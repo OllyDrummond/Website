@@ -55,8 +55,29 @@
     --ok: #5cbf86;
     --warn: #e0a043;
     --crit: #f07167;
+    color-scheme: dark;
   }
 }
+:root[data-theme="dark"] {
+    --bg: #12171b;
+  --surface: #1a2025;
+  --surface-2: #222a30;
+  --line: #313a41;
+  --ink: #e9edef;
+  --ink-2: #b2bcc2;
+  --ink-3: #8a969d;
+  --water: #5aa6e6;
+  --water-soft: #1b3a52;
+  --maroon: #b23a4c;
+  --maroon-hover: #c64a5d;
+  --maroon-soft: #3a1e23;
+  --night: #1b2126;
+  --ok: #5cbf86;
+  --warn: #e0a043;
+  --crit: #f07167;
+  color-scheme: dark;
+}
+
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
