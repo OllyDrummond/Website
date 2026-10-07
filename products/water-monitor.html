@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Water Tank Monitoring | Drummond Mechatronics</title>
+  <meta name="description" content="Remote water tank level monitoring: a lid-mounted sensor sends readings by radio to a receiver, so you can see the level, daily use and days remaining.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='6' y='8' width='20' height='20' rx='2' fill='none' stroke='%2315232b' stroke-width='3'/%3E%3Crect x='9' y='17' width='14' height='8' fill='%231f6fb2'/%3E%3Ccircle cx='16' cy='4' r='3' fill='%23f2b705'/%3E%3C/svg%3E">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="../index.html" aria-label="Drummond Mechatronics home">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="6" y="8" width="20" height="20" rx="2" fill="none" stroke="currentColor" stroke-width="3"/><rect x="9" y="17" width="14" height="8" fill="#1f6fb2"/><circle cx="16" cy="4" r="3" fill="#f2b705"/></svg>
+        Drummond Mechatronics
+      </a>
+      <nav class="nav" id="nav" aria-label="Main">
+        <a href="water-monitor.html" aria-current="page">Tank monitoring</a>
+        <a href="smart-filtration.html">Filtration</a>
+        <a href="acid-dosing.html">Acid dosing</a>
+        <a href="../index.html#contact">Contact</a>
+      </nav>
+      <div class="header-contact">
+        <a class="btn btn-ghost btn-sm" href="tel:+640000000000" aria-label="Call us">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2z"/></svg>
+          <span class="label">000 000 0000</span>
+        </a>
+        <a class="btn btn-primary btn-sm" href="mailto:hello@example.com" aria-label="Email us">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+          <span class="label">Email us</span>
+        </a>
+      </div>
+      <button class="menu-toggle" aria-expanded="false" aria-controls="nav">Menu</button>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="wrap crumbs"><a href="../index.html#products">Products</a> / Water tank monitoring</div>
+
+    <section class="product-hero">
+      <div class="wrap">
+        <div>
+          <span class="stage stage--building">In development</span>
+          <h1>Know how much water is in every tank, from the house.</h1>
+          <p class="lede">A battery-powered sensor on the tank lid measures the water level and sends it by radio to a receiver up to several kilometres away. You see each tank's level, your daily use and how many days you have left.</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#dashboard">Try the demo dashboard</a>
+            <a class="btn btn-ghost" href="../index.html?product=Water%20tank%20monitoring#contact">Register interest</a>
+          </div>
+        </div>
+        <div class="photo"><img src="../assets/img/water-monitor.svg" alt="Water tank with a level sensor on the lid sending readings to a receiver unit"></div>
+      </div>
+    </section>
+
+    <section id="dashboard" class="band">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Your water, at a glance</h2>
+          <p class="lede">This is what you'll see on the receiver and your phone. It's running on sample data for two tanks, so change the tank or time range to explore it.</p>
+        </div>
+
+        <div class="dash">
+          <div class="dash-controls">
+            <div>
+              <label for="tank-select">Tank</label>
+              <select id="tank-select"></select>
+            </div>
+            <div class="seg" role="group" aria-label="Time range">
+              <button type="button" data-range="7" aria-pressed="false">7 days</button>
+              <button type="button" data-range="30" aria-pressed="true">30 days</button>
+              <button type="button" data-range="90" aria-pressed="false">90 days</button>
+            </div>
+            <span class="demo-flag">Sample data</span>
+          </div>
+
+          <div class="dash-top">
+            <div class="gauge">
+              <svg viewBox="0 0 120 150" role="img" aria-labelledby="gauge-label">
+                <clipPath id="gauge-clip"><rect x="10" y="10" width="100" height="130" rx="4"/></clipPath>
+                <rect id="gauge-water" class="gauge-water" x="10" y="60" width="100" height="80" clip-path="url(#gauge-clip)"/>
+                <rect class="gauge-shell" x="10" y="10" width="100" height="130" rx="4"/>
+              </svg>
+              <p class="visually-hidden" id="gauge-label">Current tank level</p>
+              <div id="status"></div>
+            </div>
+            <div class="tiles">
+              <div class="tile"><p class="k">Current level</p><p class="v" id="kpi-level">–</p><p class="d" id="kpi-level-d"></p></div>
+              <div class="tile"><p class="k">Average daily use</p><p class="v" id="kpi-avg">–</p><p class="d" id="kpi-avg-d"></p></div>
+              <div class="tile"><p class="k">Days remaining</p><p class="v" id="kpi-days">–</p><p class="d">At your average use, with no rain</p></div>
+              <div class="tile"><p class="k">Rain collected</p><p class="v" id="kpi-rain">–</p><p class="d" id="kpi-rain-d"></p></div>
+            </div>
+          </div>
+
+          <div class="chart-block">
+            <div class="chart-head">
+              <h3 id="use-title">Daily water use</h3>
+              <p class="sub">Litres per day. Dashed line shows the average.</p>
+            </div>
+            <div class="chart-wrap">
+              <svg class="chart" id="use-chart" role="img" aria-labelledby="use-title"></svg>
+              <div class="tooltip" id="use-tip"></div>
+            </div>
+          </div>
+
+          <div class="chart-block">
+            <div class="chart-head">
+              <h3 id="level-title">Tank level</h3>
+              <p class="sub">Percent full. Rises are rainfall or a refill.</p>
+            </div>
+            <div class="chart-wrap">
+              <svg class="chart" id="level-chart" role="img" aria-labelledby="level-title"></svg>
+              <div class="tooltip" id="level-tip"></div>
+            </div>
+          </div>
+
+          <details class="table-view">
+            <summary>Show the data as a table</summary>
+            <div class="table-scroll">
+              <table class="data-table">
+                <thead><tr><th scope="col">Date</th><th scope="col">Used (L)</th><th scope="col">Rain in (L)</th><th scope="col">Level at end of day</th></tr></thead>
+                <tbody id="data-rows"></tbody>
+              </table>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <div class="section-head"><h2>How it works</h2></div>
+        <div class="spec-list">
+          <div><h3>Measures from the lid</h3><p>An ultrasonic sensor measures the distance down to the water. Nothing goes in the water, and it fits any tank with a lid or inspection hatch.</p></div>
+          <div><h3>Long-range radio</h3><p>Readings go out over LoRa radio, which reaches across paddocks and hills without needing mobile coverage or Wi-Fi at the tank.</p></div>
+          <div><h3>Runs for years on a battery</h3><p>The sensor wakes, takes a reading, sends it and goes back to sleep. A small solar panel is available for very remote tanks.</p></div>
+          <div><h3>Low-water alerts</h3><p>Set a level for each tank. When it drops below, you get a text or app alert so you can act before the taps stop.</p></div>
+          <div><h3>Leak detection</h3><p>A sudden overnight drop when nobody should be using water usually means a leak or a burst pipe. We flag it.</p></div>
+          <div><h3>Several tanks, one screen</h3><p>One receiver handles many sensors, so house, stock and fire-fighting tanks all show in one place.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="band">
+      <div class="wrap">
+        <div class="section-head"><h2>Target specifications</h2><p class="muted">These may change as testing goes on.</p></div>
+        <table class="spec-table">
+          <tr><th scope="row">Measurement</th><td>Ultrasonic, non-contact, ±1 cm</td></tr>
+          <tr><th scope="row">Tank depth</th><td>0.3 m to 5 m</td></tr>
+          <tr><th scope="row">Radio range</th><td>Up to 5 km line of sight (LoRa)</td></tr>
+          <tr><th scope="row">Reading interval</th><td>Every 15 minutes, adjustable</td></tr>
+          <tr><th scope="row">Power</th><td>Lithium battery, 3+ years; optional solar</td></tr>
+          <tr><th scope="row">Enclosure</th><td>IP67, UV-stabilised</td></tr>
+          <tr><th scope="row">Receiver</th><td>Mains powered, shows levels on screen and sends them to your phone over Wi-Fi</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section class="cta-band">
+      <div class="wrap">
+        <div>
+          <h2>Want to be in the first trial?</h2>
+          <p>Tell us how many tanks you have and how far they are from the house.</p>
+        </div>
+        <a class="btn btn-primary" href="../index.html?product=Water%20tank%20monitoring#contact">Register interest</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p>© <span data-year></span> Drummond Mechatronics</p>
+      <nav aria-label="Products">
+        <a href="water-monitor.html">Water tank monitoring</a>
+        <a href="smart-filtration.html">Smart filtration</a>
+        <a href="acid-dosing.html">Automated acid dosing</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="../assets/js/main.js"></script>
+  <script src="../assets/js/dashboard.js"></script>
+</body>
+</html>
