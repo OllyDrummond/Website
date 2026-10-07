@@ -1,0 +1,8 @@
+<!doctype html><html><body>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+<script type="module">
+const s = new URLSearchParams(location.search).get('s');
+await document.fonts.load('800 40px Inter'); await document.fonts.load('500 40px Inter');
+const mod = await import('./scenes/' + s + '.js?' + Date.now());
+mod.default();
+</script></body></html>

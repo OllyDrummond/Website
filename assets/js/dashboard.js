@@ -230,9 +230,28 @@ function render() {
   drawUse(document.getElementById("use-chart"), document.getElementById("use-tip"), days);
   drawLevel(document.getElementById("level-chart"), document.getElementById("level-tip"), days, tank.capacity, tank.alertPct);
 
+  renderCards();
   document.getElementById("data-rows").innerHTML = days.slice().reverse().map((d) =>
     `<tr><td>${fmtDate(d.date, { weekday: "short", day: "numeric", month: "short" })}</td><td>${fmt(d.used)}</td><td>${d.rain ? fmt(d.rain) : "–"}</td><td>${Math.round((d.litres / tank.capacity) * 100)}%</td></tr>`
   ).join("");
+}
+
+// Tank summary cards (client portal only)
+const cardsEl = document.getElementById("tank-cards");
+function renderCards() {
+  if (!cardsEl) return;
+  cardsEl.innerHTML = tanks.map((t) => {
+    const now = t.days[t.days.length - 1];
+    const pct = Math.round((now.litres / t.capacity) * 100);
+    const avg = t.days.slice(-30).reduce((s, d) => s + d.used, 0) / 30;
+    return `<button type="button" class="tank-card" data-tank="${t.id}" aria-pressed="${t.id === state.tank}">
+      <span class="mini" aria-hidden="true"><span style="height:${pct}%"></span></span>
+      <span><p class="name">${t.name}</p><p class="pct">${pct}%</p><p class="sub">${fmt(now.litres)} L · ${Math.floor(now.litres / avg)} days left</p></span>
+    </button>`;
+  }).join("");
+  cardsEl.querySelectorAll(".tank-card").forEach((b) => b.addEventListener("click", () => {
+    state.tank = b.dataset.tank; select.value = state.tank; render();
+  }));
 }
 
 select.addEventListener("change", () => { state.tank = select.value; render(); });

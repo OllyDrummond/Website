@@ -1,0 +1,11 @@
+import { chromium } from 'playwright';
+import fs from 'fs';
+const [,,name,w,h]=process.argv;
+const b=await chromium.launch({args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+const p=await b.newPage({viewport:{width:400,height:300}});
+p.on('pageerror',e=>console.log('ERR',e.message)); p.on('console',m=>m.type()==='error'&&console.log(m.text()));
+const t=Date.now();
+await p.goto('http://localhost:8790/scene.html?s='+name); await p.waitForFunction('window.done',null,{timeout:500000,polling:1000});
+const data=await p.evaluate(()=>document.getElementById('out').toDataURL('image/png'));
+fs.writeFileSync('out/'+name+'.png',Buffer.from(data.split(',')[1],'base64'));
+await b.close(); console.log(name,(Date.now()-t)/1000+'s');

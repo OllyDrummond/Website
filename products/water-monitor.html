@@ -1,71 +1,73 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-NZ">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Water Tank Monitoring | Drummond Mechatronics</title>
-  <meta name="description" content="Remote water tank level monitoring: a lid-mounted sensor sends readings by radio to a receiver, so you can see the level, daily use and days remaining.">
+  <title>Water Tank Monitoring | Kinetiq</title>
+  <meta name="description" content="Remote water tank level monitoring for New Zealand farms: a lid-mounted sensor sends readings by LoRa radio to a receiver, so you can see the level, daily use and days remaining.">
+  <meta name="theme-color" content="#1b2126">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../assets/css/style.css">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='6' y='8' width='20' height='20' rx='2' fill='none' stroke='%2315232b' stroke-width='3'/%3E%3Crect x='9' y='17' width='14' height='8' fill='%231f6fb2'/%3E%3Ccircle cx='16' cy='4' r='3' fill='%23f2b705'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='5' y='4' width='5' height='24' rx='1.5' fill='%231c2227'/%3E%3Cpath d='M14 16 25 5M14 16l11 11' stroke='%237a1f2b' stroke-width='5' stroke-linecap='round'/%3E%3Ccircle cx='14' cy='16' r='3.6' fill='%23fff' stroke='%231c2227' stroke-width='2.4'/%3E%3C/svg%3E">
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
-
   <header class="site-header">
     <div class="wrap">
-      <a class="brand" href="../index.html" aria-label="Drummond Mechatronics home">
-        <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="6" y="8" width="20" height="20" rx="2" fill="none" stroke="currentColor" stroke-width="3"/><rect x="9" y="17" width="14" height="8" fill="#1f6fb2"/><circle cx="16" cy="4" r="3" fill="#f2b705"/></svg>
-        Drummond Mechatronics
-      </a>
+      <a class="brand" href="../index.html" aria-label="Kinetiq home"><svg viewBox="0 0 32 32" aria-hidden="true"><rect class="bar" x="5" y="4" width="5" height="24" rx="1.5"/><path d="M14 16 25 5M14 16l11 11" stroke="#7a1f2b" stroke-width="5" stroke-linecap="round"/><circle class="pivot" cx="14" cy="16" r="3.6"/><circle class="pivot-hole" cx="14" cy="16" r="1.4"/></svg>Kinetiq</a>
       <nav class="nav" id="nav" aria-label="Main">
-        <a href="water-monitor.html" aria-current="page">Tank monitoring</a>
-        <a href="smart-filtration.html">Filtration</a>
-        <a href="acid-dosing.html">Acid dosing</a>
+        <a href="../index.html#products" aria-current="page">Products</a>
+        <a href="../services.html">Services</a>
+        <a href="../projects.html">Projects</a>
+        <a href="../about.html">About</a>
         <a href="../index.html#contact">Contact</a>
       </nav>
-      <div class="header-contact">
-        <a class="btn btn-ghost btn-sm" href="tel:+640000000000" aria-label="Call us">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2z"/></svg>
-          <span class="label">000 000 0000</span>
-        </a>
-        <a class="btn btn-primary btn-sm" href="mailto:hello@example.com" aria-label="Email us">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
-          <span class="label">Email us</span>
-        </a>
+      <div class="header-actions">
+        <a class="btn btn-ghost btn-sm hide-sm" href="tel:+640000000000"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2z"/></svg>000 000 0000</a>
+        <a class="btn btn-primary btn-sm" href="../portal/login.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Client login</a>
       </div>
       <button class="menu-toggle" aria-expanded="false" aria-controls="nav">Menu</button>
     </div>
   </header>
 
   <main id="main">
-    <div class="wrap crumbs"><a href="../index.html#products">Products</a> / Water tank monitoring</div>
-
-    <section class="product-hero">
+    <section class="page-hero with-media light">
       <div class="wrap">
         <div>
-          <span class="stage stage--building">In development</span>
-          <h1>Know how much water is in every tank, from the house.</h1>
-          <p class="lede">A battery-powered sensor on the tank lid measures the water level and sends it by radio to a receiver up to several kilometres away. You see each tank's level, your daily use and how many days you have left.</p>
-          <div class="hero-actions">
-            <a class="btn btn-primary" href="#dashboard">Try the demo dashboard</a>
-            <a class="btn btn-ghost" href="../index.html?product=Water%20tank%20monitoring#contact">Register interest</a>
+          <p class="crumbs"><a href="../projects.html">Projects</a> / Water tank monitoring</p>
+          <span class="badge ready" data-reveal>Completed</span>
+          <h1 data-reveal style="--d:.08s;margin-top:14px">Know how much water is in every tank, from the house.</h1>
+          <p class="lede" data-reveal style="--d:.16s">A battery-powered sensor on the tank lid measures the water level and sends it by radio to a receiver up to 5 km away. See each tank's level, your daily use and how many days you have left.</p>
+          <div class="hero-actions" data-reveal style="--d:.24s">
+            <a class="btn btn-primary" href="#dashboard">Try the live demo</a>
+            <a class="btn btn-ghost" href="../index.html?product=Water%20tank%20monitoring#contact">Get a quote</a>
           </div>
         </div>
-        <div class="photo"><img src="../assets/img/water-monitor.svg" alt="Water tank with a level sensor on the lid sending readings to a receiver unit"></div>
+        <div class="page-hero-media" data-reveal="zoom"><img src="../assets/img/renders/sensor.webp" alt="Kinetiq tank level sensor with antenna" width="1600" height="1200" fetchpriority="high" decoding="async"></div>
+      </div>
+    </section>
+
+    <section class="stats" style="padding-top:clamp(48px,6vw,72px)" aria-label="Specifications at a glance">
+      <div class="wrap">
+        <div class="stats-grid" data-stagger>
+          <div class="stat"><p class="num" data-count="5">5<small>km</small></p><p>Radio range, line of sight</p></div>
+          <div class="stat"><p class="num" data-count="15">15<small>min</small></p><p>Between readings</p></div>
+          <div class="stat"><p class="num" data-count="3">3<small>yr+</small></p><p>Battery life</p></div>
+          <div class="stat"><p class="num" data-count="1">1<small>cm</small></p><p>Accuracy, without touching the water</p></div>
+        </div>
       </div>
     </section>
 
     <section id="dashboard" class="band">
       <div class="wrap">
-        <div class="section-head">
+        <div class="section-head" data-reveal>
+          <p class="kicker">Live demo</p>
           <h2>Your water, at a glance</h2>
-          <p class="lede">This is what you'll see on the receiver and your phone. It's running on sample data for two tanks, so change the tank or time range to explore it.</p>
+          <p class="lede">This is what you see on the receiver and in the client portal. It's running on sample data for two tanks, so change the tank or time range to explore.</p>
         </div>
-
-        <div class="dash">
+        <div class="dash" data-reveal>
           <div class="dash-controls">
             <div>
               <label for="tank-select">Tank</label>
@@ -78,7 +80,6 @@
             </div>
             <span class="demo-flag">Sample data</span>
           </div>
-
           <div class="dash-top">
             <div class="gauge">
               <svg viewBox="0 0 120 150" role="img" aria-labelledby="gauge-label">
@@ -96,29 +97,14 @@
               <div class="tile"><p class="k">Rain collected</p><p class="v" id="kpi-rain">–</p><p class="d" id="kpi-rain-d"></p></div>
             </div>
           </div>
-
           <div class="chart-block">
-            <div class="chart-head">
-              <h3 id="use-title">Daily water use</h3>
-              <p class="sub">Litres per day. Dashed line shows the average.</p>
-            </div>
-            <div class="chart-wrap">
-              <svg class="chart" id="use-chart" role="img" aria-labelledby="use-title"></svg>
-              <div class="tooltip" id="use-tip"></div>
-            </div>
+            <div class="chart-head"><h3 id="use-title">Daily water use</h3><p class="sub">Litres per day. Dashed line shows the average.</p></div>
+            <div class="chart-wrap"><svg class="chart" id="use-chart" role="img" aria-labelledby="use-title"></svg><div class="tooltip" id="use-tip"></div></div>
           </div>
-
           <div class="chart-block">
-            <div class="chart-head">
-              <h3 id="level-title">Tank level</h3>
-              <p class="sub">Percent full. Rises are rainfall or a refill.</p>
-            </div>
-            <div class="chart-wrap">
-              <svg class="chart" id="level-chart" role="img" aria-labelledby="level-title"></svg>
-              <div class="tooltip" id="level-tip"></div>
-            </div>
+            <div class="chart-head"><h3 id="level-title">Tank level</h3><p class="sub">Percent full. Rises are rainfall or a refill.</p></div>
+            <div class="chart-wrap"><svg class="chart" id="level-chart" role="img" aria-labelledby="level-title"></svg><div class="tooltip" id="level-tip"></div></div>
           </div>
-
           <details class="table-view">
             <summary>Show the data as a table</summary>
             <div class="table-scroll">
@@ -134,52 +120,91 @@
 
     <section>
       <div class="wrap">
-        <div class="section-head"><h2>How it works</h2></div>
-        <div class="spec-list">
-          <div><h3>Measures from the lid</h3><p>An ultrasonic sensor measures the distance down to the water. Nothing goes in the water, and it fits any tank with a lid or inspection hatch.</p></div>
-          <div><h3>Long-range radio</h3><p>Readings go out over LoRa radio, which reaches across paddocks and hills without needing mobile coverage or Wi-Fi at the tank.</p></div>
-          <div><h3>Runs for years on a battery</h3><p>The sensor wakes, takes a reading, sends it and goes back to sleep. A small solar panel is available for very remote tanks.</p></div>
-          <div><h3>Low-water alerts</h3><p>Set a level for each tank. When it drops below, you get a text or app alert so you can act before the taps stop.</p></div>
-          <div><h3>Leak detection</h3><p>A sudden overnight drop when nobody should be using water usually means a leak or a burst pipe. We flag it.</p></div>
-          <div><h3>Several tanks, one screen</h3><p>One receiver handles many sensors, so house, stock and fire-fighting tanks all show in one place.</p></div>
+        <div class="section-head" data-reveal><p class="kicker">How it works</p><h2>Simple on the outside, clever on the inside</h2></div>
+        <div class="feature-grid" data-stagger>
+          <div><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg></div><h3>Measures from the lid</h3><p>An ultrasonic sensor measures the distance down to the water. Nothing goes in the tank, and it fits any tank with a lid or hatch.</p></div>
+          <div><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14"/></svg></div><h3>Long-range radio</h3><p>LoRa radio reaches across paddocks and hills with no cell coverage or Wi-Fi needed at the tank.</p></div>
+          <div><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="7" width="18" height="10" rx="2"/><path d="M22 11v2M6 10v4M10 10v4"/></svg></div><h3>Years on a battery</h3><p>The sensor wakes, reads, sends and sleeps. A small solar panel is available for very remote tanks.</p></div>
+          <div><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></div><h3>Low-water alerts</h3><p>Set a level for each tank. When it drops below, you get an alert before the taps stop.</p></div>
+          <div><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17v.5"/></svg></div><h3>Leak detection</h3><p>A sudden overnight drop usually means a leak or burst pipe. The system flags it.</p></div>
+          <div><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M5 13h14"/></svg></div><h3>Many tanks, one screen</h3><p>One receiver handles many sensors, so house, stock and fire-fighting tanks all show in one place.</p></div>
         </div>
       </div>
     </section>
 
     <section class="band">
-      <div class="wrap">
-        <div class="section-head"><h2>Target specifications</h2><p class="muted">These may change as testing goes on.</p></div>
-        <table class="spec-table">
-          <tr><th scope="row">Measurement</th><td>Ultrasonic, non-contact, ±1 cm</td></tr>
-          <tr><th scope="row">Tank depth</th><td>0.3 m to 5 m</td></tr>
-          <tr><th scope="row">Radio range</th><td>Up to 5 km line of sight (LoRa)</td></tr>
-          <tr><th scope="row">Reading interval</th><td>Every 15 minutes, adjustable</td></tr>
-          <tr><th scope="row">Power</th><td>Lithium battery, 3+ years; optional solar</td></tr>
-          <tr><th scope="row">Enclosure</th><td>IP67, UV-stabilised</td></tr>
-          <tr><th scope="row">Receiver</th><td>Mains powered, shows levels on screen and sends them to your phone over Wi-Fi</td></tr>
-        </table>
+      <div class="wrap split-2">
+        <div data-reveal>
+          <p class="kicker">The receiver</p>
+          <h2>Readings on the bench, alerts on your phone</h2>
+          <p class="lede">The receiver sits in the house or shed. It shows every tank on its screen and passes readings to the client portal over Wi-Fi.</p>
+          <div class="flagship-media" style="margin-top:24px"><img src="../assets/img/renders/receiver.webp" alt="Kinetiq receiver unit with tank level display" width="1600" height="1200" loading="lazy" decoding="async"></div>
+        </div>
+        <div data-reveal>
+          <p class="kicker">Specifications</p>
+          <table class="spec-table">
+            <tr><th scope="row">Measurement</th><td>Ultrasonic, non-contact, ±1 cm</td></tr>
+            <tr><th scope="row">Tank depth</th><td>0.3 m to 5 m</td></tr>
+            <tr><th scope="row">Radio</th><td>LoRa, up to 5 km line of sight</td></tr>
+            <tr><th scope="row">Reading interval</th><td>Every 15 minutes, adjustable</td></tr>
+            <tr><th scope="row">Power</th><td>Lithium battery, 3+ years; optional solar</td></tr>
+            <tr><th scope="row">Enclosure</th><td>IP67, UV-stabilised</td></tr>
+            <tr><th scope="row">Receiver</th><td>Mains powered, on-screen levels, Wi-Fi to client portal</td></tr>
+          </table>
+        </div>
       </div>
     </section>
 
-    <section class="cta-band">
-      <div class="wrap">
+    <section class="cta">
+      <svg class="bg-mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="5" y="4" width="5" height="24" rx="1.5" fill="#fff"/><path d="M14 16 25 5M14 16l11 11" stroke="#fff" stroke-width="5" stroke-linecap="round"/></svg>
+      <div class="wrap" data-reveal>
         <div>
-          <h2>Want to be in the first trial?</h2>
+          <h2>Want monitors on your tanks?</h2>
           <p>Tell us how many tanks you have and how far they are from the house.</p>
         </div>
-        <a class="btn btn-primary" href="../index.html?product=Water%20tank%20monitoring#contact">Register interest</a>
+        <a class="btn" href="../index.html#contact">Talk to an engineer</a>
       </div>
     </section>
+
   </main>
 
   <footer class="site-footer">
     <div class="wrap">
-      <p>© <span data-year></span> Drummond Mechatronics</p>
-      <nav aria-label="Products">
-        <a href="water-monitor.html">Water tank monitoring</a>
-        <a href="smart-filtration.html">Smart filtration</a>
-        <a href="acid-dosing.html">Automated acid dosing</a>
-      </nav>
+      <div class="footer-grid">
+        <div>
+          <a class="brand" href="../index.html" aria-label="Kinetiq home"><svg viewBox="0 0 32 32" aria-hidden="true"><rect class="bar" x="5" y="4" width="5" height="24" rx="1.5"/><path d="M14 16 25 5M14 16l11 11" stroke="#7a1f2b" stroke-width="5" stroke-linecap="round"/><circle class="pivot" cx="14" cy="16" r="3.6"/><circle class="pivot-hole" cx="14" cy="16" r="1.4"/></svg>Kinetiq</a>
+          <p>Mechatronic systems designed, built and supported in New Zealand, for farms and rural properties.</p>
+        </div>
+        <div>
+          <h4>Products</h4>
+          <ul>
+            <li><a href="../products/water-monitor.html">Water tank monitoring</a></li>
+            <li><a href="../products/smart-filtration.html">Smart filtration</a></li>
+            <li><a href="../products/acid-dosing.html">Automated acid dosing</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Company</h4>
+          <ul>
+            <li><a href="../services.html">Services</a></li>
+            <li><a href="../projects.html">Projects</a></li>
+            <li><a href="../about.html">About</a></li>
+            <li><a href="../portal/login.html">Client login</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Get in touch</h4>
+          <ul>
+            <li><a href="tel:+640000000000">000 000 0000</a></li>
+            <li><a href="mailto:hello@example.com">hello@example.com</a></li>
+            <li>New Zealand</li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-base">
+        <p>© <span data-year></span> Kinetiq</p>
+        <p>Designed and built in New Zealand</p>
+      </div>
     </div>
   </footer>
 
