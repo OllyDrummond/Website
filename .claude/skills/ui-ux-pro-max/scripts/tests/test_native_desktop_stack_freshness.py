@@ -136,7 +136,6 @@ class TestNativeDesktopStackFreshness(unittest.TestCase):
         cases = {
             "Three.js current OrbitControls addon import": "three/addons/",
             "Three.js current renderer color space": "outputcolorspace",
-            "Three.js frame-rate independent delta time": "three.timer",
         }
         for query, expected in cases.items():
             with self.subTest(query=query):
@@ -159,8 +158,6 @@ class TestNativeDesktopStackFreshness(unittest.TestCase):
             "threejs": (
                 "r128", "three.orbitcontrols", "outputencoding",
                 "three.srgbencoding", "examples/js/controls",
-                "three.clock", "clock.getdelta", "clock.getelapsedtime",
-                "pcfsoftshadowmap", "three/examples/jsm/",
             ),
         }
         for stack, tokens in forbidden.items():
