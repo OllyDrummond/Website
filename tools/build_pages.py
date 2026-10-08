@@ -58,7 +58,7 @@ def head(title, desc, root):
 """
 
 
-NAV = [("Tank monitor", "products/water-monitor.html"), ("Live demo", "projects/tank-monitor-live.html"), ("Services", "services.html"), ("Projects", "projects.html"), ("About", "about.html")]
+NAV = [("Products", "index.html#products"), ("Services", "services.html"), ("Projects", "projects.html"), ("About", "about.html"), ("Contact", "index.html#contact")]
 
 
 def header(root, current=None, over_hero=False):
@@ -74,8 +74,8 @@ def header(root, current=None, over_hero=False):
 {links}
       </nav>
       <div class="header-actions">
-        <a class="btn btn-ghost btn-sm hide-sm" href="{root}portal/login.html">{I['user']}Client login</a>
-        <a class="btn btn-primary btn-sm" href="{root}index.html#trial">Join the trial</a>
+        <a class="btn btn-ghost btn-sm hide-sm" href="tel:{PHONE_TEL}">{I['phone']}{PHONE_DISPLAY}</a>
+        <a class="btn btn-primary btn-sm" href="{root}portal/login.html">{I['user']}Client login</a>
       </div>
       <button class="menu-toggle" aria-expanded="false" aria-controls="nav">Menu</button>
     </div>
@@ -96,7 +96,7 @@ def footer(root, scripts=()):
         <div>
           <h4>Products</h4>
           <ul>
-            <li><a href="{root}products/water-monitor.html">Tank monitor</a></li>
+            <li><a href="{root}products/water-monitor.html">Water tank monitoring</a></li>
             <li><a href="{root}projects/tank-monitor-live.html">Live demo &amp; pump control</a></li>
             <li><a href="{root}products/smart-filtration.html">Smart filtration</a></li>
             <li><a href="{root}products/acid-dosing.html">Automated acid dosing</a></li>
@@ -162,6 +162,334 @@ def img(root, name, alt, eager=False, width=1600, height=1200):
 
 
 # =========================================================================
+# Shared bits for the tank monitor
+# =========================================================================
+# Which rotating render is used where. Each is a folder of frames in
+# assets/img/turntables/<name>/00.webp, 01.webp, ...
+TT = {
+    "tanksteel": dict(frames=24, mode="pingpong", alt="Kinetiq tank monitor installed on a corrugated steel farm tank, cut away to show the pressure probe on the tank floor"),
+    "tankpoly": dict(frames=24, mode="pingpong", alt="Kinetiq tank monitor mounted on a plastic rainwater tank, cut away to show the pressure probe on the tank floor"),
+    "kit": dict(frames=36, mode="loop", alt="Kinetiq tank monitor: grey enclosure with solar panel and antenna, coiled cable and stainless pressure probe"),
+    "exploded": dict(frames=36, mode="loop", alt="Exploded view of the Kinetiq tank monitor showing the solar panel, enclosure, circuit board, battery and probe"),
+}
+HERO_TT = "tanksteel"      # homepage hero
+PRODUCT_TT = "kit"         # product page hero
+
+DRAG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 12h16M7 9l-3 3 3 3M17 9l3 3-3 3"/></svg>'
+
+
+def turntable(root, name, eager=False, hint=True):
+    t = TT[name]
+    load = 'fetchpriority="high"' if eager else 'loading="lazy"'
+    h = f'<p class="turntable-hint">{DRAG}Drag to turn it</p>' if hint else ""
+    return (f'<div class="turntable" data-turntable="{root}assets/img/turntables/{name}" data-frames="{t["frames"]}" data-mode="{t["mode"]}" role="img" aria-label="{t["alt"]}. Rotating view; drag or use the arrow keys to turn it.">'
+            f'<img src="{root}assets/img/turntables/{name}/00.webp" alt="" width="1200" height="900" {load} decoding="async"></div>{h}')
+
+
+def frame(root, name, alt, i=0, eager=False):
+    load = 'fetchpriority="high"' if eager else 'loading="lazy"'
+    return f'<img src="{root}assets/img/turntables/{name}/{i:02d}.webp" alt="{alt}" width="1200" height="900" {load} decoding="async">'
+
+
+I.update({
+    "probe": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 2v9"/><rect x="9" y="11" width="6" height="10" rx="2"/><path d="M9 17h6"/></svg>',
+    "sun": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+    "router": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 16.5h.01M11 16.5h.01M17 13V8M14 5.5a4 4 0 0 1 6 0"/></svg>',
+    "cloud": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 18a5 5 0 1 1 .9-9.9A6 6 0 0 1 19 10a4 4 0 0 1-1 8H7z"/></svg>',
+    "phone2": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/></svg>',
+    "pump": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 12 8 6M12 12l6 2M12 12l-2 7"/></svg>',
+    "cow": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8 3 5M19 8l2-3"/><path d="M6 8h12v6a6 6 0 0 1-12 0z"/><path d="M9 15h.01M15 15h.01"/></svg>',
+    "hills": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 19 9 9l4 6 3-4 6 8z"/></svg>',
+    "building": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/></svg>',
+})
+
+FLOW = [
+    ("probe", "Pressure probe", "A stainless probe sits on the tank floor and measures the weight of water above it, which gives the depth.", "In the tank"),
+    ("sun", "Sensor unit", "Reads the probe on a schedule. A small solar panel keeps its battery topped up, so there are no wires to run.", "On the tank"),
+    ("radio", "LoRa radio link", "Sends each reading by long-range radio to the house, across paddocks and hills, with no mobile coverage needed.", "Up to 5 km (target)"),
+    ("router", "Receiver", "Sits in the house or shed, shows every tank on its screen and uploads readings over your Wi-Fi.", "In the house"),
+    ("phone2", "App & website", "Levels, usage, alerts and pump control from your phone or computer, wherever you are.", "Anywhere"),
+]
+
+
+def flow_block():
+    items = "\n".join(f"""          <li><span class="node">{I[ic]}</span><div><h3>{t}</h3><p>{d}</p><span class="tag">{tag}</span></div></li>""" for ic, t, d, tag in FLOW)
+    return f"""        <ol class="flow" data-stagger>
+{items}
+        </ol>"""
+
+
+SEGMENTS = [
+    ("cow", "Dairy farms", "Keep an eye on shed and wash-down water, and fill the tank from the bore automatically before milking."),
+    ("hills", "Sheep &amp; beef", "Stock-water tanks spread over hill country, checked from the house instead of the ute."),
+    ("home", "Lifestyle blocks &amp; rural homes", "Know how much rainwater is left for the house and get an alert before it runs low."),
+    ("building", "Councils, marae, schools &amp; businesses", "Shared or community supplies with a clear record of levels and usage for everyone responsible."),
+]
+
+
+def segments_block():
+    items = "\n".join(f"""          <div class="segment"><div class="ico">{I[ic]}</div><h3>{t}</h3><p>{d}</p></div>""" for ic, t, d in SEGMENTS)
+    return f"""        <div class="segments" data-stagger>
+{items}
+        </div>"""
+
+
+TARGET_STATS = """          <div class="stat"><p class="num" data-count="5">5<small>km</small></p><p>LoRa range to the receiver, line of sight</p></div>
+          <div class="stat"><p class="num" data-count="15">15<small>min</small></p><p>Between readings, faster while the pump runs</p></div>
+          <div class="stat"><p class="num" data-count="1">1<small>cm</small></p><p>Level resolution from the pressure probe</p></div>
+          <div class="stat"><p class="num" data-count="5">5<small>m</small></p><p>Maximum tank depth</p></div>"""
+
+
+def trial_form(r):
+    return f"""        <form class="form" id="quote-form" novalidate data-reveal>
+          <div class="field">
+            <label for="f-name">Name</label>
+            <input id="f-name" name="name" autocomplete="name" required>
+            <p class="error" id="f-name-err">Enter your name.</p>
+          </div>
+          <div class="field">
+            <label for="f-phone">Phone <span class="hint">(optional)</span></label>
+            <input id="f-phone" name="phone" type="tel" autocomplete="tel">
+          </div>
+          <div class="field full">
+            <label for="f-email">Email</label>
+            <input id="f-email" name="email" type="email" autocomplete="email" required>
+            <p class="error" id="f-email-err">Enter an email address like name@example.com.</p>
+          </div>
+          <div class="field full">
+            <label for="f-product">What are you interested in?</label>
+            <select id="f-product" name="product">
+              <option>Tank monitor trial</option>
+              <option>Tank monitor with pump control</option>
+              <option>Smart filtration</option>
+              <option>Automated acid dosing</option>
+              <option>Custom machine design</option>
+              <option>Electronics &amp; PCB design</option>
+              <option>PLC programming</option>
+              <option>Automation &amp; control</option>
+              <option>Installation &amp; maintenance</option>
+              <option>Something else</option>
+            </select>
+          </div>
+          <div class="field full">
+            <label for="f-msg">About your site</label>
+            <textarea id="f-msg" name="message" required placeholder="e.g. Dairy farm near Te Awamutu. Two 30,000 L concrete tanks fed from a bore, about 600 m from the house."></textarea>
+            <p class="error" id="f-msg-err">Tell us a little about your tanks or project.</p>
+          </div>
+          <div class="full"><button class="btn btn-primary" type="submit">Send</button></div>
+          <p class="form-status" id="form-status" role="status"></p>
+        </form>"""
+
+
+# =========================================================================
+# Home
+# =========================================================================
+def home():
+    r = ""
+    services = [
+        ("gears", "Custom machine design", "One-off machines and mechanisms designed around the job, from concept sketches to CAD and a working build.", "services.html#machine-design"),
+        ("pcb", "Electronics &amp; PCB design", "Sensor boards, controllers and long-range wireless telemetry, designed and tested in-house.", "services.html#electronics"),
+        ("plc", "PLC programming", "Programming, commissioning and fault-finding for PLC-controlled plant, new or existing.", "services.html#plc"),
+    ]
+    svc_cards = "\n".join(f"""          <a class="service" href="{href}">
+            <div class="service-media">{img(r, n, '', width=1600, height=1000)}</div>
+            <div class="service-body"><h3>{t}</h3><p>{d}</p></div>
+          </a>""" for n, t, d, href in services)
+    html = head(None, "Kinetiq is a New Zealand engineering company. Our tank monitor reads water levels from the bottom of the tank, runs on solar power and sends readings by LoRa radio to your house, phone and computer.", r)
+    html += header(r, over_hero=True)
+    html += f"""
+  <main id="main">
+    <section class="hero on-dark" aria-labelledby="hero-title">
+      <div class="hero-media">{img(r, 'hero', 'Kinetiq tank monitor with solar panel and antenna mounted on the roof of a corrugated steel water tank', eager=True, width=2400, height=1300)}</div>
+      <div class="wrap">
+        <div class="hero-copy">
+          <p class="kicker" data-reveal>Mechatronics for New Zealand farms</p>
+          <h1 id="hero-title" data-reveal style="--d:.08s">Smart machines for the jobs that never stop.</h1>
+          <p class="lede" data-reveal style="--d:.16s">We design, build and install sensors, controllers and automation for farms, rural properties and organisations. Our tank monitor is built and working, and we're taking sites for the trial now.</p>
+          <div class="hero-actions" data-reveal style="--d:.24s">
+            <a class="btn btn-primary" href="products/water-monitor.html">See the tank monitor</a>
+            <a class="btn btn-ghost" href="#contact">Join the trial</a>
+          </div>
+        </div>
+      </div>
+      <aside class="live-card" data-live aria-label="Example live tank reading">
+        <div class="top"><span class="live-dot">Live</span><span>Tank 1 · House</span></div>
+        <p class="big">62<small>% full</small></p>
+        <div class="meter"><span style="width:62%"></span></div>
+        <p><span data-litres>13,640 L</span> · updated <span data-ago>just now</span> · demo</p>
+      </aside>
+    </section>
+
+    <section class="stats" aria-label="Tank monitor design targets">
+      <div class="wrap">
+        <div class="stats-grid" data-stagger>
+{TARGET_STATS}
+        </div>
+        <p class="target-note">Design targets for the production unit. We'll publish measured figures as trials finish.</p>
+      </div>
+    </section>
+
+    <section id="products">
+      <div class="wrap">
+        <div class="section-head" data-reveal>
+          <p class="kicker">Products</p>
+          <h2>Built for the paddock, not the lab</h2>
+          <p class="lede">One system finished and in trials, two more on the drawing board. Built for dairy farms, sheep and beef, lifestyle blocks, and councils, marae, schools and businesses.</p>
+        </div>
+
+        <div class="flagship">
+          <div class="flagship-media" data-reveal="zoom">
+            {img(r, 'unit', 'Kinetiq tank monitor: grey enclosure with solar panel and antenna, coiled cable and stainless pressure probe')}
+            <div class="inset">{img(r, 'receiver', 'Kinetiq receiver showing tank level on its screen')}</div>
+          </div>
+          <div data-reveal>
+            <span class="badge ready">Completed</span>
+            <h2 style="margin-top:14px">Water tank monitoring</h2>
+            <p class="lede">A stainless pressure probe on the tank floor measures the water depth. The solar-powered sensor unit sends each reading by LoRa radio to a receiver in the house, which uploads it over Wi-Fi to the Kinetiq app and website.</p>
+            <ul class="checks">
+              <li>{I['check']}<span>Submersible pressure probe that reads the level from the bottom of the tank</span></li>
+              <li>{I['check']}<span>Solar panel and battery, so no power or phone signal is needed at the tank</span></li>
+              <li>{I['check']}<span>Levels, daily use, alerts and pump control on your phone or computer</span></li>
+            </ul>
+            <div class="hero-actions" style="margin-top:0"><a class="btn btn-primary" href="products/water-monitor.html">Explore the tank monitor</a><a class="btn btn-ghost" href="projects/tank-monitor-live.html">Live demo</a></div>
+          </div>
+        </div>
+
+        <div class="cards" style="margin-top:clamp(40px,6vw,72px)" data-stagger>
+          <a class="card" href="products/smart-filtration.html">
+            <div class="card-media">{img(r, 'filtration', 'Mock-up of a three-stage smart filtration unit with pressure gauges and controller')}<span class="badge mock">Mock-up</span></div>
+            <div class="card-body"><h3>Smart filtration</h3><p>Pressure sensors on each filter stage tell you which cartridge needs changing and when.</p><span class="link-arrow">See the concept {I['arrow']}</span></div>
+          </a>
+          <a class="card" href="products/acid-dosing.html">
+            <div class="card-media">{img(r, 'dosing', 'Mock-up of an automated acid dosing system with chemical drum, peristaltic pump and controller')}<span class="badge mock">Mock-up</span></div>
+            <div class="card-body"><h3>Automated acid dosing</h3><p>Measured acid for every dairy plant wash, logged automatically, with no one handling chemicals.</p><span class="link-arrow">See the concept {I['arrow']}</span></div>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="dark" id="services">
+      <div class="wrap">
+        <div class="section-head split" data-reveal>
+          <div>
+            <p class="kicker">Services</p>
+            <h2>From an idea on a napkin to a machine on site</h2>
+          </div>
+          <a class="btn btn-ghost" href="services.html" style="color:#fff">All services</a>
+        </div>
+        <div class="services" data-stagger>
+{svc_cards}
+          <a class="service textonly" href="services.html#automation">
+            <div class="service-body"><div class="service-icon">{I['gauge']}</div><h3>Automation &amp; control</h3><p>Pumps, valves, motors and sensors tied together so the process runs itself, with alarms when it needs you.</p></div>
+          </a>
+          <a class="service textonly" href="services.html#install">
+            <div class="service-body"><div class="service-icon">{I['wrench']}</div><h3>Installation &amp; maintenance</h3><p>We fit what we build, commission it on site and stay on call for servicing, spares and updates.</p></div>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section id="process">
+      <div class="wrap">
+        <div class="section-head" data-reveal>
+          <p class="kicker">How we work</p>
+          <h2>Four steps from problem to installed system</h2>
+        </div>
+        <ol class="process">
+          <li><span></span><h3>See the problem</h3><p>We visit, look at the site and work out what's going wrong and what it costs you.</p></li>
+          <li><span></span><h3>Design &amp; prototype</h3><p>Mechanics, electronics and software, designed together and proven on the bench.</p></li>
+          <li><span></span><h3>Install &amp; trial</h3><p>We fit it and run it alongside your current routine until it earns its place.</p></li>
+          <li><span></span><h3>Support it</h3><p>Firmware updates, spare parts and a real person to call when you need one.</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="band" id="project">
+      <div class="wrap">
+        <div class="section-head split" data-reveal>
+          <div>
+            <p class="kicker">Projects</p>
+            <h2>What we've built</h2>
+          </div>
+          <a class="btn btn-ghost" href="projects.html">All projects</a>
+        </div>
+        <div class="project" data-reveal>
+          <a class="project-media" href="projects/tank-monitor-live.html" aria-label="Open the tank monitor live view">{img(r, 'installed', 'Kinetiq tank monitor installed on a farm tank, cut away to show the probe on the tank floor')}</a>
+          <div class="project-body">
+            <span class="badge ready">Completed</span>
+            <h3 style="font-size:1.6rem">Tank monitoring &amp; pump control</h3>
+            <p class="muted">Rural properties often find out a tank is empty when the taps stop. We built a probe, sensor unit and receiver that report each tank's level, daily use and days remaining, and can run the pump that fills it.</p>
+            <dl class="facts">
+              <div><dt>Sensing</dt><dd>Submersible pressure probe</dd></div>
+              <div><dt>Power</dt><dd>Solar + battery</dd></div>
+              <div><dt>Link</dt><dd>LoRa → receiver → Wi-Fi → cloud</dd></div>
+              <div><dt>Control</dt><dd>Fill pump: manual, auto, schedule</dd></div>
+            </dl>
+            <div class="actions"><a class="btn btn-primary" href="projects/tank-monitor-live.html">Open live view</a><a class="btn btn-ghost" href="products/water-monitor.html">Product details</a></div>
+          </div>
+        </div>
+      </div>
+    </section>
+{cta(r)}
+    <section id="contact">
+      <div class="wrap contact-grid">
+        <div data-reveal>
+          <p class="kicker">Contact</p>
+          <h2>Join the trial, or tell us about a problem</h2>
+          <p class="lede">We're taking farms, rural properties and organisations around New Zealand for the tank monitor trial. For anything else, describe the job you'd like automated and we'll reply with whether we can help and a rough price.</p>
+          <div class="contact-direct">
+            <a href="tel:{PHONE_TEL}">{I['phone']}{PHONE_DISPLAY}</a>
+            <a href="mailto:{EMAIL}">{I['mail']}{EMAIL}</a>
+            <span>{I['pin']}New Zealand</span>
+          </div>
+        </div>
+        <form class="form" id="quote-form" novalidate data-reveal>
+          <div class="field">
+            <label for="f-name">Name</label>
+            <input id="f-name" name="name" autocomplete="name" required>
+            <p class="error" id="f-name-err">Enter your name.</p>
+          </div>
+          <div class="field">
+            <label for="f-phone">Phone <span class="hint">(optional)</span></label>
+            <input id="f-phone" name="phone" type="tel" autocomplete="tel">
+          </div>
+          <div class="field full">
+            <label for="f-email">Email</label>
+            <input id="f-email" name="email" type="email" autocomplete="email" required>
+            <p class="error" id="f-email-err">Enter an email address like name@example.com.</p>
+          </div>
+          <div class="field full">
+            <label for="f-product">What's it about?</label>
+            <select id="f-product" name="product">
+              <option>Tank monitor trial</option>
+              <option>Tank monitor with pump control</option>
+              <option>Smart filtration</option>
+              <option>Automated acid dosing</option>
+              <option>Custom machine design</option>
+              <option>Electronics &amp; PCB design</option>
+              <option>PLC programming</option>
+              <option>Automation &amp; control</option>
+              <option>Installation &amp; maintenance</option>
+              <option>Something else</option>
+            </select>
+          </div>
+          <div class="field full">
+            <label for="f-msg">Describe the problem</label>
+            <textarea id="f-msg" name="message" required placeholder="e.g. Two 25,000 L tanks on a hill, filled from the bore, about 400 m from the house. We only find out they're empty when the taps stop."></textarea>
+            <p class="error" id="f-msg-err">Tell us a little about the problem.</p>
+          </div>
+          <div class="full"><button class="btn btn-primary" type="submit">Send enquiry</button></div>
+          <p class="form-status" id="form-status" role="status"></p>
+        </form>
+      </div>
+    </section>
+  </main>
+"""
+    html += footer(r)
+    write("index.html", html)
+
+
+# =========================================================================
 # Services
 # =========================================================================
 def services():
@@ -200,7 +528,7 @@ def services():
           <h1 data-reveal style="--d:.08s">Mechanical, electrical and software, under one roof.</h1>
           <p class="lede" data-reveal style="--d:.16s">Mechatronics means the moving parts, the electronics and the code are designed together. That's how we work on every job, big or small.</p>
         </div>
-        <div class="page-hero-media" data-reveal="zoom">{img(r, 'exploded', 'Exploded view of the Kinetiq tank monitor: solar panel, enclosure, circuit board, battery and probe', eager=True, width=1200, height=900)}</div>
+        <div class="page-hero-media" data-reveal="zoom">{img(r, 'hero', 'Kinetiq tank monitor installed on a corrugated water tank', eager=True, width=2400, height=1300)}</div>
       </div>
     </section>
 
@@ -217,11 +545,94 @@ def services():
 
 
 # =========================================================================
+# Projects
+# =========================================================================
+def projects():
+    r = ""
+    html = head("Projects", "Kinetiq projects: the completed tank monitor with live view and pump control, plus smart filtration and automated acid dosing mock-ups.", r)
+    html += header(r, "Projects")
+    html += f"""
+  <main id="main">
+    <section class="page-hero">
+      <div class="wrap">
+        <p class="kicker" data-reveal>Projects</p>
+        <h1 data-reveal style="--d:.08s">What we've built, and what's next.</h1>
+        <p class="lede" data-reveal style="--d:.16s">Every project starts with a real problem on a real property. Completed work is marked as completed, and ideas still in design are marked as mock-ups.</p>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <div class="section-head split" style="margin-bottom:28px">
+          <div class="chips" role="group" aria-label="Filter projects">
+            <button type="button" data-filter="all" aria-pressed="true">All</button>
+            <button type="button" data-filter="completed" aria-pressed="false">Completed</button>
+            <button type="button" data-filter="mockup" aria-pressed="false">Mock-ups</button>
+          </div>
+        </div>
+
+        <article class="project" data-status="completed" data-reveal>
+          <a class="project-media" href="projects/tank-monitor-live.html" aria-label="Open the tank monitor live view">{img(r, 'installed', 'Kinetiq tank monitor installed on a farm tank')}</a>
+          <div class="project-body">
+            <span class="badge ready">Completed</span>
+            <h2 style="font-size:1.8rem">Tank monitoring &amp; pump control</h2>
+            <p class="muted">On rural properties, tanks are often far from the house and checked by climbing a ladder, or not at all until the taps stop. A stainless pressure probe on the tank floor measures the depth. A solar-powered sensor unit sends it by LoRa radio to a receiver in the house, which uploads it over Wi-Fi so levels, usage and pump control are on your phone or computer.</p>
+            <dl class="facts">
+              <div><dt>Sensing</dt><dd>Submersible pressure probe</dd></div>
+              <div><dt>Power</dt><dd>Solar + battery</dd></div>
+              <div><dt>Link</dt><dd>LoRa → receiver → Wi-Fi → cloud</dd></div>
+              <div><dt>Status</dt><dd>Built and working · trials open</dd></div>
+            </dl>
+            <div class="actions"><a class="btn btn-primary" href="projects/tank-monitor-live.html">Open live view</a><a class="btn btn-ghost" href="products/water-monitor.html">Product details</a></div>
+          </div>
+        </article>
+
+        <article class="project" data-status="mockup" data-reveal>
+          <div class="project-media">{img(r, 'filtration', 'Mock-up of a smart filtration unit')}</div>
+          <div class="project-body">
+            <span class="badge mock">Mock-up</span>
+            <h2 style="font-size:1.8rem">Smart filtration</h2>
+            <p class="muted">Filter cartridges are usually changed by the calendar, so good ones get thrown out and blocked ones stay in. This concept measures pressure across each stage and tells you which one actually needs changing.</p>
+            <dl class="facts">
+              <div><dt>Problem</dt><dd>Guesswork on filter changes</dd></div>
+              <div><dt>Concept</dt><dd>Pressure, flow and UV monitoring</dd></div>
+              <div><dt>Disciplines</dt><dd>Sensing, control, plumbing</dd></div>
+              <div><dt>Status</dt><dd>Mock-up</dd></div>
+            </dl>
+            <div class="actions"><a class="btn btn-ghost" href="products/smart-filtration.html">See the concept</a></div>
+          </div>
+        </article>
+
+        <article class="project" data-status="mockup" data-reveal>
+          <div class="project-media">{img(r, 'dosing', 'Mock-up of an automated acid dosing system')}</div>
+          <div class="project-body">
+            <span class="badge mock">Mock-up</span>
+            <h2 style="font-size:1.8rem">Automated acid dosing</h2>
+            <p class="muted">Dairy plant washes often rely on someone measuring acid by hand, twice a day. This concept doses straight from the drum with a peristaltic pump and logs every wash.</p>
+            <dl class="facts">
+              <div><dt>Problem</dt><dd>Hand-measured chemical dosing</dd></div>
+              <div><dt>Concept</dt><dd>Peristaltic pump + controller</dd></div>
+              <div><dt>Disciplines</dt><dd>Fluid handling, control, logging</dd></div>
+              <div><dt>Status</dt><dd>Mock-up</dd></div>
+            </dl>
+            <div class="actions"><a class="btn btn-ghost" href="products/acid-dosing.html">See the concept</a></div>
+          </div>
+        </article>
+      </div>
+    </section>
+{cta(r, "Have a project in mind?", "Tell us about it. Many of our best ideas started with a customer's problem.")}
+  </main>
+"""
+    html += footer(r)
+    write("projects.html", html)
+
+
+# =========================================================================
 # About
 # =========================================================================
 def about():
     r = ""
-    html = head("About", "Kinetiq is a New Zealand mechatronics business building practical sensing and automation for farms and rural properties.", r)
+    html = head("About", "Kinetiq is a New Zealand engineering company building tank monitoring, pump control and automation for farms, rural properties and organisations.", r)
     html += header(r, "About")
     html += f"""
   <main id="main">
@@ -230,7 +641,7 @@ def about():
         <div>
           <p class="kicker" data-reveal>About Kinetiq</p>
           <h1 data-reveal style="--d:.08s">Engineers who'd rather fix the problem than sell you a gadget.</h1>
-          <p class="lede" data-reveal style="--d:.16s">Kinetiq is a New Zealand mechatronics business. We design and build practical machines, sensors and control systems for farms and rural properties.</p>
+          <p class="lede" data-reveal style="--d:.16s">Kinetiq is a New Zealand engineering company. We design and build practical machines, sensors and control systems for farms, rural properties and the organisations that look after shared water.</p>
         </div>
         <div class="page-hero-media" data-reveal="zoom">{img(r, 'pcb', 'Close-up of a Kinetiq circuit board', eager=True, width=1600, height=1000)}</div>
       </div>
@@ -244,13 +655,23 @@ def about():
         </div>
         <div data-reveal>
           <p class="lede">Rural life runs on systems most people never think about: water, pumps, filters, wash-downs. When they fail, you find out the hard way.</p>
-          <p class="muted">Our first project was a simple question: why do you have to climb a ladder to find out how much water is in the tank? The answer became the Kinetiq tank monitor, a sensor and receiver that does the checking for you.</p>
+          <p class="muted">Our first project was a simple question: why do you have to climb a ladder to find out how much water is in the tank? The answer became the Kinetiq tank monitor: a pressure probe on the tank floor, a solar-powered sensor unit and a receiver that puts the level on your phone, and can run the pump that fills the tank.</p>
           <p class="muted">Since then we've been turning other everyday farm jobs into machines that run themselves. Filter changes and acid dosing are next on the bench. Each system is designed in New Zealand for New Zealand conditions: long distances, patchy coverage, mud, weather and all.</p>
         </div>
       </div>
     </section>
 
     <section class="band">
+      <div class="wrap">
+        <div class="section-head" data-reveal>
+          <p class="kicker">Who we work with</p>
+          <h2>Built for the way New Zealand uses water</h2>
+        </div>
+{segments_block()}
+      </div>
+    </section>
+
+    <section>
       <div class="wrap">
         <div class="section-head" data-reveal>
           <p class="kicker">What we stand for</p>
@@ -264,7 +685,7 @@ def about():
       </div>
     </section>
 
-    <section>
+    <section class="band">
       <div class="wrap">
         <div class="section-head" data-reveal>
           <p class="kicker">Capabilities</p>
@@ -290,6 +711,101 @@ def about():
 # =========================================================================
 # Product pages
 # =========================================================================
+def water():
+    r = "../"
+    html = head("Water Tank Monitoring", "The Kinetiq tank monitor: a submersible pressure probe, solar-powered sensor unit and LoRa receiver that put tank levels, usage and pump control on your phone.", r)
+    html += header(r, "Products")
+    html += f"""
+  <main id="main">
+    <section class="page-hero with-media light">
+      <div class="wrap">
+        <div>
+          <p class="crumbs"><a href="{r}projects.html">Projects</a> / Water tank monitoring</p>
+          <span class="badge ready" data-reveal>Completed · trials open</span>
+          <h1 data-reveal style="--d:.08s;margin-top:14px">Know how much water is in every tank, from anywhere.</h1>
+          <p class="lede" data-reveal style="--d:.16s">A stainless pressure probe on the tank floor measures the depth. A solar-powered sensor unit sends it by LoRa radio to a receiver in the house, which uploads it over Wi-Fi to the Kinetiq app and website.</p>
+          <div class="hero-actions" data-reveal style="--d:.24s">
+            <a class="btn btn-primary" href="{r}projects/tank-monitor-live.html">Open the live demo</a>
+            <a class="btn btn-ghost" href="{r}index.html?product=Tank%20monitor%20trial#contact">Join the trial</a>
+          </div>
+        </div>
+        <div class="page-hero-media" data-reveal="zoom">{img(r, 'unit', 'Kinetiq tank monitor: enclosure with solar panel and antenna, coiled cable and stainless pressure probe', eager=True)}</div>
+      </div>
+    </section>
+
+    <section class="stats" style="padding-top:clamp(48px,6vw,72px)" aria-label="Design targets">
+      <div class="wrap">
+        <div class="stats-grid" data-stagger>
+{TARGET_STATS}
+        </div>
+        <p class="target-note">Design targets for the production unit.</p>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <div class="section-head" data-reveal><p class="kicker">How it works</p><h2>From the bottom of the tank to your phone</h2></div>
+{flow_block()}
+      </div>
+    </section>
+
+    <section id="dashboard" class="band">
+      <div class="wrap">
+        <div class="section-head" data-reveal>
+          <p class="kicker">Usage demo</p>
+          <h2>Your water, at a glance</h2>
+          <p class="lede">This is what you see in the app and on the website. It's running on sample data for two tanks. For live levels and pump control, open the <a href="{r}projects/tank-monitor-live.html">live demo</a>.</p>
+        </div>
+{dashboard_block()}
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <div class="section-head" data-reveal><p class="kicker">Features</p><h2>Simple on the outside, clever on the inside</h2></div>
+        <div class="feature-grid" data-stagger>
+          <div><div class="ico">{I['probe']}</div><h3>Reads from the tank floor</h3><p>A submersible pressure probe measures the weight of water above it. Foam, condensation and lids don't affect the reading.</p></div>
+          <div><div class="ico">{I['sun']}</div><h3>Solar powered</h3><p>A small solar panel keeps the battery charged, so there are no wires to run and no batteries to swap.</p></div>
+          <div><div class="ico">{I['radio']}</div><h3>Long-range radio</h3><p>LoRa radio reaches across paddocks and hills with no mobile coverage or Wi-Fi needed at the tank.</p></div>
+          <div><div class="ico">{I['bell']}</div><h3>Low-water alerts</h3><p>Set a level for each tank. When it drops below, you get an alert before the taps stop.</p></div>
+          <div><div class="ico">{I['pump']}</div><h3>Pump control</h3><p>Fill the tank by hand, by level or on a schedule, with dry-run, overfill and run-time cut-outs.</p></div>
+          <div><div class="ico">{I['tank']}</div><h3>Many tanks, one receiver</h3><p>House, stock and fire-fighting tanks all show in one place.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="band">
+      <div class="wrap split-2">
+        <div data-reveal>
+          <p class="kicker">Inside the unit</p>
+          <h2>Built to sit on a tank for years</h2>
+          <p class="lede">A sealed enclosure holds the controller board, LoRa radio and rechargeable battery, with the solar panel on a tilted mount on top.</p>
+          <div class="flagship-media" style="margin-top:24px;background:#1b2126">{img(r, 'exploded', 'Exploded view of the Kinetiq tank monitor: solar panel, enclosure, circuit board, battery and probe', width=1200, height=900)}</div>
+        </div>
+        <div data-reveal>
+          <p class="kicker">Specifications (design targets)</p>
+          <table class="spec-table">
+            <tr><th scope="row">Level sensor</th><td>Submersible pressure probe, stainless steel</td></tr>
+            <tr><th scope="row">Tank depth</th><td>Up to 5 m</td></tr>
+            <tr><th scope="row">Resolution</th><td>1 cm</td></tr>
+            <tr><th scope="row">Power</th><td>Solar panel with rechargeable battery</td></tr>
+            <tr><th scope="row">Radio</th><td>LoRa to receiver, up to 5 km line of sight</td></tr>
+            <tr><th scope="row">Reading interval</th><td>Every 15 minutes; faster while the pump runs</td></tr>
+            <tr><th scope="row">Receiver</th><td>Mains powered, on-screen levels, Wi-Fi upload to the cloud</td></tr>
+            <tr><th scope="row">Pump control</th><td>Manual, auto by level, schedule; dry-run, overfill and run-time cut-outs</td></tr>
+          </table>
+          <p class="kicker" style="margin-top:32px">The receiver</p>
+          <div class="flagship-media">{img(r, 'receiver', 'Kinetiq receiver unit with tank level display')}</div>
+        </div>
+      </div>
+    </section>
+{cta(r, "Want monitors on your tanks?", "We're taking sites for the trial now. Tell us how many tanks you have and how far they are from the house.")}
+  </main>
+"""
+    html += footer(r, ["dashboard.js"])
+    write("products/water-monitor.html", html)
+
+
 def dashboard_block():
     return """        <div class="dash" data-reveal>
           <div class="dash-controls">
@@ -519,448 +1035,12 @@ def portal_dashboard():
 
 
 # =========================================================================
-# Shared bits for the tank monitor
-# =========================================================================
-# Which rotating render is used where. Each is a folder of frames in
-# assets/img/turntables/<name>/00.webp, 01.webp, ...
-TT = {
-    "tanksteel": dict(frames=24, mode="pingpong", alt="Kinetiq tank monitor installed on a corrugated steel farm tank, cut away to show the pressure probe on the tank floor"),
-    "tankpoly": dict(frames=24, mode="pingpong", alt="Kinetiq tank monitor mounted on a plastic rainwater tank, cut away to show the pressure probe on the tank floor"),
-    "kit": dict(frames=36, mode="loop", alt="Kinetiq tank monitor: grey enclosure with solar panel and antenna, coiled cable and stainless pressure probe"),
-    "exploded": dict(frames=36, mode="loop", alt="Exploded view of the Kinetiq tank monitor showing the solar panel, enclosure, circuit board, battery and probe"),
-}
-HERO_TT = "tanksteel"      # homepage hero
-PRODUCT_TT = "kit"         # product page hero
-
-DRAG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 12h16M7 9l-3 3 3 3M17 9l3 3-3 3"/></svg>'
-
-
-def turntable(root, name, eager=False, hint=True):
-    t = TT[name]
-    load = 'fetchpriority="high"' if eager else 'loading="lazy"'
-    h = f'<p class="turntable-hint">{DRAG}Drag to turn it</p>' if hint else ""
-    return (f'<div class="turntable" data-turntable="{root}assets/img/turntables/{name}" data-frames="{t["frames"]}" data-mode="{t["mode"]}" role="img" aria-label="{t["alt"]}. Rotating view; drag or use the arrow keys to turn it.">'
-            f'<img src="{root}assets/img/turntables/{name}/00.webp" alt="" width="1200" height="900" {load} decoding="async"></div>{h}')
-
-
-def frame(root, name, alt, i=0, eager=False):
-    load = 'fetchpriority="high"' if eager else 'loading="lazy"'
-    return f'<img src="{root}assets/img/turntables/{name}/{i:02d}.webp" alt="{alt}" width="1200" height="900" {load} decoding="async">'
-
-
-I.update({
-    "probe": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 2v9"/><rect x="9" y="11" width="6" height="10" rx="2"/><path d="M9 17h6"/></svg>',
-    "sun": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
-    "router": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 16.5h.01M11 16.5h.01M17 13V8M14 5.5a4 4 0 0 1 6 0"/></svg>',
-    "cloud": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 18a5 5 0 1 1 .9-9.9A6 6 0 0 1 19 10a4 4 0 0 1-1 8H7z"/></svg>',
-    "phone2": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/></svg>',
-    "pump": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 12 8 6M12 12l6 2M12 12l-2 7"/></svg>',
-    "cow": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8 3 5M19 8l2-3"/><path d="M6 8h12v6a6 6 0 0 1-12 0z"/><path d="M9 15h.01M15 15h.01"/></svg>',
-    "hills": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 19 9 9l4 6 3-4 6 8z"/></svg>',
-    "building": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/></svg>',
-})
-
-FLOW = [
-    ("probe", "Pressure probe", "A stainless probe sits on the tank floor and measures the weight of water above it, which gives the depth.", "In the tank"),
-    ("sun", "Sensor unit", "Reads the probe on a schedule. A small solar panel keeps its battery topped up, so there are no wires to run.", "On the tank"),
-    ("radio", "LoRa radio link", "Sends each reading by long-range radio to the house, across paddocks and hills, with no mobile coverage needed.", "Up to 5 km (target)"),
-    ("router", "Receiver", "Sits in the house or shed, shows every tank on its screen and uploads readings over your Wi-Fi.", "In the house"),
-    ("phone2", "App & website", "Levels, usage, alerts and pump control from your phone or computer, wherever you are.", "Anywhere"),
-]
-
-
-def flow_block():
-    items = "\n".join(f"""          <li><span class="node">{I[ic]}</span><div><h3>{t}</h3><p>{d}</p><span class="tag">{tag}</span></div></li>""" for ic, t, d, tag in FLOW)
-    return f"""        <ol class="flow" data-stagger>
-{items}
-        </ol>"""
-
-
-SEGMENTS = [
-    ("cow", "Dairy farms", "Keep an eye on shed and wash-down water, and fill the tank from the bore automatically before milking."),
-    ("hills", "Sheep &amp; beef", "Stock-water tanks spread over hill country, checked from the house instead of the ute."),
-    ("home", "Lifestyle blocks &amp; rural homes", "Know how much rainwater is left for the house and get an alert before it runs low."),
-    ("building", "Councils, marae, schools &amp; businesses", "Shared or community supplies with a clear record of levels and usage for everyone responsible."),
-]
-
-
-def segments_block():
-    items = "\n".join(f"""          <div class="segment"><div class="ico">{I[ic]}</div><h3>{t}</h3><p>{d}</p></div>""" for ic, t, d in SEGMENTS)
-    return f"""        <div class="segments" data-stagger>
-{items}
-        </div>"""
-
-
-TARGET_STATS = """          <div class="stat"><p class="num" data-count="5">5<small>km</small></p><p>LoRa range to the receiver, line of sight</p></div>
-          <div class="stat"><p class="num" data-count="15">15<small>min</small></p><p>Between readings, faster while the pump runs</p></div>
-          <div class="stat"><p class="num" data-count="1">1<small>cm</small></p><p>Level resolution from the pressure probe</p></div>
-          <div class="stat"><p class="num" data-count="5">5<small>m</small></p><p>Maximum tank depth</p></div>"""
-
-
-def trial_form(r):
-    return f"""        <form class="form" id="quote-form" novalidate data-reveal>
-          <div class="field">
-            <label for="f-name">Name</label>
-            <input id="f-name" name="name" autocomplete="name" required>
-            <p class="error" id="f-name-err">Enter your name.</p>
-          </div>
-          <div class="field">
-            <label for="f-phone">Phone <span class="hint">(optional)</span></label>
-            <input id="f-phone" name="phone" type="tel" autocomplete="tel">
-          </div>
-          <div class="field full">
-            <label for="f-email">Email</label>
-            <input id="f-email" name="email" type="email" autocomplete="email" required>
-            <p class="error" id="f-email-err">Enter an email address like name@example.com.</p>
-          </div>
-          <div class="field full">
-            <label for="f-product">What are you interested in?</label>
-            <select id="f-product" name="product">
-              <option>Tank monitor trial</option>
-              <option>Tank monitor with pump control</option>
-              <option>Smart filtration</option>
-              <option>Automated acid dosing</option>
-              <option>Custom machine design</option>
-              <option>Electronics &amp; PCB design</option>
-              <option>PLC programming</option>
-              <option>Automation &amp; control</option>
-              <option>Installation &amp; maintenance</option>
-              <option>Something else</option>
-            </select>
-          </div>
-          <div class="field full">
-            <label for="f-msg">About your site</label>
-            <textarea id="f-msg" name="message" required placeholder="e.g. Dairy farm near Te Awamutu. Two 30,000 L concrete tanks fed from a bore, about 600 m from the house."></textarea>
-            <p class="error" id="f-msg-err">Tell us a little about your tanks or project.</p>
-          </div>
-          <div class="full"><button class="btn btn-primary" type="submit">Send</button></div>
-          <p class="form-status" id="form-status" role="status"></p>
-        </form>"""
-
-
-# =========================================================================
-# Home (product first, shorter)
-# =========================================================================
-def home():
-    r = ""
-    html = head(None, "Kinetiq tank monitoring for New Zealand farms and rural properties: a solar-powered pressure sensor, LoRa radio link, live levels on your phone and automatic pump control.", r)
-    html += header(r, over_hero=True)
-    html += f"""
-  <main id="main">
-    <section class="hero-split on-dark" aria-labelledby="hero-title">
-      <div class="wrap">
-        <div>
-          <p class="kicker" data-reveal>Kinetiq tank monitor</p>
-          <h1 id="hero-title" data-reveal style="--d:.08s">See every tank. Control the pump that fills it.</h1>
-          <p class="lede" data-reveal style="--d:.16s">A solar-powered sensor reads the water level from the bottom of the tank and sends it by long-range radio to your house. Check levels and usage on your phone, and let the pump top the tank up automatically.</p>
-          <div class="hero-actions" data-reveal style="--d:.24s">
-            <a class="btn btn-primary" href="#trial">Join the trial</a>
-            <a class="btn btn-ghost" href="projects/tank-monitor-live.html">Open the live demo</a>
-          </div>
-          <ul class="hero-points" data-reveal style="--d:.32s">
-            <li>{I['sun']}Solar powered</li><li>{I['radio']}No mobile coverage needed</li><li>{I['pump']}Automatic pump control</li>
-          </ul>
-        </div>
-        <div class="hero-visual" data-reveal="fade">
-          {turntable(r, HERO_TT, eager=True)}
-          <aside class="live-card" data-live aria-label="Example live tank reading">
-            <div class="top"><span class="live-dot">Live</span><span>Tank 1 · Shed</span></div>
-            <p class="big">62<small>% full</small></p>
-            <div class="meter"><span style="width:62%"></span></div>
-            <p><span data-litres>15,500 L</span> · <span data-ago>just now</span> · demo</p>
-          </aside>
-        </div>
-      </div>
-    </section>
-
-    <section class="stats" style="padding-top:clamp(32px,4vw,48px)" aria-label="Design targets">
-      <div class="wrap">
-        <div class="stats-grid" data-stagger>
-{TARGET_STATS}
-        </div>
-        <p class="target-note">Design targets for the production unit. We'll publish measured figures as trials finish.</p>
-      </div>
-    </section>
-
-    <section id="how">
-      <div class="wrap">
-        <div class="section-head" data-reveal>
-          <p class="kicker">How it works</p>
-          <h2>From the bottom of the tank to your phone</h2>
-          <p class="lede">Five parts, each doing one job well. Nothing goes on the tank that needs mains power or a phone signal.</p>
-        </div>
-{flow_block()}
-      </div>
-    </section>
-
-    <section class="band" id="live">
-      <div class="wrap split-2" style="align-items:center">
-        <div data-reveal>
-          <p class="kicker">Live view &amp; pump control</p>
-          <h2>Start the pump from the kitchen, or let it look after itself</h2>
-          <p class="lede">Your pump fills the tank from the bore, creek or dam. Run it by hand, set it to start and stop at the levels you choose, or limit it to off-peak hours.</p>
-          <ul class="checks">
-            <li>{I['check']}<span>Manual start and stop, with a confirmation step</span></li>
-            <li>{I['check']}<span>Auto mode: start below one level, stop at another</span></li>
-            <li>{I['check']}<span>Schedules, such as overnight on cheaper power</span></li>
-            <li>{I['check']}<span>Safety cut-outs for dry running, overfilling and long run times</span></li>
-          </ul>
-          <a class="btn btn-primary" href="projects/tank-monitor-live.html">Try the live demo</a>
-        </div>
-        <div class="flagship-media" data-reveal="zoom" style="aspect-ratio:4/3">
-          {img(r, 'receiver', 'Kinetiq receiver showing a tank level on its screen')}
-        </div>
-      </div>
-    </section>
-
-    <section id="who">
-      <div class="wrap">
-        <div class="section-head" data-reveal>
-          <p class="kicker">Who it's for</p>
-          <h2>Built for the way New Zealand uses water</h2>
-        </div>
-{segments_block()}
-      </div>
-    </section>
-
-    <section class="dark">
-      <div class="wrap">
-        <div class="section-head split" data-reveal>
-          <div>
-            <p class="kicker">Also from Kinetiq</p>
-            <h2>Engineering beyond the tank</h2>
-          </div>
-          <a class="btn btn-ghost" href="services.html" style="color:#fff">Our services</a>
-        </div>
-        <div class="also" data-stagger>
-          <a class="service" href="services.html">
-            <div class="service-media">{img(r, 'plc', '', width=1600, height=1000)}</div>
-            <div class="service-body"><h3>Engineering services</h3><p>Machine design, PCB design, PLC programming, automation and installation.</p></div>
-          </a>
-          <a class="service" href="products/smart-filtration.html">
-            <div class="service-media">{img(r, 'filtration', '')}</div>
-            <div class="service-body"><h3>Smart filtration <span class="badge mock" style="margin-left:6px">Mock-up</span></h3><p>Tells you which filter cartridge needs changing, and when.</p></div>
-          </a>
-          <a class="service" href="products/acid-dosing.html">
-            <div class="service-media">{img(r, 'dosing', '')}</div>
-            <div class="service-body"><h3>Acid dosing <span class="badge mock" style="margin-left:6px">Mock-up</span></h3><p>Measured acid for every dairy plant wash, logged automatically.</p></div>
-          </a>
-        </div>
-      </div>
-    </section>
-
-    <section id="trial">
-      <div class="wrap contact-grid">
-        <div data-reveal>
-          <p class="kicker">Join the trial</p>
-          <h2>Put a Kinetiq monitor on your tank</h2>
-          <p class="lede">We're looking for farms, rural properties and organisations around New Zealand to trial the tank monitor. Tell us about your tanks and we'll be in touch.</p>
-          <div class="contact-direct">
-            <a href="tel:{PHONE_TEL}">{I['phone']}{PHONE_DISPLAY}</a>
-            <a href="mailto:{EMAIL}">{I['mail']}{EMAIL}</a>
-            <span>{I['pin']}New Zealand</span>
-          </div>
-        </div>
-{trial_form(r)}
-      </div>
-    </section>
-  </main>
-"""
-    html += footer(r, ["turntable.js"])
-    write("index.html", html)
-
-
-# =========================================================================
-# Projects
-# =========================================================================
-def projects():
-    r = ""
-    html = head("Projects", "Kinetiq projects: the completed tank monitor with live view and pump control, plus smart filtration and automated acid dosing mock-ups.", r)
-    html += header(r, "Projects")
-    html += f"""
-  <main id="main">
-    <section class="page-hero">
-      <div class="wrap">
-        <p class="kicker" data-reveal>Projects</p>
-        <h1 data-reveal style="--d:.08s">What we've built, and what's next.</h1>
-        <p class="lede" data-reveal style="--d:.16s">Completed work is marked completed. Ideas still being designed are marked as mock-ups.</p>
-      </div>
-    </section>
-
-    <section>
-      <div class="wrap">
-        <div class="section-head split" style="margin-bottom:28px">
-          <div class="chips" role="group" aria-label="Filter projects">
-            <button type="button" data-filter="all" aria-pressed="true">All</button>
-            <button type="button" data-filter="completed" aria-pressed="false">Completed</button>
-            <button type="button" data-filter="mockup" aria-pressed="false">Mock-ups</button>
-          </div>
-        </div>
-
-        <article class="project" data-status="completed" data-reveal>
-          <a class="project-media" href="projects/tank-monitor-live.html" aria-label="Open the tank monitor live view">{frame(r, 'tanksteel', 'Kinetiq tank monitor installed on a farm tank', 12)}</a>
-          <div class="project-body">
-            <span class="badge ready">Completed</span>
-            <h2 style="font-size:1.8rem">Tank monitoring &amp; pump control</h2>
-            <p class="muted">A stainless pressure probe on the tank floor measures the water depth. A solar-powered sensor unit sends each reading by LoRa radio to a receiver in the house, which uploads it over Wi-Fi so levels, usage and pump control are available on your phone or computer.</p>
-            <dl class="facts">
-              <div><dt>Sensing</dt><dd>Submersible pressure probe</dd></div>
-              <div><dt>Power</dt><dd>Solar + battery</dd></div>
-              <div><dt>Link</dt><dd>LoRa → receiver → Wi-Fi → cloud</dd></div>
-              <div><dt>Control</dt><dd>Fill pump: manual, auto, schedule</dd></div>
-            </dl>
-            <div class="actions"><a class="btn btn-primary" href="projects/tank-monitor-live.html">Open live view</a><a class="btn btn-ghost" href="products/water-monitor.html">Product details</a></div>
-          </div>
-        </article>
-
-        <article class="project" data-status="mockup" data-reveal>
-          <div class="project-media">{img(r, 'filtration', 'Mock-up of a smart filtration unit')}</div>
-          <div class="project-body">
-            <span class="badge mock">Mock-up</span>
-            <h2 style="font-size:1.8rem">Smart filtration</h2>
-            <p class="muted">Filter cartridges are usually changed by the calendar, so good ones get thrown out and blocked ones stay in. This concept measures pressure across each stage and tells you which one actually needs changing.</p>
-            <dl class="facts">
-              <div><dt>Problem</dt><dd>Guesswork on filter changes</dd></div>
-              <div><dt>Concept</dt><dd>Pressure, flow and UV monitoring</dd></div>
-              <div><dt>Disciplines</dt><dd>Sensing, control, plumbing</dd></div>
-              <div><dt>Status</dt><dd>Mock-up</dd></div>
-            </dl>
-            <div class="actions"><a class="btn btn-ghost" href="products/smart-filtration.html">See the concept</a></div>
-          </div>
-        </article>
-
-        <article class="project" data-status="mockup" data-reveal>
-          <div class="project-media">{img(r, 'dosing', 'Mock-up of an automated acid dosing system')}</div>
-          <div class="project-body">
-            <span class="badge mock">Mock-up</span>
-            <h2 style="font-size:1.8rem">Automated acid dosing</h2>
-            <p class="muted">Dairy plant washes often rely on someone measuring acid by hand, twice a day. This concept doses straight from the drum with a peristaltic pump and logs every wash.</p>
-            <dl class="facts">
-              <div><dt>Problem</dt><dd>Hand-measured chemical dosing</dd></div>
-              <div><dt>Concept</dt><dd>Peristaltic pump + controller</dd></div>
-              <div><dt>Disciplines</dt><dd>Fluid handling, control, logging</dd></div>
-              <div><dt>Status</dt><dd>Mock-up</dd></div>
-            </dl>
-            <div class="actions"><a class="btn btn-ghost" href="products/acid-dosing.html">See the concept</a></div>
-          </div>
-        </article>
-      </div>
-    </section>
-{cta(r, "Have a project in mind?", "Tell us about it. Many of our best ideas started with a customer's problem.")}
-  </main>
-"""
-    html += footer(r)
-    write("projects.html", html)
-
-
-# =========================================================================
-# Tank monitor product page
-# =========================================================================
-def water():
-    r = "../"
-    html = head("Tank Monitor", "The Kinetiq tank monitor: a submersible pressure probe, solar-powered sensor unit and LoRa receiver that put tank levels, usage and pump control on your phone.", r)
-    html += header(r, "Tank monitor")
-    html += f"""
-  <main id="main">
-    <section class="page-hero with-media light">
-      <div class="wrap">
-        <div>
-          <p class="crumbs"><a href="{r}projects.html">Projects</a> / Tank monitor</p>
-          <span class="badge ready" data-reveal>Completed · trials open</span>
-          <h1 data-reveal style="--d:.08s;margin-top:14px">Know what's in the tank, from anywhere.</h1>
-          <p class="lede" data-reveal style="--d:.16s">A pressure probe on the tank floor, a solar-powered sensor unit on the tank, and a receiver in the house. Levels, usage, alerts and pump control on your phone.</p>
-          <div class="hero-actions" data-reveal style="--d:.24s">
-            <a class="btn btn-primary" href="{r}projects/tank-monitor-live.html">Open the live demo</a>
-            <a class="btn btn-ghost" href="{r}index.html?product=Tank%20monitor%20trial#trial">Join the trial</a>
-          </div>
-        </div>
-        <div data-reveal="fade">{turntable(r, PRODUCT_TT, eager=True)}</div>
-      </div>
-    </section>
-
-    <section class="stats" style="padding-top:clamp(48px,6vw,72px)" aria-label="Design targets">
-      <div class="wrap">
-        <div class="stats-grid" data-stagger>
-{TARGET_STATS}
-        </div>
-        <p class="target-note">Design targets for the production unit.</p>
-      </div>
-    </section>
-
-    <section>
-      <div class="wrap">
-        <div class="section-head" data-reveal><p class="kicker">How it works</p><h2>Five parts, one clear reading</h2></div>
-{flow_block()}
-      </div>
-    </section>
-
-    <section class="band">
-      <div class="wrap split-2" style="align-items:center">
-        <div data-reveal>
-          <p class="kicker">Inside the unit</p>
-          <h2>Built to sit on a tank for years</h2>
-          <p class="lede">Everything lives in a sealed enclosure: the controller board, LoRa radio and a rechargeable battery kept topped up by the solar panel on top.</p>
-          <ul class="checks">
-            <li>{I['check']}<span>Pressure probe measures from the tank floor, so condensation, foam and lids don't affect it</span></li>
-            <li>{I['check']}<span>No mains power or mobile signal needed at the tank</span></li>
-            <li>{I['check']}<span>Fits concrete, steel and plastic tanks through an inlet or hatch</span></li>
-          </ul>
-        </div>
-        <div data-reveal="fade">{turntable(r, 'exploded')}</div>
-      </div>
-    </section>
-
-    <section>
-      <div class="wrap">
-        <div class="section-head" data-reveal><p class="kicker">Features</p><h2>What you get</h2></div>
-        <div class="feature-grid" data-stagger>
-          <div><div class="ico">{I['drop']}</div><h3>Live level &amp; litres</h3><p>Percent full and litres for every tank, updated through the day.</p></div>
-          <div><div class="ico">{I['chart']}</div><h3>Usage history</h3><p>Daily water use and level trends, so you can spot changes in demand.</p></div>
-          <div><div class="ico">{I['bell']}</div><h3>Low-water alerts</h3><p>A text or app alert when a tank drops below the level you set.</p></div>
-          <div><div class="ico">{I['warn']}</div><h3>Leak detection</h3><p>A sudden drop overnight is flagged as a possible leak or burst pipe.</p></div>
-          <div><div class="ico">{I['pump']}</div><h3>Pump control</h3><p>Fill the tank by hand, by level, or on a schedule, with safety cut-outs.</p></div>
-          <div><div class="ico">{I['tank']}</div><h3>Many tanks, one receiver</h3><p>House, stock and fire-fighting tanks all show in one place.</p></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="band">
-      <div class="wrap split-2">
-        <div data-reveal>
-          <p class="kicker">The receiver</p>
-          <h2>Readings in the house, data in the cloud</h2>
-          <p class="lede">The receiver shows every tank on its screen and uploads readings over your Wi-Fi to the Kinetiq app and website.</p>
-          <div class="flagship-media" style="margin-top:24px">{img(r, 'receiver', 'Kinetiq receiver unit with tank level display')}</div>
-        </div>
-        <div data-reveal>
-          <p class="kicker">Specifications (design targets)</p>
-          <table class="spec-table">
-            <tr><th scope="row">Level sensor</th><td>Submersible pressure probe, stainless steel</td></tr>
-            <tr><th scope="row">Tank depth</th><td>Up to 5 m</td></tr>
-            <tr><th scope="row">Resolution</th><td>1 cm</td></tr>
-            <tr><th scope="row">Power</th><td>Solar panel with rechargeable battery</td></tr>
-            <tr><th scope="row">Radio</th><td>LoRa to receiver, up to 5 km line of sight</td></tr>
-            <tr><th scope="row">Reading interval</th><td>Every 15 minutes; faster while the pump runs</td></tr>
-            <tr><th scope="row">Receiver</th><td>Mains powered, on-screen levels, Wi-Fi upload to the cloud</td></tr>
-            <tr><th scope="row">Pump control</th><td>Manual, auto by level, schedule; dry-run, overfill and run-time cut-outs</td></tr>
-          </table>
-        </div>
-      </div>
-    </section>
-{cta(r, "Want a monitor on your tank?", "We're taking sites for the trial now.")}
-  </main>
-"""
-    html += footer(r, ["turntable.js"])
-    write("products/water-monitor.html", html)
-
-
-# =========================================================================
 # Live view + pump control (mock-up)
 # =========================================================================
 def live():
     r = "../"
     html = head("Tank Monitor Live", "Live view of a Kinetiq tank monitor with pump control (demo with simulated data).", r)
-    html += header(r, "Live demo")
+    html += header(r, "Projects")
     html += f"""
   <main id="main">
     <section style="padding-top:clamp(32px,5vw,56px)">
@@ -1097,7 +1177,7 @@ def live():
           <div class="panel">
             <h2>Want this on your tank?</h2>
             <p class="muted">This page runs on simulated data. Trial sites see their own tanks and control their own pumps here.</p>
-            <a class="btn btn-primary" href="{r}index.html?product=Tank%20monitor%20with%20pump%20control#trial">Join the trial</a>
+            <a class="btn btn-primary" href="{r}index.html?product=Tank%20monitor%20with%20pump%20control#contact">Join the trial</a>
           </div>
         </div>
       </div>
@@ -1108,41 +1188,5 @@ def live():
     write("projects/tank-monitor-live.html", html)
 
 
-# =========================================================================
-# Design options (rotating renders to choose from)
-# =========================================================================
-def options():
-    r = ""
-    opts = [
-        ("A", "tanksteel", "Installed on a steel farm tank", "Dark, dramatic and technical. The cut-away shows the probe sitting on the tank floor. Suits the homepage hero."),
-        ("B", "tankpoly", "Installed on a plastic rainwater tank", "Lighter and more homely. Speaks to lifestyle blocks and rural homes."),
-        ("C", "kit", "Studio product shot", "The unit, cable and probe laid out like your photo. Clean and clear for the product page."),
-        ("D", "exploded", "Exploded view", "Solar panel, enclosure, circuit board, battery and probe pulled apart. Shows the engineering inside."),
-    ]
-    cards = "\n".join(f"""        <article class="option">
-          {turntable(r, n, hint=False)}
-          <div class="option-body"><span class="label">Design {k}</span><h2>{t}</h2><p>{d}</p></div>
-        </article>""" for k, n, t, d in opts)
-    html = head("Render Options", "Rotating 3D render options for the Kinetiq tank monitor.", r)
-    html += header(r)
-    html += f"""
-  <main id="main">
-    <section style="padding-top:clamp(40px,6vw,72px)">
-      <div class="wrap">
-        <div class="section-head">
-          <p class="kicker">Render options</p>
-          <h1 style="font-size:clamp(2rem,4.5vw,3.2rem)">Pick the look for the tank monitor</h1>
-          <p class="lede">Four 3D designs based on your prototype photo. Each one rotates; drag it to turn it yourself. Tell us which you like for the homepage and the product page.</p>
-        </div>
-        <div class="picker">
-{cards}
-        </div>
-      </div>
-    </section>
-  </main>
-"""
-    html += footer(r, ["turntable.js"])
-    write("render-options.html", html)
 
-
-home(); services(); projects(); about(); water(); live(); options(); filtration(); dosing(); portal_login(); portal_dashboard()
+home(); services(); projects(); about(); water(); live(); filtration(); dosing(); portal_login(); portal_dashboard()

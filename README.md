@@ -6,13 +6,12 @@ A static website (plain HTML, CSS and JavaScript, no build step needed to view i
 
 | File | What it is |
 |---|---|
-| `index.html` | Home: tank monitor hero (rotating 3D view), design-target stats, how it works, pump control, who it's for, other work, trial sign-up |
+| `index.html` | Home: hero, design-target stats, products, services, process, featured project, trial / contact form |
 | `services.html` | Custom machine design, electronics & PCB, PLC programming, automation & control, install & maintenance |
 | `projects.html` | Projects with filters (completed / mock-ups) |
-| `about.html` | Company story, values and capabilities (no names) |
-| `products/water-monitor.html` | Tank monitor product page: how it works, exploded view, features, design-target specs |
+| `about.html` | Company story, who we work with, values and capabilities (no names) |
+| `products/water-monitor.html` | Tank monitor product page: how it works, usage demo, features, exploded view, design-target specs |
 | `projects/tank-monitor-live.html` | Live view mock-up: real-time level, 24 h chart, daily use, pump control (manual / auto / schedule) and safety cut-outs |
-| `render-options.html` | The four rotating 3D render options to choose from |
 | `products/smart-filtration.html` | Smart filtration (mock-up) |
 | `products/acid-dosing.html` | Automated acid dosing (mock-up) |
 | `portal/login.html` → `portal/dashboard.html` | Client portal demo. Sign in does nothing but open the dashboard |
@@ -36,7 +35,7 @@ Contact details are at the top of that file (`PHONE_DISPLAY`, `PHONE_TEL`, `EMAI
 
 ## Images
 
-All product and engineering images in `assets/img/renders/` and the rotating views in `assets/img/turntables/` are 3D renders made with three.js. The tank monitor model is based on the prototype photo. The scenes are in `tools/renders/` (see its README) and can be changed and re-rendered. To use real photos, replace the `.webp` files with your own of the same name.
+All product and engineering images in `assets/img/renders/` are 3D renders made with three.js. The tank monitor model is based on the prototype photo. The scenes are in `tools/renders/` (see its README) and can be changed and re-rendered. To use real photos, replace the `.webp` files with your own of the same name.
 
 ## Look and feel
 

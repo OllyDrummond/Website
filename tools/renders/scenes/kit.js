@@ -2,7 +2,7 @@ import { studio, THREE, mat, add, contactShadow } from '../studio.js';
 import { unit, probe, cable, coilPoints } from '../unit.js';
 export default function () {
   const q = new URLSearchParams(location.search);
-  const S = studio({ w: 1200, h: 900, bg: '#e7eaec', floor: '#e4e7e9', fogNear: 16, fogFar: 34,
+  const S = studio({ w: +(q.get('w') || 1200), h: +(q.get('h') || 900), bg: '#e7eaec', floor: '#e4e7e9', fogNear: 16, fogFar: 34,
     cam: [0, 4.4, 9.6], target: [0, 1.0, 0], fov: 28, aperture: 0.03, softness: 1.3,
     key: [4, 10, 6], keyIntensity: 2.3, envIntensity: 0.6, fillIntensity: 0.4, samples: +(q.get('n') || 16) });
   const root = new THREE.Group(); S.scene.add(root);
