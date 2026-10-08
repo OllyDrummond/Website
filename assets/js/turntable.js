@@ -15,7 +15,11 @@
     const cache = srcs.map((s) => { const im = new Image(); im.decoding = "async"; im.src = s; return im; });
     let pos = 0, dir = 1, playing = !reduce, timer = null, visible = true;
 
-    const show = (i) => { pos = (i + n) % n; img.src = srcs[pos]; };
+    const show = (i) => {
+      const next = (i + n) % n;
+      if (!cache[next].complete || !cache[next].naturalWidth) return; // wait until the frame is loaded so it never flashes blank
+      pos = next; img.src = srcs[pos];
+    };
     const step = () => {
       if (pingpong) {
         if (pos + dir >= n || pos + dir < 0) dir = -dir;

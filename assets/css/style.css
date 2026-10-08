@@ -728,3 +728,6 @@ details.table-view summary { cursor: pointer; font-weight: 600; color: var(--wat
 .option-body h2 { font-size: 1.3rem; margin: 0 0 6px; }
 .option-body p { color: var(--ink-2); margin: 0; }
 .option-body .label { display: inline-block; font-weight: 800; color: var(--maroon); margin-bottom: 6px; }
+.also .service, .also .service:nth-child(4), .also .service:nth-child(5) { grid-column: auto; }
+.hero-visual .turntable img { -webkit-mask-image: radial-gradient(ellipse 58% 56% at 52% 50%, #000 52%, transparent 100%); mask-image: radial-gradient(ellipse 58% 56% at 52% 50%, #000 52%, transparent 100%); transform: scale(1.12); }
+.hero-visual .turntable-hint { display: flex; justify-content: flex-end; }
