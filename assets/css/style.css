@@ -731,3 +731,21 @@ details.table-view summary { cursor: pointer; font-weight: 600; color: var(--wat
 .also .service, .also .service:nth-child(4), .also .service:nth-child(5) { grid-column: auto; }
 .hero-visual .turntable img { -webkit-mask-image: radial-gradient(ellipse 58% 56% at 52% 50%, #000 52%, transparent 100%); mask-image: radial-gradient(ellipse 58% 56% at 52% 50%, #000 52%, transparent 100%); transform: scale(1.12); }
 .hero-visual .turntable-hint { display: flex; justify-content: flex-end; }
+
+/* ---------- New Zealand image band ---------- */
+.nz-band { position: relative; min-height: clamp(460px, 52vw, 640px); display: flex; align-items: flex-end; padding: clamp(48px, 7vw, 88px) 0; overflow: hidden; background: var(--night); color: #fff; }
+.nz-media { position: absolute; inset: 0; }
+.nz-media img { width: 100%; height: 100%; object-fit: cover; object-position: 60% 50%; }
+.nz-media::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(20,26,30,0.82) 0%, rgba(20,26,30,0.55) 38%, rgba(20,26,30,0) 65%), linear-gradient(0deg, rgba(20,26,30,0.6) 0%, rgba(20,26,30,0) 45%); }
+.nz-band .wrap { position: relative; width: 100%; }
+.nz-copy { max-width: 560px; }
+.nz-copy h2 { color: #fff; }
+.nz-copy p { color: #dfe6ea; }
+.nz-copy .kicker { color: #f0b7bf; }
+.nz-points { list-style: none; padding: 0; margin: 20px 0 0; display: flex; flex-wrap: wrap; gap: 10px 22px; font-weight: 600; font-size: 0.97rem; }
+.nz-points li { display: flex; align-items: center; gap: 8px; }
+.nz-points svg { width: 20px; height: 20px; color: #8cc2ef; }
+@media (max-width: 760px) {
+  .nz-media img { object-position: 70% 50%; }
+  .nz-media::after { background: linear-gradient(0deg, rgba(20,26,30,0.88) 0%, rgba(20,26,30,0.5) 55%, rgba(20,26,30,0.15) 100%); }
+}

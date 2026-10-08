@@ -110,3 +110,73 @@ export function coilPoints(cx, cz, rx = 1.5, rz = 1.1, turns = 4, y = 0.04) {
   }
   return pts;
 }
+
+// ---------------------------------------------------------------------------
+// Version 2, closer to the prototype photo: a shallower junction box with the
+// lid on top, a plain black solar panel fixed flush on the lid (slightly larger
+// than the box), a tapered rubber antenna on a knuckle at the side, a cable
+// gland on the side, and a smooth stainless probe with a stepped, grooved nose.
+export const BOX2 = { w: 1.4, h: 0.72, d: 1.15 };
+
+function blackPanelTexture() {
+  return canvasTex(1024, 1024, (c, w, h) => {
+    c.fillStyle = '#07090c'; c.fillRect(0, 0, w, h);
+    // monocrystalline cells: very dark, faint busbars
+    const n = 4, pad = 40, gap = 8, cs = (w - pad * 2 - gap * (n - 1)) / n;
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+      const x = pad + i * (cs + gap), y = pad + j * (cs + gap);
+      c.fillStyle = '#0d1117'; c.fillRect(x, y, cs, cs);
+      c.strokeStyle = 'rgba(120,130,145,0.18)'; c.lineWidth = 2;
+      for (let k = 1; k < 3; k++) { c.beginPath(); c.moveTo(x + (cs * k) / 3, y); c.lineTo(x + (cs * k) / 3, y + cs); c.stroke(); }
+    }
+  });
+}
+
+export function unit2({ lidOffset = 0, panelLift = 0, showLogo = true } = {}) {
+  const g = new THREE.Group();
+  const { w, h, d } = BOX2;
+  const body = mat.plastic('#e4e6e6', 0.55);
+  add(g, new RoundedBoxGeometry(w, h * 0.78, d, 6, 0.06), body, [0, h * 0.39, 0]);
+  // lid with a visible seam line
+  const lid = new THREE.Group(); lid.position.set(0, h * 0.78 + 0.004 + lidOffset, 0); g.add(lid);
+  add(lid, new RoundedBoxGeometry(w + 0.02, h * 0.22, d + 0.02, 6, 0.05), mat.plastic('#e9ebeb', 0.5), [0, h * 0.11, 0]);
+  add(g, new THREE.BoxGeometry(w + 0.025, 0.012, d + 0.025), mat.plastic('#b9bebf', 0.6), [0, h * 0.78, 0], [0, 0, 0], false);
+  // screws in the lid corners (visible from above beside the panel overhang)
+  for (const [x, z] of [[-0.6, -0.48], [0.6, -0.48], [-0.6, 0.48], [0.6, 0.48]]) add(lid, new THREE.CylinderGeometry(0.035, 0.035, 0.02, 16), mat.plastic('#c7cbcc', 0.4), [x, h * 0.22 + 0.006, z], [0, 0, 0], false);
+  // black solar panel fixed flush on the lid, overhanging slightly
+  const panel = new THREE.Group(); panel.position.set(0, h + 0.03 + panelLift + lidOffset, 0); g.add(panel);
+  const top = new THREE.MeshPhysicalMaterial({ map: blackPanelTexture(), roughness: 0.2, metalness: 0.1, clearcoat: 0.6, clearcoatRoughness: 0.08, envMapIntensity: 0.35 });
+  const edge = mat.plastic('#121417', 0.4);
+  add(panel, new THREE.BoxGeometry(1.62, 0.05, 1.42), [edge, edge, top, edge, edge, edge]);
+  // logo on the front of the body
+  if (showLogo) {
+    const t = canvasTex(512, 96, (c, W, H) => { c.fillStyle = '#e4e6e6'; c.fillRect(0, 0, W, H); c.fillStyle = '#7a1f2b'; c.font = '800 60px Inter'; c.fillText('KINETIQ', 18, 70); });
+    add(g, new THREE.PlaneGeometry(0.62, 0.115), new THREE.MeshStandardMaterial({ map: t, roughness: 0.55 }), [-0.28, h * 0.4, d / 2 + 0.002], [0, 0, 0], false);
+    add(g, new THREE.CircleGeometry(0.028, 20), mat.glow('#3fbf7f', 2.2), [0.55, h * 0.55, d / 2 + 0.003], [0, 0, 0], false);
+  }
+  // antenna: knuckle on the right-hand side, angled up and out
+  const ant = new THREE.Group(); ant.position.set(w / 2 + 0.02, h * 0.5, 0.15); g.add(ant);
+  add(ant, new THREE.CylinderGeometry(0.07, 0.07, 0.08, 24), mat.rubber('#14171a'), [0.04, 0, 0], [0, 0, Math.PI / 2]);
+  const rod = new THREE.Group(); rod.position.set(0.1, 0, 0); rod.rotation.z = -0.62; ant.add(rod);
+  add(rod, new THREE.SphereGeometry(0.075, 20, 12), mat.rubber('#14171a'));
+  add(rod, new THREE.CylinderGeometry(0.022, 0.07, 1.9, 24), mat.rubber('#14171a'), [0, 0.95, 0]);
+  add(rod, new THREE.SphereGeometry(0.024, 12, 8), mat.rubber('#14171a'), [0, 1.9, 0]);
+  // cable gland on the left side, near the bottom
+  add(g, new THREE.CylinderGeometry(0.09, 0.09, 0.1, 6), mat.plastic('#2a2f34', 0.5), [-w / 2 - 0.05, h * 0.25, 0.1], [0, 0, Math.PI / 2]);
+  add(g, new THREE.CylinderGeometry(0.06, 0.075, 0.1, 20), mat.plastic('#2a2f34', 0.5), [-w / 2 - 0.13, h * 0.25, 0.1], [0, 0, Math.PI / 2]);
+  g.userData.glandOut = new THREE.Vector3(-w / 2 - 0.2, h * 0.25, 0.1);
+  return g;
+}
+
+// Smooth stainless probe with a stepped, grooved nose. Origin at the cable end, pointing -Y.
+export function probe2() {
+  const g = new THREE.Group();
+  const ss = mat.metal('#d6dadd', 0.16);
+  add(g, new THREE.CylinderGeometry(0.1, 0.1, 0.9, 40), ss, [0, -0.45, 0]);
+  add(g, new THREE.CylinderGeometry(0.1, 0.075, 0.04, 40), ss, [0, -0.92, 0]);
+  add(g, new THREE.CylinderGeometry(0.075, 0.075, 0.14, 40), ss, [0, -1.01, 0]);
+  add(g, new THREE.TorusGeometry(0.072, 0.008, 8, 40), mat.metal('#8e959a', 0.35), [0, -0.99, 0], [Math.PI / 2, 0, 0]);
+  add(g, new THREE.CylinderGeometry(0.06, 0.06, 0.03, 6), ss, [0, -1.095, 0]);
+  add(g, new THREE.CylinderGeometry(0.1, 0.1, 0.01, 40), mat.metal('#b4babe', 0.25), [0, -0.005, 0]);
+  return g;
+}

@@ -11,13 +11,19 @@ mkdir -p out && node render.mjs hero   # writes out/hero.png (scene name = file 
 
 Then convert to WebP into `assets/img/renders/`. Edit a scene file to change models, colours, camera or lighting.
 
-## Rotating views (turntables)
 
-`unit.js` models the real tank monitor (enclosure, tilted solar panel, antenna, cable and pressure probe).
-The scenes `tanksteel`, `tankpoly`, `kit` and `exploded` render frame sequences:
+## Current scenes
+
+| Scene | Output | What it shows |
+|---|---|---|
+| `nzhero` | `hero.webp` | Monitor on the lid of a green poly tank, NZ farmland and ranges behind |
+| `nzwide` | `nz-farm.webp` | Poly tank in a paddock with fence, cabbage trees and ranges |
+| `unit2` | `unit.webp` | Studio shot of the unit, cable and probe |
+| `installed2` | `installed.webp` | Cut-away poly tank with the probe on the floor |
+| `exploded2` | `exploded.webp` | Exploded view of the unit |
+
+`unit.js` (`unit2`, `probe2`) models the prototype; `nz.js` holds the landscape, cabbage trees, fence and poly tank.
 
 ```bash
-node render-seq.mjs tanksteel "frames=24&n=14" ../../assets/img/turntables/tanksteel
+mkdir -p out && node render.mjs nzhero "w=2400&h=1300&n=32"   # n = samples per pixel
 ```
-
-`frames` is the number of frames and `n` the samples per frame (higher is smoother but slower).

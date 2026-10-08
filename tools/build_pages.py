@@ -300,7 +300,7 @@ def home():
     html += f"""
   <main id="main">
     <section class="hero on-dark" aria-labelledby="hero-title">
-      <div class="hero-media">{img(r, 'hero', 'Kinetiq tank monitor with solar panel and antenna mounted on the roof of a corrugated steel water tank', eager=True, width=2400, height=1300)}</div>
+      <div class="hero-media">{img(r, 'hero', 'Kinetiq tank monitor with its black solar panel and antenna on the lid of a green poly water tank, New Zealand farmland behind', eager=True, width=2400, height=1300)}</div>
       <div class="wrap">
         <div class="hero-copy">
           <p class="kicker" data-reveal>Mechatronics for New Zealand farms</p>
@@ -368,6 +368,23 @@ def home():
       </div>
     </section>
 
+
+    <section class="nz-band on-dark" aria-labelledby="nz-title">
+      <div class="nz-media">{img(r, 'nz-farm', 'Kinetiq tank monitor on a green poly water tank in a New Zealand paddock, with a fence line, cabbage trees and snow-capped ranges behind', width=2400, height=1100)}</div>
+      <div class="wrap">
+        <div class="nz-copy" data-reveal>
+          <p class="kicker">Made in Aotearoa New Zealand</p>
+          <h2 id="nz-title">Designed for Kiwi farms, from Northland to Southland.</h2>
+          <p>Long distances between tanks, patchy mobile coverage, hard frosts and dry summers. We design and test every Kinetiq system for New Zealand conditions, and support it from here.</p>
+          <ul class="nz-points">
+            <li>{I['check']}Designed and built in NZ</li>
+            <li>{I['check']}Works without mobile coverage</li>
+            <li>{I['check']}Local support and spares</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
     <section class="dark" id="services">
       <div class="wrap">
         <div class="section-head split" data-reveal>
@@ -414,7 +431,7 @@ def home():
           <a class="btn btn-ghost" href="projects.html">All projects</a>
         </div>
         <div class="project" data-reveal>
-          <a class="project-media" href="projects/tank-monitor-live.html" aria-label="Open the tank monitor live view">{img(r, 'installed', 'Kinetiq tank monitor installed on a farm tank, cut away to show the probe on the tank floor')}</a>
+          <a class="project-media" href="projects/tank-monitor-live.html" aria-label="Open the tank monitor live view">{img(r, 'installed', 'Cut-away poly water tank with the Kinetiq monitor on the lid and the pressure probe on the tank floor')}</a>
           <div class="project-body">
             <span class="badge ready">Completed</span>
             <h3 style="font-size:1.6rem">Tank monitoring &amp; pump control</h3>
@@ -528,7 +545,7 @@ def services():
           <h1 data-reveal style="--d:.08s">Mechanical, electrical and software, under one roof.</h1>
           <p class="lede" data-reveal style="--d:.16s">Mechatronics means the moving parts, the electronics and the code are designed together. That's how we work on every job, big or small.</p>
         </div>
-        <div class="page-hero-media" data-reveal="zoom">{img(r, 'hero', 'Kinetiq tank monitor installed on a corrugated water tank', eager=True, width=2400, height=1300)}</div>
+        <div class="page-hero-media" data-reveal="zoom">{img(r, 'hero', 'Kinetiq tank monitor on the lid of a poly water tank on a New Zealand farm', eager=True, width=2400, height=1300)}</div>
       </div>
     </section>
 
@@ -572,7 +589,7 @@ def projects():
         </div>
 
         <article class="project" data-status="completed" data-reveal>
-          <a class="project-media" href="projects/tank-monitor-live.html" aria-label="Open the tank monitor live view">{img(r, 'installed', 'Kinetiq tank monitor installed on a farm tank')}</a>
+          <a class="project-media" href="projects/tank-monitor-live.html" aria-label="Open the tank monitor live view">{img(r, 'installed', 'Cut-away poly water tank with the Kinetiq monitor on the lid and the pressure probe on the floor')}</a>
           <div class="project-body">
             <span class="badge ready">Completed</span>
             <h2 style="font-size:1.8rem">Tank monitoring &amp; pump control</h2>
@@ -643,7 +660,7 @@ def about():
           <h1 data-reveal style="--d:.08s">Engineers who'd rather fix the problem than sell you a gadget.</h1>
           <p class="lede" data-reveal style="--d:.16s">Kinetiq is a New Zealand engineering company. We design and build practical machines, sensors and control systems for farms, rural properties and the organisations that look after shared water.</p>
         </div>
-        <div class="page-hero-media" data-reveal="zoom">{img(r, 'pcb', 'Close-up of a Kinetiq circuit board', eager=True, width=1600, height=1000)}</div>
+        <div class="page-hero-media" data-reveal="zoom">{img(r, 'nz-farm', 'Green poly water tank with a Kinetiq monitor in a New Zealand paddock', eager=True, width=2400, height=1100)}</div>
       </div>
     </section>
 
