@@ -1,3 +1,6 @@
+# NOTE: The HTML pages are now edited directly, either in the browser with the
+# site editor (add ?edit to any page address) or by hand. Re-running this
+# script would overwrite those edits, so only use it as a reference.
 """Generates the static HTML pages for the Kinetiq site."""
 import os
 

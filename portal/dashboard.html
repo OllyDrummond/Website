@@ -33,7 +33,7 @@
         <div class="who"><span>Demo farm</span><span class="avatar" aria-hidden="true">DF</span><a class="btn btn-ghost btn-sm" href="login.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>Sign out</a></div>
       </header>
       <main id="main" class="app-body">
-        <div class="notice"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg><p>You're viewing a demo of the client portal with sample data. Real accounts show live readings from your own sensors.</p></div>
+        <div class="notice"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg><p data-e="1">You're viewing a demo of the client portal with sample data. Real accounts show live readings from your own sensors.</p></div>
         <section id="tanks" style="padding:0" aria-label="Your tanks">
           <div class="tank-list" id="tank-cards"></div>
         </section>
@@ -41,7 +41,7 @@
         <div class="dash" data-reveal>
           <div class="dash-controls">
             <div>
-              <label for="tank-select">Tank</label>
+              <label data-e="2" for="tank-select">Tank</label>
               <select id="tank-select"></select>
             </div>
             <div class="seg" role="group" aria-label="Time range">
@@ -62,25 +62,25 @@
               <div id="status"></div>
             </div>
             <div class="tiles">
-              <div class="tile"><p class="k">Current level</p><p class="v" id="kpi-level">–</p><p class="d" id="kpi-level-d"></p></div>
-              <div class="tile"><p class="k">Average daily use</p><p class="v" id="kpi-avg">–</p><p class="d" id="kpi-avg-d"></p></div>
-              <div class="tile"><p class="k">Days remaining</p><p class="v" id="kpi-days">–</p><p class="d">At your average use, with no rain</p></div>
-              <div class="tile"><p class="k">Rain collected</p><p class="v" id="kpi-rain">–</p><p class="d" id="kpi-rain-d"></p></div>
+              <div class="tile"><p data-e="3" class="k">Current level</p><p class="v" id="kpi-level">–</p><p class="d" id="kpi-level-d"></p></div>
+              <div class="tile"><p data-e="4" class="k">Average daily use</p><p class="v" id="kpi-avg">–</p><p class="d" id="kpi-avg-d"></p></div>
+              <div class="tile"><p data-e="5" class="k">Days remaining</p><p class="v" id="kpi-days">–</p><p data-e="6" class="d">At your average use, with no rain</p></div>
+              <div class="tile"><p data-e="7" class="k">Rain collected</p><p class="v" id="kpi-rain">–</p><p class="d" id="kpi-rain-d"></p></div>
             </div>
           </div>
           <div class="chart-block">
-            <div class="chart-head"><h3 id="use-title">Daily water use</h3><p class="sub">Litres per day. Dashed line shows the average.</p></div>
+            <div class="chart-head"><h3 data-e="8" id="use-title">Daily water use</h3><p data-e="9" class="sub">Litres per day. Dashed line shows the average.</p></div>
             <div class="chart-wrap"><svg class="chart" id="use-chart" role="img" aria-labelledby="use-title"></svg><div class="tooltip" id="use-tip"></div></div>
           </div>
           <div class="chart-block">
-            <div class="chart-head"><h3 id="level-title">Tank level</h3><p class="sub">Percent full. Rises are rainfall or a refill.</p></div>
+            <div class="chart-head"><h3 data-e="10" id="level-title">Tank level</h3><p data-e="11" class="sub">Percent full. Rises are rainfall or a refill.</p></div>
             <div class="chart-wrap"><svg class="chart" id="level-chart" role="img" aria-labelledby="level-title"></svg><div class="tooltip" id="level-tip"></div></div>
           </div>
           <details class="table-view">
-            <summary>Show the data as a table</summary>
+            <summary data-e="12">Show the data as a table</summary>
             <div class="table-scroll">
               <table class="data-table">
-                <thead><tr><th scope="col">Date</th><th scope="col">Used (L)</th><th scope="col">Rain in (L)</th><th scope="col">Level at end of day</th></tr></thead>
+                <thead><tr><th data-e="13" scope="col">Date</th><th data-e="14" scope="col">Used (L)</th><th data-e="15" scope="col">Rain in (L)</th><th data-e="16" scope="col">Level at end of day</th></tr></thead>
                 <tbody id="data-rows"></tbody>
               </table>
             </div>
@@ -88,19 +88,19 @@
         </div>
           <div style="display:grid;gap:24px">
             <section class="panel" id="alerts" style="padding:20px">
-              <h2>Recent alerts</h2>
+              <h2 data-e="17">Recent alerts</h2>
               <ul class="alerts">
-                <li><span style="color:var(--warn)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17v.5"/></svg></span><span>Tank 2 dropped below 40%</span><span class="t">2 days ago</span></li>
-                <li><span style="color:var(--water)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg></span><span>Tank 1 rose 9% after rain</span><span class="t">5 days ago</span></li>
-                <li><span style="color:var(--ok)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.6 2.5L16 9.5"/></svg></span><span>Sensor battery check passed</span><span class="t">1 week ago</span></li>
+                <li><span style="color:var(--warn)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17v.5"/></svg></span><span data-e="18">Tank 2 dropped below 40%</span><span data-e="19" class="t">2 days ago</span></li>
+                <li><span style="color:var(--water)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg></span><span data-e="20">Tank 1 rose 9% after rain</span><span data-e="21" class="t">5 days ago</span></li>
+                <li><span style="color:var(--ok)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.6 2.5L16 9.5"/></svg></span><span data-e="22">Sensor battery check passed</span><span data-e="23" class="t">1 week ago</span></li>
               </ul>
             </section>
             <section class="panel" id="settings" style="padding:20px">
-              <h2>Alert settings</h2>
+              <h2 data-e="24">Alert settings</h2>
               <table class="spec-table" style="font-size:.95rem">
-                <tr><th scope="row">Low-water alert</th><td>Below 20%</td></tr>
-                <tr><th scope="row">Leak alert</th><td>Overnight drop &gt; 5%</td></tr>
-                <tr><th scope="row">Send alerts to</th><td>Text and email</td></tr>
+                <tr><th data-e="25" scope="row">Low-water alert</th><td data-e="26">Below 20%</td></tr>
+                <tr><th data-e="27" scope="row">Leak alert</th><td data-e="28">Overnight drop &gt; 5%</td></tr>
+                <tr><th data-e="29" scope="row">Send alerts to</th><td data-e="30">Text and email</td></tr>
               </table>
             </section>
           </div>
@@ -110,5 +110,6 @@
   </div>
   <script src="../assets/js/main.js"></script>
   <script src="../assets/js/dashboard.js"></script>
+  <script src="../assets/js/editor.js" defer></script>
 </body>
 </html>

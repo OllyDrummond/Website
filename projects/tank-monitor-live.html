@@ -35,24 +35,24 @@
   <main id="main">
     <section style="padding-top:clamp(32px,5vw,56px)">
       <div class="wrap">
-        <p class="crumbs"><a href="../projects.html">Projects</a> / <a href="../products/water-monitor.html">Tank monitor</a> / Live view</p>
+        <p data-e="1" class="crumbs"><a href="../projects.html">Projects</a> / <a href="../products/water-monitor.html">Tank monitor</a> / Live view</p>
         <div class="live-head">
           <div>
-            <span class="badge mock">Mock-up · simulated data</span>
-            <h1>Tank 1 · Shed supply</h1>
-            <p class="muted" style="margin:0">25,000 L concrete tank, filled from the bore. Time runs fast here: 1 second = 1 minute.</p>
+            <span data-e="2" class="badge mock">Mock-up · simulated data</span>
+            <h1 data-e="3">Tank 1 · Shed supply</h1>
+            <p data-e="4" class="muted" style="margin:0">25,000 L concrete tank, filled from the bore. Time runs fast here: 1 second = 1 minute.</p>
           </div>
           <div class="live-meta">
-            <span class="pill live">Live</span>
-            <span class="pill">Sim time <strong id="r-clock" style="margin-left:4px">--:--</strong></span>
-            <span class="pill">Receiver online</span>
+            <span data-e="5" class="pill live">Live</span>
+            <span data-e="6" class="pill">Sim time <strong id="r-clock" style="margin-left:4px">--:--</strong></span>
+            <span data-e="7" class="pill">Receiver online</span>
           </div>
         </div>
         <p class="visually-hidden" aria-live="polite" id="live-announce"></p>
 
         <div class="live-grid">
           <div class="panel">
-            <h2>Level now</h2>
+            <h2 data-e="8">Level now</h2>
             <div class="tank-view">
               <svg class="tank-svg" viewBox="0 0 200 300" aria-hidden="true">
                 <path class="pipe" d="M190 6 H150 V24"/>
@@ -74,100 +74,100 @@
                 </g>
               </svg>
               <div>
-                <p class="big-read"><span id="tank-pct">--</span><small>% full</small></p>
-                <p class="read-sub"><span id="tank-litres">--</span> L of 25,000 L</p>
+                <p class="big-read"><span id="tank-pct">--</span><small data-e="9">% full</small></p>
+                <p data-e="10" class="read-sub"><span id="tank-litres">--</span> L of 25,000 L</p>
                 <div id="level-status" class="status ok" style="margin-top:12px"></div>
                 <div class="read-grid">
-                  <div class="tile"><p class="k">Change, last hour</p><p class="v" id="r-flow">–</p><p class="d" id="r-flow-d"></p></div>
-                  <div class="tile"><p class="k">Used today</p><p class="v" id="r-today">–</p><p class="d">Since midnight</p></div>
-                  <div class="tile"><p class="k">Water left</p><p class="v" id="r-days">–</p><p class="d">At the 14-day average, without pumping</p></div>
-                  <div class="tile"><p class="k">Last reading</p><p class="v" style="font-size:1.3rem">Just now</p><p class="d">Every minute while live</p></div>
+                  <div class="tile"><p data-e="11" class="k">Change, last hour</p><p class="v" id="r-flow">–</p><p class="d" id="r-flow-d"></p></div>
+                  <div class="tile"><p data-e="12" class="k">Used today</p><p class="v" id="r-today">–</p><p data-e="13" class="d">Since midnight</p></div>
+                  <div class="tile"><p data-e="14" class="k">Water left</p><p class="v" id="r-days">–</p><p data-e="15" class="d">At the 14-day average, without pumping</p></div>
+                  <div class="tile"><p data-e="16" class="k">Last reading</p><p data-e="17" class="v" style="font-size:1.3rem">Just now</p><p data-e="18" class="d">Every minute while live</p></div>
                 </div>
               </div>
             </div>
           </div>
 
           <div class="panel" aria-labelledby="pump-title">
-            <h2 id="pump-title">Bore pump</h2>
+            <h2 data-e="19" id="pump-title">Bore pump</h2>
             <div class="pump-state off" id="pump-state" aria-live="polite">
               <span class="lamp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 12 8 6M12 12l6 2M12 12l-2 7"/></svg></span><strong>Stopped</strong><span class="why"></span>
             </div>
             <div class="pump-buttons">
-              <button class="btn btn-primary" type="button" id="pump-start">Start pump</button>
-              <button class="btn btn-stop" type="button" id="pump-stop">Stop pump</button>
+              <button data-e="20" class="btn btn-primary" type="button" id="pump-start">Start pump</button>
+              <button data-e="21" class="btn btn-stop" type="button" id="pump-stop">Stop pump</button>
             </div>
-            <button class="btn btn-ghost btn-sm" type="button" id="pump-reset" hidden style="margin-top:10px">Clear fault</button>
+            <button data-e="22" class="btn btn-ghost btn-sm" type="button" id="pump-reset" hidden style="margin-top:10px">Clear fault</button>
             <div class="confirm" id="pump-confirm" hidden>
               <p id="confirm-text"></p>
               <div class="row"><button class="btn btn-primary btn-sm" type="button" id="confirm-yes">Start pump</button><button class="btn btn-ghost btn-sm" type="button" id="confirm-no">Cancel</button></div>
             </div>
-            <p class="mode-note" id="manual-note">Starting by hand works in any mode. Auto and schedule rules take over again once it stops.</p>
+            <p data-e="23" class="mode-note" id="manual-note">Starting by hand works in any mode. Auto and schedule rules take over again once it stops.</p>
 
             <div class="ctl-section">
-              <h3>Mode</h3>
+              <h3 data-e="24">Mode</h3>
               <div class="seg block" role="group" aria-label="Pump mode">
                 <button type="button" data-mode="manual" aria-pressed="false">Manual</button>
                 <button type="button" data-mode="auto" aria-pressed="true">Auto</button>
                 <button type="button" data-mode="schedule" aria-pressed="false">Schedule</button>
               </div>
-              <div data-mode-panel="manual" hidden><p class="mode-note">The pump only runs when you start it. Safety cut-outs still apply.</p></div>
+              <div data-mode-panel="manual" hidden><p data-e="25" class="mode-note">The pump only runs when you start it. Safety cut-outs still apply.</p></div>
               <div data-mode-panel="auto" style="margin-top:14px">
-                <div class="range"><label for="auto-start">Start when below</label><output id="auto-start-out" for="auto-start"></output><input type="range" id="auto-start" min="10" max="80" step="5" data-label="Auto start level"></div>
-                <div class="range"><label for="auto-stop">Stop when it reaches</label><output id="auto-stop-out" for="auto-stop"></output><input type="range" id="auto-stop" min="30" max="95" step="5" data-label="Auto stop level"></div>
+                <div class="range"><label data-e="26" for="auto-start">Start when below</label><output id="auto-start-out" for="auto-start"></output><input type="range" id="auto-start" min="10" max="80" step="5" data-label="Auto start level"></div>
+                <div class="range"><label data-e="27" for="auto-stop">Stop when it reaches</label><output id="auto-stop-out" for="auto-stop"></output><input type="range" id="auto-stop" min="30" max="95" step="5" data-label="Auto stop level"></div>
               </div>
               <div data-mode-panel="schedule" hidden style="margin-top:14px">
                 <div class="times">
-                  <div><label for="sched-start">Run from</label><input type="time" id="sched-start"></div>
-                  <div><label for="sched-end">Until</label><input type="time" id="sched-end"></div>
+                  <div><label data-e="28" for="sched-start">Run from</label><input type="time" id="sched-start"></div>
+                  <div><label data-e="29" for="sched-end">Until</label><input type="time" id="sched-end"></div>
                 </div>
-                <p class="mode-note">Every day. Inside these hours the pump fills to the auto stop level.</p>
+                <p data-e="30" class="mode-note">Every day. Inside these hours the pump fills to the auto stop level.</p>
               </div>
             </div>
 
             <div class="ctl-section">
-              <h3>Safety cut-outs</h3>
-              <label class="check"><input type="checkbox" id="dry-run"><span>Dry-run protection<small>Stops the pump if the level doesn't rise after it starts.</small></span></label>
-              <div class="range"><label for="no-rise">Stop if no rise after</label><output id="no-rise-out" for="no-rise"></output><input type="range" id="no-rise" min="5" max="30" step="5" data-label="No-rise timeout"></div>
-              <div class="range"><label for="high-cut">Overfill cut-off</label><output id="high-cut-out" for="high-cut"></output><input type="range" id="high-cut" min="85" max="100" step="1" data-label="Overfill cut-off"></div>
-              <div class="range"><label for="max-run">Maximum run time</label><output id="max-run-out" for="max-run"></output><input type="range" id="max-run" min="60" max="600" step="30" data-label="Maximum run time"></div>
-              <label class="check" style="margin-top:8px"><input type="checkbox" id="sim-dry"><span>Test: cut off the water source<small>Simulates a dry bore so you can see the protection trip.</small></span></label>
+              <h3 data-e="31">Safety cut-outs</h3>
+              <label class="check"><input type="checkbox" id="dry-run"><span data-e="32">Dry-run protection<small>Stops the pump if the level doesn't rise after it starts.</small></span></label>
+              <div class="range"><label data-e="33" for="no-rise">Stop if no rise after</label><output id="no-rise-out" for="no-rise"></output><input type="range" id="no-rise" min="5" max="30" step="5" data-label="No-rise timeout"></div>
+              <div class="range"><label data-e="34" for="high-cut">Overfill cut-off</label><output id="high-cut-out" for="high-cut"></output><input type="range" id="high-cut" min="85" max="100" step="1" data-label="Overfill cut-off"></div>
+              <div class="range"><label data-e="35" for="max-run">Maximum run time</label><output id="max-run-out" for="max-run"></output><input type="range" id="max-run" min="60" max="600" step="30" data-label="Maximum run time"></div>
+              <label class="check" style="margin-top:8px"><input type="checkbox" id="sim-dry"><span data-e="36">Test: cut off the water source<small>Simulates a dry bore so you can see the protection trip.</small></span></label>
             </div>
           </div>
         </div>
 
         <div class="panel" style="margin-top:24px">
-          <div class="chart-head"><h2 style="margin:0">Level, last 24 hours</h2><p class="sub" style="margin:0">Shaded areas show when the pump ran.</p></div>
+          <div class="chart-head"><h2 data-e="37" style="margin:0">Level, last 24 hours</h2><p data-e="38" class="sub" style="margin:0">Shaded areas show when the pump ran.</p></div>
           <div class="chart-wrap"><svg class="chart24" id="level24" role="img" aria-label="Tank level over the last 24 hours with pump run times shaded"></svg><div class="tooltip" id="level24-tip"></div></div>
-          <div class="legend"><span><i style="background:var(--water)"></i>Level</span><span><i style="background:var(--ok);opacity:.35"></i>Pump running</span><span><i style="background:var(--maroon);height:2px"></i>Auto start / stop levels</span></div>
+          <div class="legend"><span data-e="39"><i style="background:var(--water)"></i>Level</span><span data-e="40"><i style="background:var(--ok);opacity:.35"></i>Pump running</span><span data-e="41"><i style="background:var(--maroon);height:2px"></i>Auto start / stop levels</span></div>
         </div>
 
         <div class="two-col" style="margin-top:24px">
           <div class="panel">
-            <h2>Daily water use</h2>
-            <p class="sub">Last 14 days and today so far. Hover a bar for its value.</p>
+            <h2 data-e="42">Daily water use</h2>
+            <p data-e="43" class="sub">Last 14 days and today so far. Hover a bar for its value.</p>
             <svg id="days14" role="img" aria-label="Daily water use for the last 14 days"></svg>
           </div>
           <div class="panel">
-            <h2>Pump events</h2>
+            <h2 data-e="44">Pump events</h2>
             <ul class="log" id="event-log"></ul>
           </div>
         </div>
 
         <div class="two-col" style="margin-top:24px">
           <div class="panel">
-            <h2>System health</h2>
+            <h2 data-e="45">System health</h2>
             <ul class="health">
-              <li><span>Sensor battery</span><span>87%</span></li>
-              <li><span>Solar</span><span id="h-solar">–</span></li>
-              <li><span>LoRa signal</span><span>−92 dBm · Good</span></li>
-              <li><span>Receiver</span><span>Online · Wi-Fi</span></li>
-              <li><span>Probe</span><span>OK · 2.31 m cable depth</span></li>
+              <li><span data-e="46">Sensor battery</span><span data-e="47">87%</span></li>
+              <li><span data-e="48">Solar</span><span id="h-solar">–</span></li>
+              <li><span data-e="49">LoRa signal</span><span data-e="50">−92 dBm · Good</span></li>
+              <li><span data-e="51">Receiver</span><span data-e="52">Online · Wi-Fi</span></li>
+              <li><span data-e="53">Probe</span><span data-e="54">OK · 2.31 m cable depth</span></li>
             </ul>
           </div>
           <div class="panel">
-            <h2>Want this on your tank?</h2>
-            <p class="muted">This page runs on simulated data. Trial sites see their own tanks and control their own pumps here.</p>
-            <a class="btn btn-primary" href="../index.html?product=Tank%20monitor%20with%20pump%20control#contact">Join the trial</a>
+            <h2 data-e="55">Want this on your tank?</h2>
+            <p data-e="56" class="muted">This page runs on simulated data. Trial sites see their own tanks and control their own pumps here.</p>
+            <a data-e="57" class="btn btn-primary" href="../index.html?product=Tank%20monitor%20with%20pump%20control#contact">Join the trial</a>
           </div>
         </div>
       </div>
@@ -217,5 +217,6 @@
 
   <script src="../assets/js/main.js"></script>
   <script src="../assets/js/live.js"></script>
+  <script src="../assets/js/editor.js" defer></script>
 </body>
 </html>
