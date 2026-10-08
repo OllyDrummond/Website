@@ -749,3 +749,5 @@ details.table-view summary { cursor: pointer; font-weight: 600; color: var(--wat
   .nz-media img { object-position: 70% 50%; }
   .nz-media::after { background: linear-gradient(0deg, rgba(20,26,30,0.88) 0%, rgba(20,26,30,0.5) 55%, rgba(20,26,30,0.15) 100%); }
 }
+.hero-media img[src*="nz-farm"] { object-position: 62% 60%; }
+.nz-band .nz-media img { object-position: 62% 55%; }

@@ -300,7 +300,7 @@ def home():
     html += f"""
   <main id="main">
     <section class="hero on-dark" aria-labelledby="hero-title">
-      <div class="hero-media">{img(r, 'hero', 'Kinetiq tank monitor with its black solar panel and antenna on the lid of a green poly water tank, New Zealand farmland behind', eager=True, width=2400, height=1300)}</div>
+      <div class="hero-media">{img(r, 'nz-farm', 'Green poly water tank with a Kinetiq monitor on the lid, in a New Zealand paddock with a fence line, cabbage trees and snow-capped ranges', eager=True, width=2400, height=1100)}</div>
       <div class="wrap">
         <div class="hero-copy">
           <p class="kicker" data-reveal>Mechatronics for New Zealand farms</p>
@@ -370,7 +370,7 @@ def home():
 
 
     <section class="nz-band on-dark" aria-labelledby="nz-title">
-      <div class="nz-media">{img(r, 'nz-farm', 'Kinetiq tank monitor on a green poly water tank in a New Zealand paddock, with a fence line, cabbage trees and snow-capped ranges behind', width=2400, height=1100)}</div>
+      <div class="nz-media">{img(r, 'tank-top', 'Kinetiq tank monitor with its black solar panel and antenna on the lid of a green poly water tank, New Zealand farmland behind', width=2400, height=1300)}</div>
       <div class="wrap">
         <div class="nz-copy" data-reveal>
           <p class="kicker">Made in Aotearoa New Zealand</p>
@@ -545,7 +545,7 @@ def services():
           <h1 data-reveal style="--d:.08s">Mechanical, electrical and software, under one roof.</h1>
           <p class="lede" data-reveal style="--d:.16s">Mechatronics means the moving parts, the electronics and the code are designed together. That's how we work on every job, big or small.</p>
         </div>
-        <div class="page-hero-media" data-reveal="zoom">{img(r, 'hero', 'Kinetiq tank monitor on the lid of a poly water tank on a New Zealand farm', eager=True, width=2400, height=1300)}</div>
+        <div class="page-hero-media" data-reveal="zoom">{img(r, 'tank-top', 'Kinetiq tank monitor on the lid of a poly water tank on a New Zealand farm', eager=True, width=2400, height=1300)}</div>
       </div>
     </section>
 

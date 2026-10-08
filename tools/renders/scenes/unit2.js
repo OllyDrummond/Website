@@ -12,7 +12,7 @@ export default function () {
   const pts = coilPoints(0.7, 1.15, 1.45, 0.95, 4);
   cable(root, [[gland.x, gland.y, gland.z], [gland.x - 0.25, 0.06, gland.z + 0.3], [-1.0, 0.04, 0.9], ...pts]);
   const end = pts[pts.length - 1];
-  const p = probe2(); p.rotation.x = -Math.PI / 2; p.rotation.y = -0.15; p.position.set(end[0], 0.105, end[2] + 0.02); root.add(p);
+  const p = probe2(); p.rotation.z = -Math.PI / 2; p.rotation.y = 0.35; p.position.set(end[0] - 0.05, 0.105, end[2]); root.add(p);
   contactShadow(root, 6, 4.4, 0.28, [0.2, 0.003, 0.5]);
   contactShadow(root, 2.4, 2.1, 0.45, [-0.4, 0.004, -0.5]);
   S.finish();
