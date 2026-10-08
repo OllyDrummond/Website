@@ -60,7 +60,7 @@ export function studio(o) {
   document.body.appendChild(out);
   const ctx = out.getContext('2d');
 
-  function finish(samples = o.samples ?? 40) {
+  function accumulate(samples) {
     const aperture = o.aperture ?? 0;
     const softness = o.softness ?? 0.6;
     const forward = new THREE.Vector3().subVectors(target, camPos).normalize();
@@ -78,11 +78,27 @@ export function studio(o) {
       ctx.globalAlpha = 1 / (i + 1);
       ctx.drawImage(renderer.domElement, 0, 0);
     }
+  }
+
+  function finish(samples = o.samples ?? 40) {
+    accumulate(samples);
     renderer.domElement.remove();
     window.done = true;
   }
 
-  return { scene, camera, renderer, key, rim, fill, floor, finish };
+  // Render a sequence: step(i) moves the camera (via camPos/target) or the model.
+  async function turntable(frames, step, samples = o.samples ?? 16) {
+    window.shots = [];
+    for (let i = 0; i < frames; i++) {
+      step(i, camPos, target);
+      accumulate(samples);
+      window.shots.push(out.toDataURL('image/webp', 0.86));
+      await new Promise((r) => setTimeout(r, 0));
+    }
+    window.done = true;
+  }
+
+  return { scene, camera, renderer, key, rim, fill, floor, finish, turntable, camPos, target };
 }
 
 // ---------- materials ----------
@@ -171,8 +187,8 @@ export function gearGeo(teeth, rOuter, rRoot, depth, bore = 0.2) {
 }
 
 // Corrugated tank wall (horizontal corrugations)
-export function corrugatedCylinder(radius, height, pitch = 0.076, amp = 0.018) {
-  const g = new THREE.CylinderGeometry(radius, radius, height, 160, Math.round(height / pitch * 8), true);
+export function corrugatedCylinder(radius, height, pitch = 0.076, amp = 0.018, thetaStart = 0, thetaLength = Math.PI * 2) {
+  const g = new THREE.CylinderGeometry(radius, radius, height, 160, Math.round(height / pitch * 8), true, thetaStart, thetaLength);
   const p = g.attributes.position;
   for (let i = 0; i < p.count; i++) {
     const x = p.getX(i), y = p.getY(i), z = p.getZ(i);

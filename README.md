@@ -6,11 +6,13 @@ A static website (plain HTML, CSS and JavaScript, no build step needed to view i
 
 | File | What it is |
 |---|---|
-| `index.html` | Home: hero, spec stats, products, services, process, featured project, contact form |
+| `index.html` | Home: tank monitor hero (rotating 3D view), design-target stats, how it works, pump control, who it's for, other work, trial sign-up |
 | `services.html` | Custom machine design, electronics & PCB, PLC programming, automation & control, install & maintenance |
 | `projects.html` | Projects with filters (completed / mock-ups) |
 | `about.html` | Company story, values and capabilities (no names) |
-| `products/water-monitor.html` | Tank monitor case study with the interactive demo dashboard |
+| `products/water-monitor.html` | Tank monitor product page: how it works, exploded view, features, design-target specs |
+| `projects/tank-monitor-live.html` | Live view mock-up: real-time level, 24 h chart, daily use, pump control (manual / auto / schedule) and safety cut-outs |
+| `render-options.html` | The four rotating 3D render options to choose from |
 | `products/smart-filtration.html` | Smart filtration (mock-up) |
 | `products/acid-dosing.html` | Automated acid dosing (mock-up) |
 | `portal/login.html` → `portal/dashboard.html` | Client portal demo. Sign in does nothing but open the dashboard |
@@ -29,11 +31,12 @@ Contact details are at the top of that file (`PHONE_DISPLAY`, `PHONE_TEL`, `EMAI
 
 - **Phone and email** are placeholders (`000 000 0000`, `hello@example.com`).
 - **Enquiry form**: by default it opens the visitor's email app. To receive enquiries directly, create a form at a service like Formspree and paste its URL into `FORM_ENDPOINT` in `assets/js/main.js`.
+- **Live view** runs a simulation in `assets/js/live.js` (1 second = 1 minute). Real readings and pump commands plug in at `simulateMinute()` / `sendCommand()` once the cloud API exists.
 - **Client portal** is a front-end demo with sample data. Real sign-in and live readings need a backend; `loadTankData()` in `assets/js/dashboard.js` is where real data plugs in.
 
 ## Images
 
-All product and engineering images in `assets/img/renders/` are 3D renders made with three.js. The scenes are in `tools/renders/` (see its README) and can be changed and re-rendered. To use real photos, replace the `.webp` files with your own of the same name.
+All product and engineering images in `assets/img/renders/` and the rotating views in `assets/img/turntables/` are 3D renders made with three.js. The tank monitor model is based on the prototype photo. The scenes are in `tools/renders/` (see its README) and can be changed and re-rendered. To use real photos, replace the `.webp` files with your own of the same name.
 
 ## Look and feel
 
