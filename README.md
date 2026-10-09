@@ -6,7 +6,7 @@ A static website (plain HTML, CSS and JavaScript, no build step needed to view i
 
 | File | What it is |
 |---|---|
-| `index.html` | Home: product-family hero (all products on stage, linked labels), product grid, services, about us, contact |
+| `index.html` | Home: NZ farm landscape hero with product links, product grid, services, about us, contact. The product line-up render (`lineup.webp`) is kept for a quick swap back |
 | `services.html` | Custom machine design, electronics & PCB, PLC programming, automation & control, install & maintenance |
 | `projects.html` | Projects with filters (completed / mock-ups) |
 | `about.html` | Company story, who we work with, values and capabilities (no names) |
