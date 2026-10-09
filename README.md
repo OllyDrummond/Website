@@ -6,7 +6,7 @@ A static website (plain HTML, CSS and JavaScript, no build step needed to view i
 
 | File | What it is |
 |---|---|
-| `index.html` | Home: hero, design-target stats, products, services, process, featured project, trial / contact form |
+| `index.html` | Home: product-family hero (all products on stage, linked labels), product grid, services, about us, contact |
 | `services.html` | Custom machine design, electronics & PCB, PLC programming, automation & control, install & maintenance |
 | `projects.html` | Projects with filters (completed / mock-ups) |
 | `about.html` | Company story, who we work with, values and capabilities (no names) |
