@@ -837,8 +837,8 @@ details.table-view summary { cursor: pointer; font-weight: 600; color: var(--wat
 
 /* ---------- Homepage hero: NZ landscape with product chips ---------- */
 .hero-land { flex-direction: column; justify-content: center; align-items: stretch; padding-bottom: clamp(96px, 12vw, 140px); }
-.hero-land .hero-media img { object-position: 55% 55%; }
-.hero-land .hero-media img { filter: brightness(0.86) saturate(1.04); }
+.hero-land .hero-media img { object-position: 60% 60%; }
+.hero-land .hero-media img { filter: brightness(0.97) saturate(1.1); }
 .hero-land .hero-media::after { background: linear-gradient(180deg, rgba(27,33,38,0.7) 0%, rgba(27,33,38,0) 22%), linear-gradient(90deg, rgba(27,33,38,0.9) 0%, rgba(27,33,38,0.68) 44%, rgba(27,33,38,0.1) 76%), linear-gradient(0deg, rgba(27,33,38,0.78) 0%, rgba(27,33,38,0) 34%); }
 .product-chips { position: absolute; left: 0; right: 0; bottom: clamp(24px, 3.5vw, 44px); z-index: 3; list-style: none; margin: 0 auto; padding: 0 var(--gutter); max-width: var(--wrap); display: flex; flex-wrap: wrap; gap: 10px; }
 .product-chips a { display: inline-flex; align-items: center; gap: 8px; padding: 9px 15px; border-radius: 999px; background: rgba(22,27,32,0.6); border: 1px solid rgba(255,255,255,0.16); backdrop-filter: blur(8px); color: #fff; text-decoration: none; font-size: 0.93rem; white-space: nowrap; transition: background 0.25s, border-color 0.25s, transform 0.3s var(--ease); }
@@ -868,6 +868,24 @@ details.table-view summary { cursor: pointer; font-weight: 600; color: var(--wat
 @keyframes hero-fade { from { opacity: 0; } to { opacity: 1; } }
 @media (max-width: 760px) {
   .hero-land .hero-media { margin-top: 28px; overflow: hidden; }
-  .hero-land .hero-media img { object-position: 58% 72%; }
+  .hero-land .hero-media img { object-position: 62% 70%; }
   .hero-land .hero-media::after { background: linear-gradient(180deg, rgba(27,33,38,1) 0%, rgba(27,33,38,0) 40%); }
 }
+
+/* ---------- Tank monitor: the system (three parts) ---------- */
+.kit-media { border-radius: var(--radius); overflow: hidden; background: #e7eaec; aspect-ratio: 2400 / 1300; margin-bottom: clamp(28px, 4vw, 44px); }
+.kit-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.parts-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+.part { display: flex; flex-direction: column; gap: 10px; }
+.part-media { border-radius: var(--radius); overflow: hidden; background: #e7eaec; aspect-ratio: 4 / 3; margin-bottom: 6px; }
+.part-media img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.6s var(--ease); }
+.part:hover .part-media img { transform: scale(1.03); }
+.part p { color: var(--ink-2); margin: 0; }
+.part .tag { align-self: flex-start; font-size: 0.78rem; font-weight: 700; color: var(--maroon); text-transform: uppercase; letter-spacing: 0.06em; }
+@media (prefers-reduced-motion: reduce) { .part:hover .part-media img { transform: none; } }
+@media (max-width: 860px) { .parts-grid { grid-template-columns: 1fr; gap: 36px; } }
+
+.photo-credit { position: absolute; right: var(--gutter); bottom: 10px; z-index: 3; margin: 0; font-size: 0.7rem; color: rgba(255,255,255,0.6); }
+.photo-credit a { color: inherit; text-decoration: underline; text-decoration-color: rgba(255,255,255,0.35); }
+.photo-credit a:hover { color: #fff; }
+@media (max-width: 760px) { .photo-credit { position: static; order: 3; padding: 6px 16px 0; text-align: right; } }

@@ -6,11 +6,11 @@ A static website (plain HTML, CSS and JavaScript, no build step needed to view i
 
 | File | What it is |
 |---|---|
-| `index.html` | Home: NZ farm photo hero with product links, product grid, services, about us, contact. The product line-up render (`lineup.webp`) is kept for a quick swap back |
+| `index.html` | Home: NZ farm photo hero (Southland) with product links, product grid, services, about us, contact. The product line-up render (`lineup.webp`) is kept for a quick swap back |
 | `services.html` | Custom machine design, electronics & PCB, PLC programming, automation & control, install & maintenance |
 | `projects.html` | Projects with filters (completed / mock-ups) |
 | `about.html` | Company story, who we work with, values and capabilities (no names) |
-| `products/water-monitor.html` | Tank monitor product page: how it works, usage demo, features, exploded view, design-target specs |
+| `products/water-monitor.html` | Tank monitor product page: how it works, the three parts (tank unit, receiver, pump controller), usage demo, features, exploded view, design-target specs |
 | `projects/tank-monitor-live.html` | Live view mock-up: real-time level, 24 h chart, daily use, pump control (manual / auto / schedule) and safety cut-outs |
 | `products/smart-filtration.html` | Smart filtration (mock-up) |
 | `products/acid-dosing.html` | Automated acid dosing (mock-up) |
@@ -40,9 +40,9 @@ Contact details placeholders live in the page HTML and in `assets/js/main.js` (`
 
 ## Images
 
-The homepage hero is a real photo: `assets/img/photos/nz-farm-fairlie.webp` (cattle near Fairlie, Canterbury, "A rural setting. Fairlie. NZ" by Bernard Spragg, public domain CC0, via Wikimedia Commons). The previous 3D landscape render (`renders/nz-farm.webp`) is kept for a quick swap back.
+The homepage hero is a real photo: `assets/img/photos/nz-southland.webp` (sheep on paddocks in Southland, "Field in Southland, New Zealand" by Pedro Szekely, CC BY-SA 2.0, via Wikimedia Commons). The licence requires the credit line shown under the hero, so keep it if the photo stays. The 3D landscape render (`renders/nz-farm.webp`) is used on the About page.
 
-All product and engineering images in `assets/img/renders/` are 3D renders made with three.js. The tank monitor model is based on the prototype photo. The scenes are in `tools/renders/` (see its README) and can be changed and re-rendered. To use real photos, replace the `.webp` files with your own of the same name.
+All product and engineering images in `assets/img/renders/` are 3D renders made with three.js. The tank monitor models (tank unit and probe, receiver, pump controller) are based on the owner's product photos. The scenes are in `tools/renders/` (see its README) and can be changed and re-rendered. To use real photos, replace the `.webp` files with your own of the same name.
 
 ## Look and feel
 

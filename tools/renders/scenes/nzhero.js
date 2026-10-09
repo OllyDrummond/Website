@@ -1,4 +1,4 @@
-import { studio, THREE, mat, add } from '../studio.js';
+import { studio, THREE, mat, add, rectShadow } from '../studio.js';
 import { unit2, cable } from '../unit.js';
 import { sky, terrain, ranges, cabbageTree, fence, polyTank } from '../nz.js';
 export default function () {
@@ -26,6 +26,7 @@ export default function () {
   const holder = new THREE.Group(); holder.position.set(Math.sin(phi) * r, y, Math.cos(phi) * r); holder.rotation.y = phi; S.scene.add(holder);
   const tilt = new THREE.Group(); tilt.rotation.x = slope; holder.add(tilt);
   const u = unit2(); u.rotation.y = -0.55; u.position.y = 0.02; tilt.add(u);
+  rectShadow(u, 1.45, 1.12, 0.6, 0.16); rectShadow(u, 1.42, 1.1, 0.8, 0.04, [0, 0.006, 0]);
   u.updateMatrixWorld(true);
   const gl = tilt.worldToLocal(u.localToWorld(u.userData.glandOut.clone()));
   cable(tilt, [[gl.x, gl.y, gl.z], [gl.x - 0.4, 0.05, gl.z - 0.2], [-1.6, 0.03, -1.2], [-2.6, 0.03, -3.4]], 0.035);

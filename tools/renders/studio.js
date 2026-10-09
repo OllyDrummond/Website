@@ -233,3 +233,19 @@ export function sensorUnit(RoundedBoxGeometry, opts = {}) {
   }
   return g;
 }
+
+// Soft rectangular contact shadow (better than the radial one for boxes)
+export function rectShadow(parent, w, d, opacity = 0.7, blur = 0.12, pos = [0, 0.004, 0]) {
+  const pad = blur * 3, W = 512, H = Math.round(512 * (d + pad * 2) / (w + pad * 2));
+  const t = canvasTex(W, H, (c) => {
+    const sx = W / (w + pad * 2);
+    c.filter = `blur(${Math.round(blur * sx)}px)`;
+    c.fillStyle = `rgba(0,0,0,${opacity})`;
+    c.fillRect(pad * sx, pad * sx, w * sx, d * sx);
+  });
+  t.colorSpace = THREE.NoColorSpace;
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w + pad * 2, d + pad * 2), new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false }));
+  m.rotation.x = -Math.PI / 2; m.position.set(...pos);
+  parent.add(m);
+  return m;
+}

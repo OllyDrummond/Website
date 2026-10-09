@@ -5,7 +5,7 @@ import { polyTank } from '../nz.js';
 export default function () {
   const q = new URLSearchParams(location.search);
   const S = studio({ w: +(q.get('w') || 1600), h: +(q.get('h') || 1200), bg: '#e7eaec', floor: '#e2e6e8', fogNear: 300, fogFar: 900,
-    cam: [0, 52, 118], target: [-1, 13, 0], fov: 30, aperture: 0.1, softness: 18,
+    cam: [0, 52, 118], target: [-1, 12, 0], fov: 19, aperture: 0.1, softness: 18,
     key: [60, 110, 80], keyIntensity: 2.4, envIntensity: 0.6, fillIntensity: 0.4, shadowSize: 45, samples: +(q.get('n') || 40) });
   S.camera.near = 0.5; S.camera.far = 2000; S.camera.updateProjectionMatrix();
   const CUT = 0.72, R = 17.5, H = 21, LVL = 0.58;
