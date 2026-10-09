@@ -22,7 +22,7 @@ PAGES = [
 ]
 TAGS = ["h1", "h2", "h3", "h4", "p", "li", "dt", "dd", "th", "td", "span", "a", "button", "label", "summary", "figcaption", "cite", "strong", "small", "option"]
 # Text that the page's own scripts fill in or animate
-SKIP_CLASSES = {"num", "big", "tooltip", "why", "demo-flag", "visually-hidden", "skip", "live-dot"}
+SKIP_CLASSES = {"num", "big", "tooltip", "why", "demo-flag", "visually-hidden", "skip", "live-dot", "photo-credit"}
 SKIP_ATTRS = ["data-count", "data-litres", "data-ago", "data-year", "data-live", "data-filter", "data-mode", "data-range", "data-tank", "aria-live"]
 BLOCKERS = ["svg", "img", "input", "select", "textarea", "script", "style", "canvas"]
 INLINE_OK = {"strong", "em", "b", "i", "br", "small", "span", "a", "abbr"}

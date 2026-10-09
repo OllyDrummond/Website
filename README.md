@@ -10,7 +10,7 @@ A static website (plain HTML, CSS and JavaScript, no build step needed to view i
 | `services.html` | Custom machine design, electronics & PCB, PLC programming, automation & control, install & maintenance |
 | `projects.html` | Projects with filters (completed / mock-ups) |
 | `about.html` | Company story, who we work with, values and capabilities (no names) |
-| `products/water-monitor.html` | Tank monitor product page: how it works, the three parts (tank unit, receiver, pump controller), usage demo, features, exploded view, design-target specs |
+| `products/water-monitor.html` | Tank monitor product page: photo hero with a sample tank reading, design-target strip, the three parts (tank unit, receiver, pump controller), how it works, app-style usage demo, features, exploded view, design-target specs |
 | `projects/tank-monitor-live.html` | Live view mock-up: real-time level, 24 h chart, daily use, pump control (manual / auto / schedule) and safety cut-outs |
 | `products/smart-filtration.html` | Smart filtration (mock-up) |
 | `products/acid-dosing.html` | Automated acid dosing (mock-up) |

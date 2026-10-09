@@ -872,20 +872,164 @@ details.table-view summary { cursor: pointer; font-weight: 600; color: var(--wat
   .hero-land .hero-media::after { background: linear-gradient(180deg, rgba(27,33,38,1) 0%, rgba(27,33,38,0) 40%); }
 }
 
-/* ---------- Tank monitor: the system (three parts) ---------- */
-.kit-media { border-radius: var(--radius); overflow: hidden; background: #e7eaec; aspect-ratio: 2400 / 1300; margin-bottom: clamp(28px, 4vw, 44px); }
-.kit-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.parts-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
-.part { display: flex; flex-direction: column; gap: 10px; }
-.part-media { border-radius: var(--radius); overflow: hidden; background: #e7eaec; aspect-ratio: 4 / 3; margin-bottom: 6px; }
-.part-media img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.6s var(--ease); }
-.part:hover .part-media img { transform: scale(1.03); }
-.part p { color: var(--ink-2); margin: 0; }
-.part .tag { align-self: flex-start; font-size: 0.78rem; font-weight: 700; color: var(--maroon); text-transform: uppercase; letter-spacing: 0.06em; }
-@media (prefers-reduced-motion: reduce) { .part:hover .part-media img { transform: none; } }
-@media (max-width: 860px) { .parts-grid { grid-template-columns: 1fr; gap: 36px; } }
-
 .photo-credit { position: absolute; right: var(--gutter); bottom: 10px; z-index: 3; margin: 0; font-size: 0.7rem; color: rgba(255,255,255,0.6); }
 .photo-credit a { color: inherit; text-decoration: underline; text-decoration-color: rgba(255,255,255,0.35); }
 .photo-credit a:hover { color: #fff; }
 @media (max-width: 760px) { .photo-credit { position: static; order: 3; padding: 6px 16px 0; text-align: right; } }
+
+/* ==========================================================================
+   Water monitor product page (.wm)
+   Hero with a glass "tank reading" panel, ruled instrument panels below.
+   ========================================================================== */
+.wm { --rule: var(--line); --panel: var(--surface); }
+
+/* Hero: same NZ photo treatment as the home page, copy left, reading right */
+.wm-hero { position: relative; background: var(--night); color: var(--night-ink); overflow: hidden; padding: clamp(120px, 13vw, 168px) 0 clamp(120px, 12vw, 160px); }
+.wm-media { position: absolute; inset: 0; }
+.wm-media img { width: 100%; height: 100%; object-fit: cover; object-position: 70% 75%; filter: brightness(0.92) saturate(1.08); }
+.wm-media::after { content: ""; position: absolute; inset: 0; background:
+  linear-gradient(180deg, rgba(27,33,38,0.75) 0%, rgba(27,33,38,0) 26%),
+  linear-gradient(90deg, rgba(27,33,38,0.92) 0%, rgba(27,33,38,0.72) 42%, rgba(27,33,38,0.25) 100%),
+  linear-gradient(0deg, rgba(27,33,38,0.85) 0%, rgba(27,33,38,0) 40%); }
+.wm-hero-grid { position: relative; z-index: 2; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); gap: clamp(28px, 5vw, 72px); align-items: center; }
+.wm-hero h1 { color: #fff; font-size: clamp(2.3rem, 4.8vw, 3.9rem); margin: 18px 0 18px; max-width: 15ch; }
+.wm-hero .lede { color: var(--night-ink-2); }
+.wm-hero .crumbs a { color: inherit; }
+.wm-hero .photo-credit { bottom: auto; top: 84px; }
+
+.live-tank { --lvl: 0; justify-self: end; width: min(100%, 400px); color: #fff; background: rgba(23, 29, 34, 0.52); border: 1px solid rgba(255,255,255,0.16); border-radius: 18px; backdrop-filter: blur(16px) saturate(1.2); -webkit-backdrop-filter: blur(16px) saturate(1.2); box-shadow: 0 30px 60px -30px rgba(0,0,0,0.6); }
+.lt-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 18px 20px 14px; border-bottom: 1px solid rgba(255,255,255,0.12); }
+.lt-name { margin: 0; font-weight: 700; font-size: 1.05rem; }
+.lt-sub { margin: 2px 0 0; color: var(--night-ink-2); font-size: 0.88rem; }
+.lt-flag { font-size: 0.78rem; color: var(--night-ink-2); border: 1px solid rgba(255,255,255,0.22); border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
+.lt-body { display: grid; grid-template-columns: 128px 1fr; gap: 20px; align-items: center; padding: 20px; }
+.lt-tank { width: 128px; height: auto; display: block; overflow: visible; }
+.lt-air { fill: rgba(255,255,255,0.06); }
+.lt-water { transition: transform 1.6s cubic-bezier(0.22, 1, 0.36, 1); }
+.lt-wave { fill: #4d9be0; }
+.lt-shell { fill: none; stroke: rgba(255,255,255,0.75); stroke-width: 2; }
+.lt-ribs { stroke: rgba(255,255,255,0.18); stroke-width: 1; }
+.lt-lid { fill: rgba(255,255,255,0.75); }
+.lt-pct { margin: 0; font-size: clamp(3.2rem, 6vw, 4.2rem); font-weight: 800; font-stretch: 125%; line-height: 0.95; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.lt-pct small { font-size: 0.42em; font-weight: 700; margin-left: 2px; color: var(--night-ink-2); }
+.lt-litres { margin: 8px 0 14px; color: var(--night-ink-2); font-size: 0.95rem; font-variant-numeric: tabular-nums; }
+.lt-stats { display: grid; grid-template-columns: 1fr 1fr; margin: 0; border-top: 1px solid rgba(255,255,255,0.12); }
+.lt-stats div { padding-top: 10px; }
+.lt-stats div + div { padding-left: 14px; border-left: 1px solid rgba(255,255,255,0.12); }
+.lt-stats dt { font-size: 0.82rem; color: var(--night-ink-2); }
+.lt-stats dd { margin: 2px 0 0; font-weight: 700; font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+.lt-pump { display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-top: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); border-radius: 0 0 18px 18px; }
+.lt-pump p { margin: 0; font-size: 0.93rem; color: var(--night-ink-2); }
+.lt-pump strong { color: #fff; }
+.lt-dot { width: 10px; height: 10px; border-radius: 50%; background: #8a969d; box-shadow: 0 0 0 4px rgba(138,150,157,0.2); flex: none; }
+
+/* Instrument strip: design targets, pulled up over the hero edge */
+.wm-strip { padding: 0; position: relative; z-index: 3; margin-top: clamp(-84px, -7vw, -56px); }
+.strip { display: grid; grid-template-columns: repeat(4, 1fr); background: var(--panel); border: 1px solid var(--rule); border-radius: var(--radius); box-shadow: 0 24px 48px -32px rgba(16,24,32,0.45); }
+.strip-cell { padding: clamp(18px, 2.4vw, 28px); }
+.strip-cell + .strip-cell { border-left: 1px solid var(--rule); }
+.strip .num { margin: 0 0 8px; font-size: clamp(2.2rem, 3.6vw, 3rem); font-weight: 800; font-stretch: 125%; line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--ink); }
+.strip .num small { display: inline-block; vertical-align: middle; margin-left: 8px; font-size: 0.82rem; font-weight: 600; font-stretch: 100%; letter-spacing: 0; color: var(--water); background: var(--water-soft); border-radius: 999px; padding: 3px 10px; transform: translateY(-4px); }
+.strip-cell p:not(.num) { margin: 0; color: var(--ink-2); font-size: 0.95rem; max-width: 26ch; }
+.strip-note { margin: 12px 4px 0; font-size: 0.86rem; color: var(--ink-3); }
+
+/* The system: kit render, then the three parts in one ruled panel */
+.wm-system { padding-top: clamp(72px, 9vw, 120px); }
+.wm .kit-media { border-radius: var(--radius) var(--radius) 0 0; overflow: hidden; background: #e7eaec; aspect-ratio: 2400 / 1300; border: 1px solid var(--rule); border-bottom: 0; }
+.wm .kit-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.parts { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--panel); border: 1px solid var(--rule); border-radius: 0 0 var(--radius) var(--radius); }
+.part { display: flex; flex-direction: column; padding: clamp(18px, 2.2vw, 26px); }
+.part + .part { border-left: 1px solid var(--rule); }
+.part-media { border-radius: 10px; overflow: hidden; background: #e7eaec; aspect-ratio: 4 / 3; margin-bottom: 18px; }
+.part-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.part h3 { margin: 0 0 8px; }
+.part p { color: var(--ink-2); margin: 0 0 14px; }
+.part .tag { margin-top: auto; align-self: flex-start; font-size: 0.84rem; font-weight: 600; color: var(--water); background: var(--water-soft); border-radius: 999px; padding: 4px 11px; }
+
+/* How it works: the signal path as one ruled panel */
+.wm-how .flow { background: var(--bg); border: 1px solid var(--rule); border-radius: var(--radius); }
+.wm-how .flow li { padding: clamp(18px, 2.2vw, 26px); }
+.wm-how .flow li + li { border-left: 1px solid var(--rule); }
+.wm-how .flow li::after { top: calc(clamp(18px, 2.2vw, 26px) + 27px); left: calc(clamp(18px, 2.2vw, 26px) + 64px); right: -1px; }
+.wm-how .flow .node { background: var(--surface); }
+
+/* Dashboard demo: an app frame with a rail, ruled KPIs and panels */
+.wa-app { display: grid; grid-template-columns: 92px minmax(0, 1fr); background: var(--panel); border: 1px solid var(--rule); border-radius: 18px; overflow: hidden; box-shadow: 0 30px 60px -40px rgba(16,24,32,0.35); }
+.wa-rail { background: var(--night); color: var(--night-ink-2); display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 20px 8px; }
+.rail-logo { width: 44px; height: 44px; display: grid; place-items: center; color: #fff; margin-bottom: 18px; }
+.rail-logo svg { width: 30px; height: 30px; }
+.rail-item { width: 72px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0; border-radius: 12px; font-size: 0.74rem; font-weight: 600; }
+.rail-item svg { width: 22px; height: 22px; }
+.rail-item.on { background: rgba(255,255,255,0.1); color: #fff; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14); }
+.wa-main { min-width: 0; }
+.wa-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 16px clamp(16px, 2.4vw, 28px); border-bottom: 1px solid var(--rule); }
+.wa-tank { display: flex; align-items: center; gap: 10px; }
+.wa-tank label { font-weight: 600; font-size: 0.93rem; color: var(--ink-2); }
+.wa-tank select { font: inherit; font-weight: 700; font-size: 1rem; color: var(--ink); background: var(--surface-2); border: 1px solid var(--rule); border-radius: 10px; padding: 9px 12px; min-height: 44px; }
+.wm .seg button { min-height: 40px; }
+.wm .demo-flag { margin-left: auto; font-size: 0.82rem; border: 1px solid var(--rule); border-radius: 999px; padding: 3px 10px; }
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--rule); }
+.kpi { padding: clamp(16px, 2.2vw, 26px); }
+.kpi + .kpi { border-left: 1px solid var(--rule); }
+.kpi .k { margin: 0 0 10px; font-size: 0.9rem; color: var(--ink-2); }
+.kpi .v { margin: 0; font-size: clamp(2rem, 3vw, 2.6rem); font-weight: 800; font-stretch: 120%; line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.kpi .v small { display: inline-block; vertical-align: middle; margin-left: 6px; font-size: 0.8rem; font-weight: 600; font-stretch: 100%; letter-spacing: 0; color: var(--ink-2); background: var(--surface-2); border-radius: 999px; padding: 3px 9px; transform: translateY(-3px); }
+.kpi .d { margin: 10px 0 0; font-size: 0.86rem; color: var(--ink-3); }
+.wa-row { display: grid; grid-template-columns: minmax(0, 1fr) 260px; border-bottom: 1px solid var(--rule); }
+.wa-row > .wa-panel + .wa-panel { border-left: 1px solid var(--rule); }
+.wa-panel { padding: clamp(16px, 2.4vw, 28px); }
+.wm .chart-block + .chart-block { margin-top: 0; }
+.wm .chart { height: 240px; }
+.gauge-title { margin: 0; font-size: 1.05rem; align-self: stretch; text-align: left; }
+.gauge-panel { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; }
+.wm .gauge svg { width: 140px; }
+.wm .gauge-air { fill: var(--surface-2); }
+.wm .gauge-shell { fill: none; stroke: var(--ink); stroke-width: 2.5; }
+.wm .gauge-ribs { stroke: var(--surface); stroke-opacity: 0.5; stroke-width: 1; }
+.wm .gauge-water { fill: var(--water); }
+.wm #status .status { margin: 0; padding: 6px 12px; border-radius: 999px; background: var(--surface-2); }
+.wm .table-view { padding: 16px clamp(16px, 2.4vw, 28px); border-top: 1px solid var(--rule); }
+
+/* Features as a ruled grid */
+.wm .feature-grid { gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: var(--radius); overflow: hidden; }
+.wm .feature-grid > div { padding: clamp(20px, 2.6vw, 32px); background: var(--bg); }
+
+/* Inside the unit + specs */
+.wm .inside-media { margin-top: 24px; background: #1b2126; }
+.spec-panel { background: var(--panel); border: 1px solid var(--rule); border-radius: var(--radius); padding: clamp(20px, 2.6vw, 32px); }
+.spec-panel .spec-table tr:last-child th, .spec-panel .spec-table tr:last-child td { border-bottom: 0; }
+
+@media (prefers-reduced-motion: reduce) { .lt-water { transition: none; } }
+
+@media (max-width: 1080px) {
+  .wm-hero-grid { grid-template-columns: 1fr; }
+  .live-tank { justify-self: start; }
+  .wa-row { grid-template-columns: 1fr; }
+  .wa-row > .wa-panel + .wa-panel { border-left: 0; border-top: 1px solid var(--rule); flex-direction: row; justify-content: flex-start; text-align: left; }
+  .wm .gauge svg { width: 96px; }
+  .wm-how .flow { grid-template-columns: 1fr; }
+  .wm-how .flow li + li { border-left: 0; border-top: 1px solid var(--rule); }
+  .wm-how .flow li::after { display: none; }
+}
+@media (max-width: 860px) {
+  .strip, .kpis { grid-template-columns: 1fr 1fr; }
+  .strip-cell:nth-child(3), .kpi:nth-child(3) { border-left: 0; }
+  .strip-cell:nth-child(n+3), .kpi:nth-child(n+3) { border-top: 1px solid var(--rule); }
+  .parts { grid-template-columns: 1fr; }
+  .part + .part { border-left: 0; border-top: 1px solid var(--rule); }
+  .wa-app { grid-template-columns: 1fr; }
+  .wa-rail { flex-direction: row; justify-content: flex-start; padding: 8px 12px; gap: 4px; overflow-x: auto; }
+  .rail-logo { margin: 0 8px 0 0; width: 36px; height: 36px; }
+  .rail-item { width: auto; flex-direction: row; padding: 8px 12px; }
+  .rail-item svg { width: 18px; height: 18px; }
+  .wm .feature-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 560px) {
+  .wm-hero { padding-bottom: 104px; }
+  .lt-body { grid-template-columns: 96px 1fr; gap: 16px; }
+  .lt-tank { width: 96px; }
+  .wm .feature-grid { grid-template-columns: 1fr; }
+  .kpi .v { font-size: 1.7rem; }
+  .rail-item:not(.on) { display: none; }
+  .wm .demo-flag { margin-left: 0; }
+}

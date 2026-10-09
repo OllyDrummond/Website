@@ -254,6 +254,21 @@ function renderCards() {
   }));
 }
 
+// Hero reading on the product page (first tank, latest day)
+const liveTank = document.querySelector(".live-tank");
+if (liveTank) {
+  const t = tanks[0];
+  const now = t.days[t.days.length - 1];
+  const avg = t.days.slice(-30).reduce((s, d) => s + d.used, 0) / 30;
+  const pct = now.litres / t.capacity;
+  document.getElementById("live-pct").textContent = Math.round(pct * 100);
+  document.getElementById("live-litres").textContent = fmt(now.litres);
+  document.getElementById("live-avg").textContent = fmt(avg);
+  document.getElementById("live-days").textContent = Math.floor(now.litres / avg);
+  // The tank fills to its level once, on load (CSS skips the motion for reduced-motion users)
+  requestAnimationFrame(() => requestAnimationFrame(() => liveTank.style.setProperty("--lvl", pct.toFixed(3))));
+}
+
 select.addEventListener("change", () => { state.tank = select.value; render(); });
 document.querySelectorAll(".seg button").forEach((b) =>
   b.addEventListener("click", () => {
