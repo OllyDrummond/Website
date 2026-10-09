@@ -6,7 +6,7 @@ A static website (plain HTML, CSS and JavaScript, no build step needed to view i
 
 | File | What it is |
 |---|---|
-| `index.html` | Home: NZ farm landscape hero with product links, product grid, services, about us, contact. The product line-up render (`lineup.webp`) is kept for a quick swap back |
+| `index.html` | Home: NZ farm photo hero with product links, product grid, services, about us, contact. The product line-up render (`lineup.webp`) is kept for a quick swap back |
 | `services.html` | Custom machine design, electronics & PCB, PLC programming, automation & control, install & maintenance |
 | `projects.html` | Projects with filters (completed / mock-ups) |
 | `about.html` | Company story, who we work with, values and capabilities (no names) |
@@ -39,6 +39,8 @@ Contact details placeholders live in the page HTML and in `assets/js/main.js` (`
 - **Client portal** is a front-end demo with sample data. Real sign-in and live readings need a backend; `loadTankData()` in `assets/js/dashboard.js` is where real data plugs in.
 
 ## Images
+
+The homepage hero is a real photo: `assets/img/photos/nz-farm-fairlie.webp` (cattle near Fairlie, Canterbury, "A rural setting. Fairlie. NZ" by Bernard Spragg, public domain CC0, via Wikimedia Commons). The previous 3D landscape render (`renders/nz-farm.webp`) is kept for a quick swap back.
 
 All product and engineering images in `assets/img/renders/` are 3D renders made with three.js. The tank monitor model is based on the prototype photo. The scenes are in `tools/renders/` (see its README) and can be changed and re-rendered. To use real photos, replace the `.webp` files with your own of the same name.
 

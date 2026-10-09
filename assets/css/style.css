@@ -837,8 +837,9 @@ details.table-view summary { cursor: pointer; font-weight: 600; color: var(--wat
 
 /* ---------- Homepage hero: NZ landscape with product chips ---------- */
 .hero-land { flex-direction: column; justify-content: center; align-items: stretch; padding-bottom: clamp(96px, 12vw, 140px); }
-.hero-land .hero-media img { object-position: 60% 62%; }
-.hero-land .hero-media::after { background: linear-gradient(90deg, rgba(27,33,38,0.88) 0%, rgba(27,33,38,0.55) 42%, rgba(27,33,38,0.05) 72%), linear-gradient(0deg, rgba(27,33,38,0.75) 0%, rgba(27,33,38,0) 32%); }
+.hero-land .hero-media img { object-position: 55% 55%; }
+.hero-land .hero-media img { filter: brightness(0.86) saturate(1.04); }
+.hero-land .hero-media::after { background: linear-gradient(180deg, rgba(27,33,38,0.7) 0%, rgba(27,33,38,0) 22%), linear-gradient(90deg, rgba(27,33,38,0.9) 0%, rgba(27,33,38,0.68) 44%, rgba(27,33,38,0.1) 76%), linear-gradient(0deg, rgba(27,33,38,0.78) 0%, rgba(27,33,38,0) 34%); }
 .product-chips { position: absolute; left: 0; right: 0; bottom: clamp(24px, 3.5vw, 44px); z-index: 3; list-style: none; margin: 0 auto; padding: 0 var(--gutter); max-width: var(--wrap); display: flex; flex-wrap: wrap; gap: 10px; }
 .product-chips a { display: inline-flex; align-items: center; gap: 8px; padding: 9px 15px; border-radius: 999px; background: rgba(22,27,32,0.6); border: 1px solid rgba(255,255,255,0.16); backdrop-filter: blur(8px); color: #fff; text-decoration: none; font-size: 0.93rem; white-space: nowrap; transition: background 0.25s, border-color 0.25s, transform 0.3s var(--ease); }
 .product-chips a:hover { background: rgba(122,31,43,0.88); border-color: rgba(255,255,255,0.3); transform: translateY(-2px); }
@@ -857,7 +858,7 @@ details.table-view summary { cursor: pointer; font-weight: 600; color: var(--wat
 @keyframes chip-in { from { opacity: 0; transform: translateY(12px) scale(0.94); } to { opacity: 1; transform: none; } }
 @media (max-width: 760px) {
   .hero-land { padding-bottom: 0; }
-  .hero-land .hero-media img { object-position: 66% 60%; }
+  .hero-land .hero-media img { object-position: 60% 50%; }
   .product-chips { position: static; order: 4; padding: 18px 16px 28px; justify-content: flex-start; }
 }
 @media (prefers-reduced-motion: no-preference) {
@@ -865,4 +866,8 @@ details.table-view summary { cursor: pointer; font-weight: 600; color: var(--wat
   .hero-land .hero-media { animation: hero-fade 1.6s var(--ease) both; }
 }
 @keyframes hero-fade { from { opacity: 0; } to { opacity: 1; } }
-@media (max-width: 760px) { .hero-land .hero-media { margin-top: 28px; } }
+@media (max-width: 760px) {
+  .hero-land .hero-media { margin-top: 28px; overflow: hidden; }
+  .hero-land .hero-media img { object-position: 58% 72%; }
+  .hero-land .hero-media::after { background: linear-gradient(180deg, rgba(27,33,38,1) 0%, rgba(27,33,38,0) 40%); }
+}
