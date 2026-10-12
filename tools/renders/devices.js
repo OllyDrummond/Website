@@ -51,6 +51,55 @@ export function receiver() {
   return g;
 }
 
+function receiverScreenWide() {
+  return canvasTex(800, 600, (c, w, h) => {
+    const bg = c.createLinearGradient(0, 0, 0, h); bg.addColorStop(0, '#101a23'); bg.addColorStop(1, '#0a1016');
+    c.fillStyle = bg; c.fillRect(0, 0, w, h);
+    c.fillStyle = '#eef3f6'; c.font = '700 30px Inter'; c.fillText('House tank', 36, 58);
+    c.fillStyle = '#8b99a3'; c.font = '500 22px Inter'; c.textAlign = 'right'; c.fillText('Updated 2 min ago', w - 66, 56); c.textAlign = 'left';
+    c.fillStyle = '#3fbf7f'; c.beginPath(); c.arc(w - 42, 49, 9, 0, 7); c.fill();
+    c.fillStyle = '#22303b'; c.fillRect(36, 82, w - 72, 2);
+    // tank graphic filling to the level
+    const tx = 40, ty = 116, tw = 170, th = 250, lvl = 0.68;
+    c.save(); c.beginPath(); c.moveTo(tx, ty + 30); c.quadraticCurveTo(tx, ty, tx + tw / 2, ty); c.quadraticCurveTo(tx + tw, ty, tx + tw, ty + 30); c.lineTo(tx + tw, ty + th); c.lineTo(tx, ty + th); c.closePath();
+    c.fillStyle = '#18242e'; c.fill(); c.clip();
+    c.fillStyle = '#3d8fe0'; c.fillRect(tx, ty + th * (1 - lvl), tw, th * lvl);
+    c.fillStyle = 'rgba(255,255,255,0.12)'; for (let k = 1; k < 4; k++) c.fillRect(tx, ty + (th * k) / 4, tw, 2);
+    c.restore();
+    c.strokeStyle = '#cfdbe4'; c.lineWidth = 4; c.beginPath(); c.moveTo(tx, ty + 30); c.quadraticCurveTo(tx, ty, tx + tw / 2, ty); c.quadraticCurveTo(tx + tw, ty, tx + tw, ty + 30); c.lineTo(tx + tw, ty + th); c.lineTo(tx, ty + th); c.closePath(); c.stroke();
+    // big reading
+    c.fillStyle = '#eef3f6'; c.font = '800 128px Inter'; c.fillText('68%', 240, 228);
+    c.fillStyle = '#8b99a3'; c.font = '500 28px Inter'; c.fillText('15,000 L of 22,000 L', 246, 274);
+    // two figures
+    const stat = (x, k, v) => { c.fillStyle = '#8b99a3'; c.font = '500 22px Inter'; c.fillText(k, x, 330); c.fillStyle = '#eef3f6'; c.font = '700 38px Inter'; c.fillText(v, x, 372); };
+    stat(246, 'Days left', '23'); stat(430, 'Today', '612 L'); stat(610, 'Pump', 'Off');
+    // usage bars
+    c.fillStyle = '#22303b'; c.fillRect(36, 404, w - 72, 2);
+    c.fillStyle = '#8b99a3'; c.font = '500 22px Inter'; c.fillText('Daily use, last 7 days', 40, 444);
+    const vals = [58, 72, 49, 80, 66, 61, 75], days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    vals.forEach((v, i) => { const x = 40 + i * 104, bh = v * 1.05; c.fillStyle = i === 6 ? '#5aa6e6' : '#2c5f8c'; c.fillRect(x, 548 - bh, 70, bh);
+      c.fillStyle = '#6f7d87'; c.font = '500 18px Inter'; c.fillText(days[i], x + 28, 576); });
+  });
+}
+
+// The receiver turned on its side: wide screen, buttons left and right.
+export function receiverWide() {
+  const g = new THREE.Group();
+  const W = 1.15, H = 0.7, T = 0.3;
+  const white = mat.plastic('#eef0f0', 0.42);
+  add(g, new RoundedBoxGeometry(W, H, T, 8, 0.08), white, [0, H / 2, 0]);
+  add(g, new THREE.BoxGeometry(0.66, 0.5, 0.012), mat.plastic('#0b0d0f', 0.3), [0, H * 0.5, T / 2 + 0.002], [0, 0, 0], false);
+  const tex = receiverScreenWide();
+  const scr = new THREE.MeshPhysicalMaterial({ map: tex, emissiveMap: tex, emissive: '#ffffff', emissiveIntensity: 0.85, roughness: 0.08, clearcoat: 1, clearcoatRoughness: 0.03 });
+  add(g, new THREE.PlaneGeometry(0.62, 0.465), scr, [0, H * 0.5, T / 2 + 0.01], [0, 0, 0], false);
+  for (const x of [-0.45, 0.45]) {
+    add(g, new THREE.CylinderGeometry(0.062, 0.062, 0.03, 32), white, [x, H * 0.5, T / 2 + 0.015], [Math.PI / 2, 0, 0]);
+    const dome = new THREE.SphereGeometry(0.062, 32, 12, 0, Math.PI * 2, 0, Math.PI / 2); dome.scale(1, 0.55, 1);
+    add(g, dome, white, [x, H * 0.5, T / 2 + 0.03], [Math.PI / 2, 0, 0]);
+  }
+  return g;
+}
+
 function oledTexture() {
   return canvasTex(256, 200, (c, w, h) => {
     c.fillStyle = '#0a0c10'; c.fillRect(0, 0, w, h);

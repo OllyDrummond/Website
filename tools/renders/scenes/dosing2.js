@@ -1,15 +1,15 @@
-// Acid dosing skid (concept), after the owner's reference photo: stainless skid
-// and frame, white poly batching tank with a top-mounted mixer, control box on
-// the frame, two dosing pumps on pedestals, grey PVC pipework with ball valves,
-// ball check valves and a pulsation dampener with a gauge. Studio style matches
-// the smart filtration render.
+// Acid dosing skid (concept), version 2: stainless skid and frame, white poly
+// batching tank, a compact metering pump mounted on the tank lid (suction lance
+// into the tank, discharge line over the frame), one transfer pump with simple
+// pipework, and an LCD control panel on the side of the frame. Studio style
+// matches the smart filtration render.
 import { studio, THREE, mat, add, tube, canvasTex, contactShadow, rectShadow } from '../studio.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
 export default function () {
   const q = new URLSearchParams(location.search);
   const S = studio({ w: +(q.get('w') || 1600), h: +(q.get('h') || 1200), bg: '#e7eaec', floor: '#e4e7e9', fogNear: 30, fogFar: 60,
-    cam: [5.9, 5.0, 14.6], target: [0.55, 2.7, 0], fov: 29, aperture: 0.03, softness: 1.4,
+    cam: [6.8, 5.2, 14.0], target: [0.85, 2.55, 0], fov: 29, aperture: 0.03, softness: 1.4,
     key: [5, 11, 8], keyIntensity: 2.3, envIntensity: 0.7, fillIntensity: 0.38, shadowSize: 7, samples: +(q.get('n') || 48) });
 
   const steel = mat.metal('#cdd3d7', 0.24);
@@ -17,21 +17,21 @@ export default function () {
   const maroon = mat.plastic('#8a2433', 0.35);
   const blue = mat.plastic('#2a62a8', 0.35);
   const black = mat.plastic('#1d2125', 0.45);
+  const white = mat.plastic('#eef0f1', 0.42);
   const tankMat = new THREE.MeshPhysicalMaterial({ color: '#f3f2ee', roughness: 0.55, clearcoat: 0.2, sheen: 0.4, sheenColor: '#ffffff' });
+  const hose = new THREE.MeshPhysicalMaterial({ color: '#f1ead8', roughness: 0.35, transmission: 0.25, thickness: 0.1 });
 
   const bar = (a, b, s = 0.11) => {
     const d = new THREE.Vector3(...b).sub(new THREE.Vector3(...a)), len = d.length();
     const m = add(S.scene, new THREE.BoxGeometry(s, len, s), steel, [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2]);
     m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize());
   };
-  const pipe = (pts, r = 0.07) => tube(S.scene, pts, r, pvc, 160);
-  const straight = (a, b, r = 0.07) => {
+  const straight = (a, b, r = 0.07, m = pvc) => {
     const d = new THREE.Vector3(...b).sub(new THREE.Vector3(...a)), len = d.length();
-    const m = add(S.scene, new THREE.CylinderGeometry(r, r, len, 24), pvc, [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2]);
-    m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize());
+    const o = add(S.scene, new THREE.CylinderGeometry(r, r, len, 24), m, [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2]);
+    o.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize());
   };
   const elbow = (p) => add(S.scene, new THREE.SphereGeometry(0.09, 20, 12), pvc, p);
-  // Ball valve on a pipe running along axis ('x' | 'y' | 'z'), red handle
   const ballValve = (p, axis = 'x') => {
     const rot = axis === 'x' ? [0, 0, Math.PI / 2] : axis === 'z' ? [Math.PI / 2, 0, 0] : [0, 0, 0];
     add(S.scene, new THREE.CylinderGeometry(0.11, 0.11, 0.34, 24), pvc, p, rot);
@@ -39,8 +39,7 @@ export default function () {
     add(S.scene, new THREE.CylinderGeometry(0.035, 0.035, 0.12, 12), pvc, [p[0], p[1] + 0.15, p[2]]);
     add(S.scene, new RoundedBoxGeometry(axis === 'x' ? 0.34 : 0.08, 0.05, axis === 'x' ? 0.08 : 0.34, 2, 0.02), maroon, [p[0], p[1] + 0.22, p[2]]);
   };
-  // True-union ball check valve: ribbed sphere with unions
-  const checkValve = (p) => {
+  const checkValve = (p) => { // (unused now; kept for vertical risers)
     add(S.scene, new THREE.SphereGeometry(0.2, 32, 20), maroon, p);
     for (let k = 0; k < 6; k++) add(S.scene, new THREE.TorusGeometry(0.2, 0.014, 6, 32), maroon, p, [0, (k * Math.PI) / 6, 0]);
     for (const s of [-1, 1]) add(S.scene, new THREE.CylinderGeometry(0.12, 0.12, 0.08, 24), maroon, [p[0], p[1] + s * 0.24, p[2]]);
@@ -51,7 +50,6 @@ export default function () {
   for (const z of [-Z, Z]) bar([-X, by, z], [X, by, z], 0.14);
   for (const x of [-X, X, -1.0, 1.0]) bar([x, by, -Z], [x, by, Z], 0.14);
   for (const x of [-X, X]) for (const z of [-Z, Z]) add(S.scene, new THREE.BoxGeometry(0.2, 0.25, 0.2), steel, [x, 0.125, z]);
-  // tank stand
   for (const z of [-0.9, 0.9]) bar([-1.3, 0.62, z], [1.3, 0.62, z], 0.12);
   for (const x of [-1.3, 1.3]) for (const z of [-0.9, 0.9]) bar([x, by, z], [x, 0.62, z], 0.1);
 
@@ -62,7 +60,6 @@ export default function () {
     for (const z of [-fz, fz]) bar([-fx, y, z], [fx, y, z]);
     for (const x of [-fx, fx]) bar([x, y, -fz], [x, y, fz]);
   }
-  bar([-fx, 3.1, fz], [fx, 3.1, fz], 0.09);
 
   // ---- tank ----
   const tr = 1.42, tb = 0.68, th = 3.45;
@@ -70,94 +67,97 @@ export default function () {
   add(S.scene, new THREE.CylinderGeometry(tr * 0.92, tr, 0.22, 72), tankMat, [0, tb + th + 0.11, 0]);
   add(S.scene, new THREE.CylinderGeometry(0.62, 0.62, 0.08, 48), tankMat, [0, tb + th + 0.26, 0]);
   for (const y of [1.6, 2.6, 3.5]) add(S.scene, new THREE.TorusGeometry(tr + 0.005, 0.012, 6, 72), mat.plastic('#e6e5e0', 0.6), [0, y, 0], [Math.PI / 2, 0, 0]);
-  const lvl = canvasTex(64, 512, (c, w, h) => { c.fillStyle = 'rgba(0,0,0,0)'; c.clearRect(0, 0, w, h); c.fillStyle = '#5b6268';
+  const lvl = canvasTex(64, 512, (c, w, h) => { c.clearRect(0, 0, w, h); c.fillStyle = '#5b6268';
     for (let k = 0; k <= 10; k++) { const y = 20 + k * 47; c.fillRect(0, y, k % 5 ? 22 : 40, 4); } });
   add(S.scene, new THREE.PlaneGeometry(0.16, 1.3), new THREE.MeshStandardMaterial({ map: lvl, transparent: true }), [0.78, 2.4, Math.sqrt(tr * tr - 0.78 * 0.78) + 0.01], [0, Math.atan2(0.78, Math.sqrt(tr * tr - 0.6)), 0], false);
 
-  // ---- mixer on the lid ----
+  // ---- metering pump on the lid ----
   const ty = tb + th + 0.3;
-  add(S.scene, new THREE.BoxGeometry(1.1, 0.08, 0.5), steel, [0, ty + 0.04, 0]);
-  add(S.scene, new THREE.CylinderGeometry(0.22, 0.26, 0.4, 32), mat.plastic('#6d7378', 0.4), [0, ty + 0.28, 0]);
-  add(S.scene, new THREE.CylinderGeometry(0.27, 0.27, 0.7, 32), mat.plastic('#6d7378', 0.4), [0, ty + 0.83, 0]);
-  for (let k = 0; k < 14; k++) { const a = (k / 14) * Math.PI * 2; add(S.scene, new THREE.BoxGeometry(0.03, 0.62, 0.06), mat.plastic('#62686d', 0.45), [Math.cos(a) * 0.28, ty + 0.83, Math.sin(a) * 0.28], [0, -a, 0]); }
-  add(S.scene, new THREE.CylinderGeometry(0.25, 0.27, 0.16, 32), mat.plastic('#585e63', 0.5), [0, ty + 1.26, 0]);
-  add(S.scene, new RoundedBoxGeometry(0.26, 0.2, 0.22, 2, 0.03), mat.plastic('#6d7378', 0.4), [0.3, ty + 0.95, 0]);
+  const dp = new THREE.Group(); dp.position.set(-0.15, ty, 0.1); dp.rotation.y = 0.35; S.scene.add(dp);
+  add(dp, new THREE.BoxGeometry(1.3, 0.06, 0.8), steel, [0, 0.03, 0]);
+  add(dp, new RoundedBoxGeometry(1.0, 0.7, 0.62, 6, 0.1), white, [-0.1, 0.41, 0]);
+  add(dp, new THREE.BoxGeometry(1.0, 0.04, 0.63), mat.plastic('#8a2433', 0.4), [-0.1, 0.2, 0]);
+  // diaphragm dosing head on the right-hand end
+  add(dp, new THREE.CylinderGeometry(0.27, 0.27, 0.22, 40), maroon, [0.5, 0.42, 0], [0, 0, Math.PI / 2]);
+  add(dp, new THREE.CylinderGeometry(0.21, 0.24, 0.1, 40), maroon, [0.65, 0.42, 0], [0, 0, Math.PI / 2]);
+  for (let k = 0; k < 6; k++) { const a = (k / 6) * Math.PI * 2; add(dp, new THREE.CylinderGeometry(0.025, 0.025, 0.05, 10), mat.metal('#dfe4e8', 0.2), [0.71, 0.42 + Math.cos(a) * 0.17, Math.sin(a) * 0.17], [0, 0, Math.PI / 2]); }
+  // inlet (bottom) and outlet (top) fittings on the head
+  add(dp, new THREE.CylinderGeometry(0.05, 0.05, 0.16, 16), mat.plastic('#e8e3d6', 0.4), [0.62, 0.72, 0]);
+  add(dp, new THREE.CylinderGeometry(0.05, 0.05, 0.16, 16), mat.plastic('#e8e3d6', 0.4), [0.62, 0.12, 0]);
+  // stroke-rate knob and status lights on the front face
+  add(dp, new THREE.CylinderGeometry(0.11, 0.11, 0.07, 32), black, [-0.25, 0.46, 0.33], [Math.PI / 2, 0, 0]);
+  add(dp, new THREE.BoxGeometry(0.03, 0.12, 0.02), mat.plastic('#e7eaec', 0.4), [-0.25, 0.49, 0.37]);
+  add(dp, new THREE.CylinderGeometry(0.03, 0.03, 0.02, 16), mat.glow('#3fbf7f', 2), [0.05, 0.56, 0.315], [Math.PI / 2, 0, 0], false);
+  add(dp, new THREE.CylinderGeometry(0.03, 0.03, 0.02, 16), mat.glow('#e0a043', 0.3), [0.15, 0.56, 0.315], [Math.PI / 2, 0, 0], false);
+  const lg = canvasTex(256, 64, (c) => { c.fillStyle = '#eef0f1'; c.fillRect(0, 0, 256, 64); c.fillStyle = '#7a1f2b'; c.font = '800 40px Inter'; c.fillText('KINETIQ', 20, 46); });
+  add(dp, new THREE.PlaneGeometry(0.36, 0.09), new THREE.MeshStandardMaterial({ map: lg }), [0.05, 0.32, 0.312], [0, 0, 0], false);
+  dp.updateMatrixWorld(true);
+  const W = (x, y, z) => { const v = dp.localToWorld(new THREE.Vector3(x, y, z)); return [v.x, v.y, v.z]; };
+  // suction lance: from the head inlet down through the lid
+  const inl = W(0.62, 0.05, 0);
+  tube(S.scene, [inl, [inl[0] + 0.05, ty - 0.02, inl[2] + 0.1], [inl[0] - 0.1, ty - 0.1, inl[2] + 0.25]], 0.045, hose);
+  add(S.scene, new THREE.CylinderGeometry(0.1, 0.1, 0.08, 24), pvc, [inl[0] - 0.12, ty - 0.08, inl[2] + 0.28]);
+  // discharge: from the head outlet over the frame and down the right-hand side
+  const out = W(0.62, 0.8, 0);
+  tube(S.scene, [out, [out[0] + 0.1, out[1] + 0.45, out[2]], [1.3, top + 0.6, -0.5], [fx + 0.1, top + 0.15, -1.1], [fx + 0.2, 3.3, -1.25], [fx + 0.25, 2.6, -1.3]], 0.045, hose);
+  // injection fitting where the line leaves the skid
+  add(S.scene, new THREE.CylinderGeometry(0.08, 0.08, 0.22, 20), maroon, [fx + 0.25, 2.45, -1.3]);
+  straight([fx + 0.25, 2.34, -1.3], [fx + 1.4, 2.34, -1.3], 0.07);
+  // small level sensor on the lid
+  add(S.scene, new THREE.CylinderGeometry(0.16, 0.16, 0.25, 32), mat.plastic('#6d7378', 0.4), [0.75, ty + 0.12, -0.55]);
+  add(S.scene, new THREE.CylinderGeometry(0.06, 0.06, 0.12, 16), black, [0.75, ty + 0.3, -0.55]);
 
-  // ---- control box on the left of the frame ----
-  const cb = new THREE.Group(); cb.position.set(-2.05, 3.4, 1.0); cb.rotation.y = 0; S.scene.add(cb);
-  add(cb, new RoundedBoxGeometry(1.5, 1.85, 0.55, 4, 0.04), mat.plastic('#eceef0', 0.5), [-0.2, 0, 0.1]);
-  add(cb, new RoundedBoxGeometry(1.42, 1.77, 0.04, 3, 0.015), mat.plastic('#f2f4f5', 0.45), [-0.2, 0, 0.39]);
-  const hmi = canvasTex(512, 300, (c, w, h) => { c.fillStyle = '#0d1419'; c.fillRect(0, 0, w, h);
-    c.fillStyle = '#8b99a3'; c.font = '500 30px Inter'; c.fillText('AM wash  06:12', 26, 52);
-    c.fillStyle = '#eef3f6'; c.font = '800 92px Inter'; c.fillText('pH 2.4', 22, 150);
-    c.fillStyle = '#3fbf7f'; c.font = '700 32px Inter'; c.fillText('Dosed 180 mL', 26, 205);
-    c.fillStyle = '#2f6fa8'; c.fillRect(26, 236, 460, 20); c.fillStyle = '#5aa6e6'; c.fillRect(26, 236, 300, 20); });
-  add(cb, new THREE.PlaneGeometry(0.86, 0.5), new THREE.MeshStandardMaterial({ map: hmi, emissiveMap: hmi, emissive: '#fff', emissiveIntensity: 0.9, roughness: 0.15 }), [-0.2, 0.42, 0.415], [0, 0, 0], false);
-  add(cb, new THREE.PlaneGeometry(0.92, 0.56), mat.plastic('#22272b', 0.3), [-0.2, 0.42, 0.413], [0, 0, 0], false);
-  for (let i = 0; i < 3; i++) {
-    const x = -0.6 + i * 0.4;
-    add(cb, new THREE.CylinderGeometry(0.075, 0.075, 0.06, 24), mat.glow(i === 0 ? '#3fbf7f' : '#2f9d63', i === 0 ? 1.6 : 0.4), [x, -0.18, 0.43], [Math.PI / 2, 0, 0]);
-    add(cb, new THREE.CylinderGeometry(0.09, 0.09, 0.03, 24), mat.metal('#b9c0c5', 0.3), [x, -0.18, 0.41], [Math.PI / 2, 0, 0]);
-    add(cb, new THREE.CylinderGeometry(0.08, 0.08, 0.05, 24), black, [x, -0.55, 0.43], [Math.PI / 2, 0, 0]);
-    add(cb, new THREE.BoxGeometry(0.035, 0.12, 0.06), black, [x, -0.55, 0.47], [0, 0, 0.5]);
+  // ---- LCD control panel on the right side of the frame ----
+  const lp = new THREE.Group(); lp.position.set(fx + 0.12, 3.05, 0.15); lp.rotation.y = Math.PI / 2 - 0.62; S.scene.add(lp);
+  add(lp, new RoundedBoxGeometry(1.5, 1.05, 0.22, 5, 0.06), white, [0, 0, 0]);
+  add(lp, new THREE.PlaneGeometry(1.12, 0.7), mat.plastic('#1b2025', 0.3), [-0.08, 0.04, 0.112], [0, 0, 0], false);
+  const hmi = canvasTex(640, 400, (c, w, h) => {
+    c.fillStyle = '#0d1419'; c.fillRect(0, 0, w, h);
+    c.fillStyle = '#eef3f6'; c.font = '700 30px Inter'; c.fillText('Acid dosing', 28, 50);
+    c.fillStyle = '#3fbf7f'; c.beginPath(); c.arc(w - 36, 42, 9, 0, 7); c.fill();
+    c.fillStyle = '#8b99a3'; c.font = '500 22px Inter'; c.textAlign = 'right'; c.fillText('Auto', w - 56, 50); c.textAlign = 'left';
+    c.fillStyle = '#eef3f6'; c.font = '800 104px Inter'; c.fillText('pH 2.4', 26, 168);
+    c.fillStyle = '#8b99a3'; c.font = '500 24px Inter'; c.fillText('Target 2.5', 32, 208);
+    const st = (x, k, v) => { c.fillStyle = '#8b99a3'; c.font = '500 22px Inter'; c.fillText(k, x, 264); c.fillStyle = '#eef3f6'; c.font = '700 34px Inter'; c.fillText(v, x, 304); };
+    st(30, 'Last dose', '180 mL'); st(250, 'Next wash', '15:30'); st(460, 'Tank', '72%');
+    c.fillStyle = '#22303b'; c.fillRect(30, 340, w - 60, 18); c.fillStyle = '#5aa6e6'; c.fillRect(30, 340, (w - 60) * 0.72, 18);
+  });
+  add(lp, new THREE.PlaneGeometry(1.06, 0.66), new THREE.MeshStandardMaterial({ map: hmi, emissiveMap: hmi, emissive: '#fff', emissiveIntensity: 0.9, roughness: 0.12 }), [-0.08, 0.04, 0.114], [0, 0, 0], false);
+  for (const [y, c, k] of [[0.26, '#3fbf7f', 1.6], [0.0, '#e0a043', 0.3], [-0.26, '#b42318', 0.3]]) {
+    add(lp, new THREE.CylinderGeometry(0.055, 0.055, 0.04, 24), mat.glow(c, k), [0.62, y, 0.12], [Math.PI / 2, 0, 0]);
   }
-  add(cb, new THREE.CylinderGeometry(0.04, 0.04, 0.05, 16), mat.metal('#9aa2a7', 0.3), [0.38, -0.32, 0.43], [Math.PI / 2, 0, 0]);
-  const lg = canvasTex(256, 64, (c) => { c.fillStyle = '#f2f4f5'; c.fillRect(0, 0, 256, 64); c.fillStyle = '#7a1f2b'; c.font = '800 40px Inter'; c.fillText('KINETIQ', 20, 46); });
-  add(cb, new THREE.PlaneGeometry(0.4, 0.1), new THREE.MeshStandardMaterial({ map: lg }), [-0.2, -0.78, 0.415], [0, 0, 0], false);
+  for (const z of [-0.35, 0.35]) add(S.scene, new THREE.BoxGeometry(0.1, 0.9, 0.08), steel, [fx + 0.03, 3.05, 0.15 + z * 0.4]);
 
-  // ---- dosing pumps on pedestals ----
-  const pumps = [[-1.95, 1.05], [1.95, 1.05]];
-  for (const [px, pz] of pumps) {
-    add(S.scene, new THREE.BoxGeometry(0.75, 0.6, 0.75), steel, [px, by + 0.37, pz]);
-    const p0 = by + 0.67;
-    add(S.scene, new THREE.CylinderGeometry(0.34, 0.34, 0.48, 40), blue, [px, p0 + 0.34, pz], [Math.PI / 2, 0, 0]);
-    add(S.scene, new THREE.CylinderGeometry(0.28, 0.32, 0.12, 40), blue, [px, p0 + 0.34, pz + 0.3], [Math.PI / 2, 0, 0]);
-    for (let k = 0; k < 6; k++) { const a = (k / 6) * Math.PI * 2; add(S.scene, new THREE.CylinderGeometry(0.03, 0.03, 0.05, 12), mat.metal('#dfe4e8', 0.2), [px + Math.cos(a) * 0.24, p0 + 0.34 + Math.sin(a) * 0.24, pz + 0.37], [Math.PI / 2, 0, 0]); }
-    add(S.scene, new RoundedBoxGeometry(0.62, 0.7, 0.62, 4, 0.08), black, [px, p0 + 0.98, pz - 0.05]);
-    for (let k = 0; k < 7; k++) add(S.scene, new THREE.BoxGeometry(0.64, 0.025, 0.64), mat.plastic('#262b30', 0.5), [px, p0 + 0.72 + k * 0.08, pz - 0.05]);
-    add(S.scene, new THREE.CylinderGeometry(0.24, 0.24, 0.14, 32), black, [px, p0 + 1.38, pz - 0.05]);
-    const lbl = canvasTex(128, 64, (c) => { c.fillStyle = '#1d2125'; c.fillRect(0, 0, 128, 64); c.fillStyle = '#dfe4e8'; c.font = '700 28px Inter'; c.fillText(px < 0 ? 'P1' : 'P2', 40, 42); });
-    add(S.scene, new THREE.PlaneGeometry(0.22, 0.11), new THREE.MeshStandardMaterial({ map: lbl }), [px, p0 + 1.1, pz + 0.265], [0, 0, 0], false);
-  }
-
-  // ---- pipework ----
-  // suction: tank outlet at the bottom front, manifold to both pumps
+  // ---- one transfer pump on a pedestal, simple pipework ----
+  const px = 1.75, pz = 1.05;
+  add(S.scene, new THREE.BoxGeometry(0.75, 0.6, 0.75), steel, [px, by + 0.37, pz]);
+  const p0 = by + 0.67;
+  add(S.scene, new THREE.CylinderGeometry(0.34, 0.34, 0.48, 40), blue, [px, p0 + 0.34, pz], [Math.PI / 2, 0, 0]);
+  add(S.scene, new THREE.CylinderGeometry(0.28, 0.32, 0.12, 40), blue, [px, p0 + 0.34, pz + 0.3], [Math.PI / 2, 0, 0]);
+  for (let k = 0; k < 6; k++) { const a = (k / 6) * Math.PI * 2; add(S.scene, new THREE.CylinderGeometry(0.03, 0.03, 0.05, 12), mat.metal('#dfe4e8', 0.2), [px + Math.cos(a) * 0.24, p0 + 0.34 + Math.sin(a) * 0.24, pz + 0.37], [Math.PI / 2, 0, 0]); }
+  add(S.scene, new RoundedBoxGeometry(0.62, 0.7, 0.62, 4, 0.08), black, [px, p0 + 0.98, pz - 0.05]);
+  for (let k = 0; k < 7; k++) add(S.scene, new THREE.BoxGeometry(0.64, 0.025, 0.64), mat.plastic('#262b30', 0.5), [px, p0 + 0.72 + k * 0.08, pz - 0.05]);
+  add(S.scene, new THREE.CylinderGeometry(0.24, 0.24, 0.14, 32), black, [px, p0 + 1.38, pz - 0.05]);
+  // tank outlet -> valve -> pump inlet
   const sy = 0.5, sz = 1.6;
-  straight([0, 0.95, 1.3], [0, sy, 1.3]); straight([0, sy, 1.3], [0, sy, sz]); elbow([0, sy, sz]); elbow([0, sy, 1.3]);
-  straight([-1.95, sy, sz], [1.95, sy, sz]);
-  ballValve([-0.75, sy, sz], 'x'); ballValve([0.75, sy, sz], 'x'); ballValve([0, 0.75, 1.3], 'y');
-  for (const [px] of pumps) { elbow([px, sy, sz]); straight([px, sy, sz], [px, 1.01, sz]); elbow([px, 1.01, sz]); straight([px, 1.01, sz], [px, 1.01, 1.35]); }
+  straight([0, 0.95, 1.3], [0, sy, 1.3]); elbow([0, sy, 1.3]); straight([0, sy, 1.3], [0, sy, sz]); elbow([0, sy, sz]);
+  ballValve([0, 0.75, 1.3], 'y');
+  straight([0, sy, sz], [px, sy, sz]); ballValve([0.85, sy, sz], 'x'); elbow([px, sy, sz]);
+  straight([px, sy, sz], [px, p0 + 0.34, sz]); elbow([px, p0 + 0.34, sz]); straight([px, p0 + 0.34, sz], [px, p0 + 0.34, pz + 0.36]);
   // drain
-  straight([0, sy, sz], [0, sy, sz + 0.35]); ballValve([0, sy, sz + 0.2], 'z');
-  // discharge: from each pump head up the frame front to a header, check valves, dampener
-  const hy = 2.32, hz = 1.62;
-  for (const [px] of pumps) {
-    const sx = px < 0 ? px + 0.42 : px - 0.42;
-    pipe([[px, 1.01 + 0.34, 1.3], [sx, 1.45, 1.45], [sx, 1.85, hz], [sx, hy, hz]]);
-    elbow([sx, hy, hz]);
-  }
-  straight([-1.53, hy, hz], [1.53, hy, hz]);
-  ballValve([-0.95, hy, hz], 'x'); ballValve([0.95, hy, hz], 'x');
-  // risers with check valves
-  for (const x of [-0.7, 0.6]) { elbow([x, hy, hz]); straight([x, hy, hz], [x, 3.55, hz]); checkValve([x, 3.1, hz]); elbow([x, 3.55, hz]); }
-  straight([-0.7, 3.55, hz], [2.9, 3.55, hz]);
-  add(S.scene, new THREE.CylinderGeometry(0.14, 0.14, 0.06, 24), pvc, [2.9, 3.55, hz], [0, 0, Math.PI / 2]);
-  // dampener with gauge
-  straight([1.45, 3.55, hz], [1.45, 3.75, hz]);
-  add(S.scene, new THREE.CylinderGeometry(0.34, 0.2, 0.22, 32), maroon, [1.45, 3.84, hz]);
-  add(S.scene, new THREE.CylinderGeometry(0.2, 0.34, 0.22, 32), maroon, [1.45, 4.06, hz]);
-  for (let k = 0; k < 8; k++) { const a = (k / 8) * Math.PI * 2; add(S.scene, new THREE.CylinderGeometry(0.025, 0.025, 0.08, 10), mat.metal('#d6dbdf', 0.25), [1.45 + Math.cos(a) * 0.3, 3.95, hz + Math.sin(a) * 0.3]); }
-  add(S.scene, new THREE.CylinderGeometry(0.04, 0.04, 0.3, 16), mat.metal('#d6dbdf', 0.25), [1.45, 4.3, hz]);
-  const face = canvasTex(256, 256, (c) => { c.fillStyle = '#fff'; c.beginPath(); c.arc(128, 128, 124, 0, 7); c.fill(); c.strokeStyle = '#333'; c.lineWidth = 4;
-    for (let k = 0; k <= 10; k++) { const a = Math.PI * 0.75 + k * Math.PI * 0.15; c.beginPath(); c.moveTo(128 + Math.cos(a) * 100, 128 + Math.sin(a) * 100); c.lineTo(128 + Math.cos(a) * 115, 128 + Math.sin(a) * 115); c.stroke(); }
-    c.strokeStyle = '#9b2335'; c.lineWidth = 7; const a = Math.PI * 0.75 + 0.45 * Math.PI * 1.5; c.beginPath(); c.moveTo(128, 128); c.lineTo(128 + Math.cos(a) * 92, 128 + Math.sin(a) * 92); c.stroke(); });
-  add(S.scene, new THREE.CylinderGeometry(0.24, 0.24, 0.1, 40), mat.metal('#c8ced1', 0.25), [1.45, 4.6, hz], [Math.PI / 2, 0, 0]);
-  add(S.scene, new THREE.CircleGeometry(0.2, 40), new THREE.MeshStandardMaterial({ map: face, roughness: 0.3 }), [1.45, 4.6, hz + 0.052], [0, 0, 0], false);
-  // ---- cables ----
+  straight([0, sy, sz], [-0.6, sy, sz]); ballValve([-0.35, sy, sz], 'x');
+  // pump outlet -> check valve -> out of the skid
+  const oy = p0 + 0.34;
+  straight([px + 0.2, oy, pz], [3.3, oy, pz]);
+  add(S.scene, new THREE.SphereGeometry(0.2, 32, 20), maroon, [2.75, oy, pz]);
+  for (let k = 0; k < 6; k++) add(S.scene, new THREE.TorusGeometry(0.2, 0.014, 6, 32), maroon, [2.75, oy, pz], [(k * Math.PI) / 6, 0, Math.PI / 2]);
+  for (const s2 of [-1, 1]) add(S.scene, new THREE.CylinderGeometry(0.12, 0.12, 0.08, 24), maroon, [2.75 + s2 * 0.24, oy, pz], [0, 0, Math.PI / 2]);
+  add(S.scene, new THREE.CylinderGeometry(0.14, 0.14, 0.06, 24), pvc, [3.3, oy, pz], [0, 0, Math.PI / 2]);
+
+  // ---- cables from the panel ----
   const cable = new THREE.MeshStandardMaterial({ color: '#15181b', roughness: 0.7 });
-  tube(S.scene, [[-2.0, 4.3, 0.9], [-1.8, 4.8, 0.5], [-0.8, 5.2, 0.2], [-0.05, 5.15, 0.05], [0, ty + 1.05, 0.3]], 0.045, cable);
-  tube(S.scene, [[-2.3, 2.5, 1.0], [-2.4, 2.0, 0.9], [-2.2, 1.6, 0.6], [-1.95, 1.75, 0.6]], 0.04, cable);
-  tube(S.scene, [[-1.7, 2.5, 1.0], [-0.6, 1.5, 1.2], [1.0, 1.4, 1.3], [1.7, 1.55, 0.95], [1.9, 1.85, 0.6]], 0.04, cable);
+  tube(S.scene, [[fx + 0.1, 3.55, 0.0], [fx - 0.1, top + 0.15, -0.3], [0.8, top + 0.5, -0.4], [-0.3, ty + 0.45, -0.3]], 0.04, cable);
+  tube(S.scene, [[fx + 0.1, 2.55, 0.1], [fx + 0.05, 2.0, 0.4], [px + 0.25, p0 + 1.2, pz - 0.2]], 0.04, cable);
 
   rectShadow(S.scene, 5.1, 3.3, 0.45, 0.35, [0, 0.004, 0]);
   contactShadow(S.scene, 10, 6, 0.25, [0, 0.003, 0.2]);
