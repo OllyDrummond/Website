@@ -16,6 +16,8 @@ Then convert to WebP into `assets/img/renders/`. Edit a scene file to change mod
 
 | Scene | Output | What it shows |
 |---|---|---|
+| `tankset` (`?p=3`) | `tank-monitor.webp` | Homepage card: tank unit, coiled cable and probe, receiver and phone. Run `finish.py` on the PNG first |
+| `dosing2` | `dosing.webp` | Acid dosing skid concept. Run `finish.py` on the PNG first |
 | `pcbhero` | `pcb-hero.webp` | Homepage hero: blue circuit board to a glowing horizon. Also exports trace paths for the pulse animation (see below) |
 | `nzhero` | `tank-top.webp` | Monitor on the lid of a green poly tank, NZ farmland and ranges behind |
 | `nzwide` | `nz-farm.webp` | Poly tank in a paddock with fence, cabbage trees and ranges |
@@ -40,3 +42,5 @@ The `pcbhero` scene projects its visible traces into image pixels (`window.trace
 node render.mjs pcbhero "w=2400&h=1100&n=48"   # use a runner that also writes out/pcbhero.traces.json
 python3 pcb_traces.py                          # writes assets/js/pcb-traces.js
 ```
+
+`finish.py in.png out.png` adds the subtle vignette and grain used on the product shots.
