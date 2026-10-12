@@ -4,14 +4,13 @@
 // keys and a teal OK key, and a memory cartridge slot. Dark studio to match
 // the other service images.
 import { studio, THREE, mat, add, canvasTex, rectShadow } from '../studio.js';
+import { SERVICE_STUDIO } from '../service-studio.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
 export default function () {
   const q = new URLSearchParams(location.search);
-  const S = studio({ w: +(q.get('w') || 1600), h: +(q.get('h') || 1000), bg: '#161b20', floor: '#1d2329', fogNear: 9, fogFar: 22,
-    cam: [2.6, 2.5, 7.6], target: [0.15, 1.4, 0], fov: 30, aperture: 0.035, softness: 1.2,
-    key: [3, 8, 6], keyIntensity: 2.7, rim: [-5, 4, -4], rimIntensity: 2.6, rimColor: '#8fc2ff',
-    envIntensity: 0.6, fillIntensity: 0.2, shadowSize: 5, samples: +(q.get('n') || 56) });
+  const S = studio({ ...SERVICE_STUDIO, w: +(q.get('w') || 1600), h: +(q.get('h') || 1000),
+    cam: [2.6, 2.5, 7.6], target: [0.35, 1.4, 0], aperture: 0.03, key: [3, 8, 6], samples: +(q.get('n') || 56) });
 
   const body = new THREE.MeshPhysicalMaterial({ color: '#33383d', roughness: 0.55, clearcoat: 0.15 });
   const bodyDark = new THREE.MeshPhysicalMaterial({ color: '#2a2e33', roughness: 0.6 });

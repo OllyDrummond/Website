@@ -1,7 +1,7 @@
 import { studio, THREE, mat, add, gearGeo } from '../studio.js';
+import { SERVICE_STUDIO } from '../service-studio.js';
 export default function () {
-  const S = studio({ w: 1600, h: 1000, bg: '#161b20', floor: '#1d2329', fogNear: 8, fogFar: 22, cam: [0.8, 3.4, 6.2], target: [0.2, 0.7, 0], fov: 30,
-    aperture: 0.08, softness: 1.0, key: [3, 7, 3], keyIntensity: 2.8, rim: [-5, 3, -4], rimIntensity: 2.4, envIntensity: 0.45, fillIntensity: 0.15, shadowSize: 5, samples: 56 });
+  const S = studio({ ...SERVICE_STUDIO, w: 1600, h: 1000, cam: [0.8, 3.4, 6.2], target: [0.2, 0.7, 0], aperture: 0.08, samples: 56 });
   const steel = mat.metal('#c4cacd', 0.32);
   const maroon = new THREE.MeshStandardMaterial({ color: '#7a1f2b', metalness: 0.7, roughness: 0.35 });
   // base plate
