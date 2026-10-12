@@ -16,6 +16,7 @@ Then convert to WebP into `assets/img/renders/`. Edit a scene file to change mod
 
 | Scene | Output | What it shows |
 |---|---|---|
+| `pcbhero` | `pcb-hero.webp` | Homepage hero: blue circuit board to a glowing horizon. Also exports trace paths for the pulse animation (see below) |
 | `nzhero` | `tank-top.webp` | Monitor on the lid of a green poly tank, NZ farmland and ranges behind |
 | `nzwide` | `nz-farm.webp` | Poly tank in a paddock with fence, cabbage trees and ranges |
 | `unit3` | `unit.webp` | Studio shot of the tank unit, cable and probe |
@@ -29,4 +30,13 @@ Then convert to WebP into `assets/img/renders/`. Edit a scene file to change mod
 
 ```bash
 mkdir -p out && node render.mjs nzhero "w=2400&h=1300&n=32"   # n = samples per pixel
+```
+
+### Homepage hero pulses
+
+The `pcbhero` scene projects its visible traces into image pixels (`window.traces`). Save them with the render, then pick the ones the site animates:
+
+```bash
+node render.mjs pcbhero "w=2400&h=1100&n=48"   # use a runner that also writes out/pcbhero.traces.json
+python3 pcb_traces.py                          # writes assets/js/pcb-traces.js
 ```

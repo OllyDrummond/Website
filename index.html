@@ -34,8 +34,16 @@
 
   <main id="main">
     <section class="hero hero-land on-dark" aria-labelledby="hero-title">
-      <div class="hero-media"><img src="assets/img/photos/nz-southland.webp" srcset="assets/img/photos/nz-southland-1200.webp 1200w, assets/img/photos/nz-southland.webp 2400w" sizes="100vw" alt="Sheep grazing on green paddocks in Southland, New Zealand, with bush-clad ranges and low cloud behind" width="2400" height="1100" fetchpriority="high" decoding="async"></div>
-      <p class="photo-credit">Photo: <a href="https://commons.wikimedia.org/wiki/File:Field_in_Southland,_New_Zealand.jpg" rel="noopener">Pedro Szekely</a>, <a href="https://creativecommons.org/licenses/by-sa/2.0/" rel="noopener license">CC BY-SA 2.0</a></p>
+      <div class="hero-media hero-pcb">
+        <div class="pcb-stage">
+          <img src="assets/img/renders/pcb-hero.webp" srcset="assets/img/renders/pcb-hero-1200.webp 1200w, assets/img/renders/pcb-hero.webp 2400w" sizes="100vw" alt="Close-up of a blue circuit board with chips, capacitors and traces running to a glowing horizon" width="2400" height="1100" fetchpriority="high" decoding="async">
+          <svg class="pcb-pulses" viewBox="0 0 2400 1100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <defs><radialGradient id="pcb-horizon"><stop offset="0" stop-color="#8cc8ff" stop-opacity="0.55"/><stop offset="1" stop-color="#3d8fe6" stop-opacity="0"/></radialGradient></defs>
+            <ellipse class="pcb-glow" cx="1250" cy="245" rx="1300" ry="110" fill="url(#pcb-horizon)"/>
+          </svg>
+        </div>
+        <button class="motion-toggle" type="button" aria-pressed="false" hidden><svg class="ic-pause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg><svg class="ic-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg><span>Pause animation</span></button>
+      </div>
       <div class="wrap">
         <div class="hero-copy">
         <p data-e="1" class="kicker" data-reveal>Mechatronics engineering, made in New Zealand</p>
@@ -231,6 +239,8 @@
   </footer>
 
   <script src="assets/js/main.js"></script>
+  <script src="assets/js/pcb-traces.js"></script>
+  <script src="assets/js/pcb-hero.js"></script>
   <script src="assets/js/editor.js" defer></script>
 </body>
 </html>

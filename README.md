@@ -6,7 +6,7 @@ A static website (plain HTML, CSS and JavaScript, no build step needed to view i
 
 | File | What it is |
 |---|---|
-| `index.html` | Home: NZ farm photo hero (Southland) with product links, product grid, services, about us, contact. The product line-up render (`lineup.webp`) is kept for a quick swap back |
+| `index.html` | Home: animated circuit-board hero (3D render with light pulses along its traces) with product links, product grid, services, about us, contact. The product line-up render (`lineup.webp`) is kept for a quick swap back |
 | `services.html` | Custom machine design, electronics & PCB, PLC programming, automation & control, install & maintenance |
 | `projects.html` | Projects with filters (completed / mock-ups) |
 | `about.html` | Company story, who we work with, values and capabilities (no names) |
@@ -40,7 +40,9 @@ Contact details placeholders live in the page HTML and in `assets/js/main.js` (`
 
 ## Images
 
-The homepage hero is a real photo: `assets/img/photos/nz-southland.webp` (sheep on paddocks in Southland, "Field in Southland, New Zealand" by Pedro Szekely, CC BY-SA 2.0, via Wikimedia Commons). The licence requires the credit line shown under the hero, so keep it if the photo stays. The 3D landscape render (`renders/nz-farm.webp`) is used on the About page.
+The homepage hero is a 3D render (`assets/img/renders/pcb-hero.webp`, scene `tools/renders/scenes/pcbhero.js`). `assets/js/pcb-hero.js` animates light pulses along the board's traces; the trace positions come from the render (`assets/js/pcb-traces.js`, made by `tools/renders/pcb_traces.py`), so if the scene is re-rendered, re-run that script too. The animation stops for visitors who prefer reduced motion and has a pause button.
+
+The tank monitor page hero is a real photo: `assets/img/photos/nz-southland.webp` ("Field in Southland, New Zealand" by Pedro Szekely, CC BY-SA 2.0, via Wikimedia Commons). The licence requires the credit line shown on that page, so keep it if the photo stays.
 
 All product and engineering images in `assets/img/renders/` are 3D renders made with three.js. The tank monitor models (tank unit and probe, receiver, pump controller) are based on the owner's product photos. The scenes are in `tools/renders/` (see its README) and can be changed and re-rendered. To use real photos, replace the `.webp` files with your own of the same name.
 

@@ -73,7 +73,8 @@ function countUp(el) {
 }
 
 // ---------- Hero parallax ----------
-const heroImg = document.querySelector(".hero-media img");
+// Moves the image and anything layered on it (the pulse overlay) together
+const heroImg = document.querySelector(".hero-media .pcb-stage") || document.querySelector(".hero-media img");
 if (heroImg && !reduceMotion && matchMedia("(min-width: 761px)").matches) {
   let ticking = false;
   addEventListener("scroll", () => {
