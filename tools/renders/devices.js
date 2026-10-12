@@ -140,3 +140,63 @@ export function pumpController() {
   ant.userData.rod.rotation.x = Math.PI / 2;
   return g;
 }
+
+// A phone showing the Kinetiq app with the same reading as the receiver.
+function appScreen() {
+  return canvasTex(560, 1160, (c, w, h) => {
+    c.fillStyle = '#0d141a'; c.fillRect(0, 0, w, h);
+    // status bar
+    c.fillStyle = '#eef3f6'; c.font = '600 26px Inter'; c.fillText('9:41', 44, 58);
+    c.fillRect(w - 100, 40, 46, 20); c.fillStyle = '#0d141a'; c.fillRect(w - 98, 42, 10, 16);
+    // header
+    c.fillStyle = '#e8a3ad'; c.font = '700 26px Inter'; c.fillText('Kinetiq', 44, 128);
+    c.fillStyle = '#eef3f6'; c.font = '800 46px Inter'; c.fillText('House tank', 44, 184);
+    c.fillStyle = '#8b99a3'; c.font = '500 24px Inter'; c.fillText('Updated 2 min ago', 44, 222);
+    c.fillStyle = '#3fbf7f'; c.beginPath(); c.arc(w - 60, 176, 11, 0, 7); c.fill();
+    // level card
+    const card = (x, y, cw, ch) => { c.fillStyle = '#16212a'; c.beginPath(); c.roundRect(x, y, cw, ch, 26); c.fill(); };
+    card(32, 256, w - 64, 330);
+    const tx = 64, ty = 296, tw = 150, th = 250;
+    c.save(); c.beginPath(); c.moveTo(tx, ty + 28); c.quadraticCurveTo(tx, ty, tx + tw / 2, ty); c.quadraticCurveTo(tx + tw, ty, tx + tw, ty + 28); c.lineTo(tx + tw, ty + th); c.lineTo(tx, ty + th); c.closePath();
+    c.fillStyle = '#1f2d38'; c.fill(); c.clip(); c.fillStyle = '#3d8fe0'; c.fillRect(tx, ty + th * 0.32, tw, th); c.restore();
+    c.strokeStyle = '#cfdbe4'; c.lineWidth = 4; c.beginPath(); c.moveTo(tx, ty + 28); c.quadraticCurveTo(tx, ty, tx + tw / 2, ty); c.quadraticCurveTo(tx + tw, ty, tx + tw, ty + 28); c.lineTo(tx + tw, ty + th); c.lineTo(tx, ty + th); c.closePath(); c.stroke();
+    c.fillStyle = '#eef3f6'; c.font = '800 112px Inter'; c.fillText('68%', 240, 420);
+    c.fillStyle = '#8b99a3'; c.font = '500 25px Inter'; c.fillText('15,000 L of 22,000 L', 244, 466);
+    c.fillStyle = '#5aa6e6'; c.font = '700 25px Inter'; c.fillText('23 days left', 244, 520);
+    // two small cards
+    card(32, 612, (w - 80) / 2, 150); card(48 + (w - 80) / 2, 612, (w - 80) / 2, 150);
+    c.fillStyle = '#8b99a3'; c.font = '500 24px Inter'; c.fillText('Today', 60, 660); c.fillText('Fill pump', 76 + (w - 80) / 2, 660);
+    c.fillStyle = '#eef3f6'; c.font = '700 44px Inter'; c.fillText('612 L', 60, 724); c.fillText('Off', 76 + (w - 80) / 2, 724);
+    c.fillStyle = '#2b3a46'; c.beginPath(); c.roundRect(w - 140, 690, 76, 40, 20); c.fill(); c.fillStyle = '#8b99a3'; c.beginPath(); c.arc(w - 120, 710, 15, 0, 7); c.fill();
+    // usage chart
+    card(32, 788, w - 64, 250);
+    c.fillStyle = '#eef3f6'; c.font = '700 28px Inter'; c.fillText('Daily use', 60, 840);
+    c.fillStyle = '#8b99a3'; c.font = '500 22px Inter'; c.fillText('Last 7 days', w - 190, 840);
+    const vals = [58, 72, 49, 80, 66, 61, 75];
+    vals.forEach((v, i) => { const x = 66 + i * 62, bh = v * 1.6; c.fillStyle = i === 6 ? '#5aa6e6' : '#2c5f8c'; c.beginPath(); c.roundRect(x, 1008 - bh, 38, bh, 6); c.fill(); });
+    // tab bar
+    c.fillStyle = '#16212a'; c.fillRect(0, 1070, w, 90);
+    ['#5aa6e6', '#56636d', '#56636d', '#56636d'].forEach((col, i) => { c.fillStyle = col; c.beginPath(); c.roundRect(70 + i * 128, 1098, 36, 30, 8); c.fill(); });
+  });
+}
+
+export function phone() {
+  const g = new THREE.Group();
+  const W = 0.74, H = 1.52, T = 0.08;
+  add(g, new RoundedBoxGeometry(W, H, T, 8, 0.1), mat.metal('#3a4046', 0.35), [0, 0, 0]);
+  add(g, new RoundedBoxGeometry(W - 0.02, H - 0.02, T + 0.004, 8, 0.09), new THREE.MeshPhysicalMaterial({ color: '#05070a', roughness: 0.05, clearcoat: 1 }), [0, 0, 0.002]);
+  const tex = appScreen();
+  add(g, new THREE.PlaneGeometry(W - 0.07, H - 0.07), new THREE.MeshPhysicalMaterial({ map: tex, emissiveMap: tex, emissive: '#ffffff', emissiveIntensity: 0.85, roughness: 0.06, clearcoat: 1, clearcoatRoughness: 0.02 }), [0, 0, T / 2 + 0.006], [0, 0, 0], false);
+  add(g, new RoundedBoxGeometry(0.16, 0.045, 0.01, 2, 0.02), mat.plastic('#000', 0.3), [0, H / 2 - 0.08, T / 2 + 0.008], [0, 0, 0], false);
+  return g;
+}
+
+// Simple desk stand for the phone (origin on the floor)
+export function phoneStand() {
+  const g = new THREE.Group();
+  const m = mat.plastic('#d9dde0', 0.4);
+  add(g, new RoundedBoxGeometry(0.7, 0.05, 0.6, 3, 0.02), m, [0, 0.025, 0]);
+  add(g, new RoundedBoxGeometry(0.62, 0.7, 0.05, 3, 0.02), m, [0, 0.36, -0.12], [-0.32, 0, 0]);
+  add(g, new RoundedBoxGeometry(0.62, 0.08, 0.1, 3, 0.02), m, [0, 0.09, 0.14]);
+  return g;
+}

@@ -111,6 +111,20 @@ export function coilPoints(cx, cz, rx = 1.5, rz = 1.1, turns = 4, y = 0.04) {
   return pts;
 }
 
+// A looser, hand-laid coil: loops vary in size, the centre drifts, the shape
+// isn't a perfect ellipse, and each turn rides slightly over the last.
+export function looseCoil(cx, cz, { loops = 3, r = 0.9, aspect = 0.62, phase = 0.4, y = 0.036 } = {}) {
+  const pts = [], n = Math.round(loops * 40);
+  for (let i = 0; i <= n; i++) {
+    const t = (i / n) * loops * Math.PI * 2 + phase;
+    const k = i / n;
+    const rr = r * (1 + 0.1 * Math.sin(t * 0.5 + 1.3) + 0.06 * Math.sin(2 * t + 0.7) - 0.08 * k);
+    const ox = 0.16 * Math.sin(t * 0.33 + 0.5), oz = 0.1 * Math.cos(t * 0.41);
+    pts.push([cx + ox + Math.cos(t) * rr, y + k * 0.05 + 0.012 * Math.max(0, Math.sin(t * 1.5)), cz + oz + Math.sin(t) * rr * aspect]);
+  }
+  return pts;
+}
+
 // ---------------------------------------------------------------------------
 // Version 2, matched to the product photos: a white two-part enclosure (base
 // and shallower lid with a seam), a black framed solar panel fixed on the lid
