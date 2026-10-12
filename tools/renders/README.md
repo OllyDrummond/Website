@@ -17,6 +17,7 @@ Then convert to WebP into `assets/img/renders/`. Edit a scene file to change mod
 | Scene | Output | What it shows |
 |---|---|---|
 | `tankset` (`?p=3`) | `tank-monitor.webp` | Homepage card: tank unit, coiled cable and probe, receiver and phone. Run `finish.py` on the PNG first |
+| `plc2` | `plc.webp` | Compact PLC (PLC programming service). Run `finish.py` on the PNG first |
 | `dosing2` | `dosing.webp` | Acid dosing skid concept. Run `finish.py` on the PNG first |
 | `pcbhero` | `pcb-hero.webp` | Homepage hero: blue circuit board to a glowing horizon. Also exports trace paths for the pulse animation (see below) |
 | `nzhero` | `tank-top.webp` | Monitor on the lid of a green poly tank, NZ farmland and ranges behind |

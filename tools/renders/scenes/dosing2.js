@@ -9,7 +9,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 export default function () {
   const q = new URLSearchParams(location.search);
   const S = studio({ w: +(q.get('w') || 1600), h: +(q.get('h') || 1200), bg: '#e7eaec', floor: '#e4e7e9', fogNear: 30, fogFar: 60,
-    cam: [6.8, 5.2, 14.0], target: [0.85, 2.55, 0], fov: 29, aperture: 0.03, softness: 1.4,
+    cam: [6.1, 5.2, 14.0], target: [0.15, 2.55, 0], fov: 29, aperture: 0.03, softness: 1.4,
     key: [5, 11, 8], keyIntensity: 2.3, envIntensity: 0.7, fillIntensity: 0.38, shadowSize: 7, samples: +(q.get('n') || 48) });
 
   const steel = mat.metal('#cdd3d7', 0.24);
