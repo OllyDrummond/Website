@@ -26,8 +26,8 @@ export default function () {
     3: { end: 2.9, dir: 0.28, run: -0.3, lift: 0.075 }, // lying across the top of the coil
     4: { end: 0.05, dir: -0.22, run: 0.45 },                      // to the right, between coil and phone
     5: { end: -1.15, dir: -0.55, run: 0.3 },                     // behind the coil, in front of the receiver
-  }[+(q.get('p') || 1)];
-  const coil = [], t0 = -0.9, cx = -0.95, cz = 0.85, rxo = 1.0, rzo = 0.66, step = 0.082;
+  }[+(q.get('p') || 3)];
+  const coil = [], t0 = 0.0, cx = -0.95, cz = 0.85, rxo = 1.0, rzo = 0.66, step = 0.082;
   const turns = 4 + (((P.end - t0) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2) / (Math.PI * 2);
   const n = Math.round(turns * 56);
   for (let i = 0; i <= n; i++) {
@@ -36,8 +36,9 @@ export default function () {
   }
   const c0 = coil[0], c1 = coil[coil.length - 1];
   const tan = [-Math.sin(t0) * rxo, Math.cos(t0) * rzo], tl = Math.hypot(...tan);
-  const lead = [U(0.25, 0.1), U(0.3, 0.45), U(0.32, 0.75),
-    [c0[0] - (tan[0] / tl) * 0.45, 0.036, c0[2] - (tan[1] / tl) * 0.45], [c0[0] - (tan[0] / tl) * 0.15, 0.036, c0[2] - (tan[1] / tl) * 0.15]];
+  // starts behind the box (out of sight), comes round its right-hand side and into the coil
+  const lead = [U(0.2, -0.8), U(0.7, -0.72), U(0.9, -0.35), U(0.92, 0.2), U(0.85, 0.72),
+    [c0[0] - (tan[0] / tl) * 0.55, 0.036, c0[2] - (tan[1] / tl) * 0.55], [c0[0] - (tan[0] / tl) * 0.18, 0.036, c0[2] - (tan[1] / tl) * 0.18]];
   // the end rides outward over the turns, then runs straight to the probe
   const rad = [Math.cos(P.end), Math.sin(P.end) * 0.66], rl = Math.hypot(...rad), rn = [rad[0] / rl, rad[1] / rl];
   const inward = P.run < 0; if (inward) { rn[0] = -rn[0]; rn[1] = -rn[1]; }
@@ -54,10 +55,10 @@ export default function () {
   const p = probe2(); p.rotation.z = Math.PI / 2; p.rotation.y = Math.atan2(-dir[1], dir[0]); p.position.set(pb[0], 0.105 + ly, pb[1]); root.add(p);
 
   // receiver standing upright, set back and to the right
-  const r = receiverWide(); r.scale.setScalar(1.4); r.position.set(1.05, 0, -1.25); r.rotation.y = -0.22; r.rotation.x = -0.08; root.add(r);
+  const r = receiverWide(); r.scale.setScalar(1.4); r.position.set(0.75, 0, -1.25); r.rotation.y = -0.22; r.rotation.x = -0.08; root.add(r);
 
   // phone lying on the ground at an angle, at the receiver's front corner
-  const pg = new THREE.Group(); pg.position.set(2.1, 0, -0.3); pg.rotation.y = -0.62; root.add(pg);
+  const pg = new THREE.Group(); pg.position.set(1.8, 0, -0.3); pg.rotation.y = -0.62; root.add(pg);
   const ph = phone(); ph.rotation.x = -Math.PI / 2; ph.position.y = 0.04; pg.add(ph);
 
   rectShadow(u, 1.45, 1.12, 0.55, 0.18); rectShadow(u, 1.42, 1.1, 0.75, 0.04, [0, 0.005, 0]);
