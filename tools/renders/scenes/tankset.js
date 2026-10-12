@@ -18,7 +18,17 @@ export default function () {
   // cable: comes out from under the front edge of the box, feeds into the outer
   // turn of a neat coil, and the end crosses back over the turns and runs off
   // to the probe lying to the left of the box
-  const coil = [], t0 = -0.9, turns = 4 + (Math.PI - t0) / (Math.PI * 2), cx = -0.95, cz = 0.85, rxo = 1.0, rzo = 0.66, step = 0.082;
+  // Probe placement (?p=1..5): where the coil ends (angle on the inner turn), the
+  // direction the straight run heads in, and how long that run is.
+  const P = {
+    1: { end: Math.PI + 0.3, dir: Math.PI + 0.95, run: 0.05 },   // beside the box, on its left
+    2: { end: 0.25, dir: Math.PI + 0.12, run: -0.12, inside: true }, // resting in the middle of the coil
+    3: { end: 2.9, dir: 0.28, run: -0.3, lift: 0.075 }, // lying across the top of the coil
+    4: { end: 0.05, dir: -0.22, run: 0.45 },                      // to the right, between coil and phone
+    5: { end: -1.15, dir: -0.55, run: 0.3 },                     // behind the coil, in front of the receiver
+  }[+(q.get('p') || 1)];
+  const coil = [], t0 = -0.9, cx = -0.95, cz = 0.85, rxo = 1.0, rzo = 0.66, step = 0.082;
+  const turns = 4 + (((P.end - t0) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2) / (Math.PI * 2);
   const n = Math.round(turns * 56);
   for (let i = 0; i <= n; i++) {
     const k = i / n, t = t0 + k * turns * Math.PI * 2, shrink = k * turns * step, wob = 0.008 * Math.sin(t * 3 + 1);
@@ -28,12 +38,20 @@ export default function () {
   const tan = [-Math.sin(t0) * rxo, Math.cos(t0) * rzo], tl = Math.hypot(...tan);
   const lead = [U(0.25, 0.1), U(0.3, 0.45), U(0.32, 0.75),
     [c0[0] - (tan[0] / tl) * 0.45, 0.036, c0[2] - (tan[1] / tl) * 0.45], [c0[0] - (tan[0] / tl) * 0.15, 0.036, c0[2] - (tan[1] / tl) * 0.15]];
-  // end of the coil (left side, inner turn) rides over the outer turns, then out to the probe
-  const pa = [-2.6, 0.05], pb = [-2.68, -0.45];
-  const tail = [[c1[0] - 0.12, 0.05, c1[2] - 0.03], [c1[0] - 0.25, 0.1, c1[2] - 0.06], [c1[0] - 0.4, 0.1, c1[2] - 0.1], [c1[0] - 0.56, 0.045, c1[2] - 0.15],
-    [-2.35, 0.036, 0.45], [pa[0], 0.036, pa[1]], [pb[0], 0.036, pb[1]]];
+  // the end rides outward over the turns, then runs straight to the probe
+  const rad = [Math.cos(P.end), Math.sin(P.end) * 0.66], rl = Math.hypot(...rad), rn = [rad[0] / rl, rad[1] / rl];
+  const inward = P.run < 0; if (inward) { rn[0] = -rn[0]; rn[1] = -rn[1]; }
+  const over = (d, y) => [c1[0] + rn[0] * d, y, c1[2] + rn[1] * d];
+  const ly = P.lift || 0, O = inward ? over(0.18, 0.036 + ly) : over(0.5, 0.036), dir = [Math.cos(P.dir), Math.sin(P.dir)];
+  const run = Math.abs(P.run) * (inward ? 0.35 : 1);
+  const pa = [O[0] + dir[0] * run, O[2] + dir[1] * run], pb = [pa[0] + dir[0] * 0.12, pa[1] + dir[1] * 0.12];
+  const fy = 0.036 + ly;
+  const tail = inward
+    ? [over(0.07, 0.04 + ly * 0.6), O, [O[0] + dir[0] * 0.08, fy, O[2] + dir[1] * 0.08], [pa[0], fy, pa[1]], [pb[0], fy, pb[1]]]
+    : [over(0.1, 0.05), over(0.2, 0.1), over(0.33, 0.1), over(0.44, 0.045), O,
+      [O[0] + dir[0] * 0.08, 0.036, O[2] + dir[1] * 0.08], [pa[0], 0.036, pa[1]], [pb[0], 0.036, pb[1]]];
   cable(root, [...lead, ...coil, ...tail]);
-  const p = probe2(); p.rotation.z = Math.PI / 2; p.rotation.y = Math.atan2(-(pb[1] - pa[1]), pb[0] - pa[0]); p.position.set(pb[0], 0.105, pb[1]); root.add(p);
+  const p = probe2(); p.rotation.z = Math.PI / 2; p.rotation.y = Math.atan2(-dir[1], dir[0]); p.position.set(pb[0], 0.105 + ly, pb[1]); root.add(p);
 
   // receiver standing upright, set back and to the right
   const r = receiverWide(); r.scale.setScalar(1.4); r.position.set(1.05, 0, -1.25); r.rotation.y = -0.22; r.rotation.x = -0.08; root.add(r);
