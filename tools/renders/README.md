@@ -17,8 +17,9 @@ Then convert to WebP into `assets/img/renders/`. Edit a scene file to change mod
 | Scene | Output | What it shows |
 |---|---|---|
 | `tankset` (`?p=3`) | `tank-monitor.webp` | Homepage card: tank unit, coiled cable and probe, receiver and phone. Run `finish.py` on the PNG first |
-| `plc2` | `plc.webp` | Compact PLC (PLC programming service), dark studio. Run `finish.py` on the PNG first |
-| `pcb2` | `pcb.webp` | Blue PCB close-up (Electronics & PCB design service), dark studio. Run `finish.py` on the PNG first |
+| `plc3` | `plc.webp` | Compact dark-grey PLC with ladder-logic LCD (PLC programming service), dark studio. Run `finish.py` on the PNG first |
+| `pcb` | `pcb.webp` | Green board (Electronics & PCB design service). `pcb2` is an unused blue alternative |
+| `pcb2` | (unused) | Blue PCB close-up (Electronics & PCB design service), dark studio. Run `finish.py` on the PNG first |
 | `dosing2` | `dosing.webp` | Acid dosing skid concept. Run `finish.py` on the PNG first |
 | `pcbhero` | `pcb-hero.webp` | Homepage hero: blue circuit board to a glowing horizon. Also exports trace paths for the pulse animation (see below) |
 | `nzhero` | `tank-top.webp` | Monitor on the lid of a green poly tank, NZ farmland and ranges behind |
