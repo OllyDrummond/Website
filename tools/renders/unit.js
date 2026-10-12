@@ -172,7 +172,7 @@ export function whip(len = 1.75) {
   return g;
 }
 
-export function unit2({ lidOffset = 0, panelLift = 0, showLogo = false } = {}) {
+export function unit2({ lidOffset = 0, panelLift = 0, showLogo = false, gland = 'back' } = {}) {
   const g = new THREE.Group();
   const { w, h, d } = BOX2;
   const white = mat.plastic('#eceeee', 0.5);
@@ -194,9 +194,20 @@ export function unit2({ lidOffset = 0, panelLift = 0, showLogo = false } = {}) {
   add(ant, new THREE.CylinderGeometry(0.05, 0.05, 0.08, 6), mat.metal('#c9a64e', 0.25), [0.03, 0, 0], [0, 0, Math.PI / 2]);
   const wp = whip(); wp.position.set(0.12, -0.02, 0); wp.rotation.z = -0.08; ant.add(wp);
   // cable gland on the back face, low
-  add(g, new THREE.CylinderGeometry(0.075, 0.075, 0.08, 6), mat.plastic('#e2e5e5', 0.5), [0.35, hb * 0.35, -d / 2 - 0.04], [Math.PI / 2, 0, 0]);
-  add(g, new THREE.CylinderGeometry(0.05, 0.065, 0.08, 20), mat.plastic('#e2e5e5', 0.5), [0.35, hb * 0.35, -d / 2 - 0.11], [Math.PI / 2, 0, 0]);
-  g.userData.glandOut = new THREE.Vector3(0.35, hb * 0.35, -d / 2 - 0.16);
+  if (gland === 'side') {
+    // low on the right-hand side face, near the front
+    const gy = hb * 0.3, gz = d / 2 - 0.3;
+    add(g, new THREE.CylinderGeometry(0.075, 0.075, 0.08, 6), mat.plastic('#e2e5e5', 0.5), [w / 2 + 0.04, gy, gz], [0, 0, Math.PI / 2]);
+    add(g, new THREE.CylinderGeometry(0.05, 0.065, 0.08, 20), mat.plastic('#e2e5e5', 0.5), [w / 2 + 0.11, gy, gz], [0, 0, -Math.PI / 2]);
+    add(g, new THREE.CylinderGeometry(0.042, 0.05, 0.05, 20), mat.rubber('#1a1d20'), [w / 2 + 0.165, gy, gz], [0, 0, -Math.PI / 2]);
+    g.userData.glandOut = new THREE.Vector3(w / 2 + 0.17, gy, gz);
+    g.userData.glandDir = new THREE.Vector3(1, 0, 0);
+  } else {
+    add(g, new THREE.CylinderGeometry(0.075, 0.075, 0.08, 6), mat.plastic('#e2e5e5', 0.5), [0.35, hb * 0.35, -d / 2 - 0.04], [Math.PI / 2, 0, 0]);
+    add(g, new THREE.CylinderGeometry(0.05, 0.065, 0.08, 20), mat.plastic('#e2e5e5', 0.5), [0.35, hb * 0.35, -d / 2 - 0.11], [Math.PI / 2, 0, 0]);
+    g.userData.glandOut = new THREE.Vector3(0.35, hb * 0.35, -d / 2 - 0.16);
+    g.userData.glandDir = new THREE.Vector3(0, 0, -1);
+  }
   if (showLogo) add(g, new THREE.CircleGeometry(0.02, 20), mat.glow('#3fbf7f', 2), [0.58, hb * 0.5, d / 2 + 0.002], [0, 0, 0], false);
   return g;
 }
