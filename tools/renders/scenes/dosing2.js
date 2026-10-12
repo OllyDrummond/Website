@@ -97,12 +97,10 @@ export default function () {
   const inl = W(0.62, 0.05, 0);
   tube(S.scene, [inl, [inl[0] + 0.05, ty - 0.02, inl[2] + 0.1], [inl[0] - 0.1, ty - 0.1, inl[2] + 0.25]], 0.045, hose);
   add(S.scene, new THREE.CylinderGeometry(0.1, 0.1, 0.08, 24), pvc, [inl[0] - 0.12, ty - 0.08, inl[2] + 0.28]);
-  // discharge: from the head outlet over the frame and down the right-hand side
+  // discharge: from the head outlet over the frame and down the front-right post,
+  // into the outlet line through an injection fitting (drawn with the pipework below)
   const out = W(0.62, 0.8, 0);
-  tube(S.scene, [out, [out[0] + 0.1, out[1] + 0.45, out[2]], [1.3, top + 0.6, -0.6], [fx + 0.1, top + 0.15, -1.45], [fx + 0.2, 3.3, -1.62], [fx + 0.25, 2.6, -1.66]], 0.045, hose);
-  // injection fitting where the line leaves the skid
-  add(S.scene, new THREE.CylinderGeometry(0.08, 0.08, 0.22, 20), maroon, [fx + 0.25, 2.45, -1.66]);
-  straight([fx + 0.25, 2.34, -1.66], [fx + 1.4, 2.34, -1.66], 0.07);
+  const dosingHose = [out, [out[0] + 0.1, out[1] + 0.45, out[2]], [1.3, top + 0.6, 0.5], [fx + 0.1, top + 0.15, 1.45], [fx + 0.22, 3.2, 1.55]];
   // small level sensor on the lid
   add(S.scene, new THREE.CylinderGeometry(0.16, 0.16, 0.25, 32), mat.plastic('#6d7378', 0.4), [0.75, ty + 0.12, -0.55]);
   add(S.scene, new THREE.CylinderGeometry(0.06, 0.06, 0.12, 16), black, [0.75, ty + 0.3, -0.55]);
@@ -174,6 +172,11 @@ export default function () {
   for (let k = 0; k < 6; k++) add(S.scene, new THREE.TorusGeometry(0.2, 0.014, 6, 32), maroon, [2.85, oy, gz], [(k * Math.PI) / 6, 0, Math.PI / 2]);
   for (const s2 of [-1, 1]) add(S.scene, new THREE.CylinderGeometry(0.12, 0.12, 0.08, 24), maroon, [2.85 + s2 * 0.24, oy, gz], [0, 0, Math.PI / 2]);
   add(S.scene, new THREE.CylinderGeometry(0.14, 0.14, 0.06, 24), pvc, [3.4, oy, gz], [0, 0, Math.PI / 2]);
+  // dosing line joins the outlet through an injection fitting
+  const ix2 = fx + 0.3;
+  tube(S.scene, [...dosingHose, [ix2, oy + 0.6, gz + 0.05], [ix2, oy + 0.24, gz]], 0.045, hose);
+  add(S.scene, new THREE.CylinderGeometry(0.06, 0.06, 0.14, 20), maroon, [ix2, oy + 0.17, gz]);
+  add(S.scene, new THREE.CylinderGeometry(0.11, 0.11, 0.2, 24), pvc, [ix2, oy + 0.02, gz]);
 
   // ---- cables from the panel: up to the lid pump, and down the frame post to the motor ----
   const cable = new THREE.MeshStandardMaterial({ color: '#15181b', roughness: 0.7 });
