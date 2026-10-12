@@ -182,12 +182,12 @@ export function unit2({ lidOffset = 0, panelLift = 0, showLogo = false } = {}) {
   add(lid, new RoundedBoxGeometry(w + 0.03, hl, d + 0.03, 6, 0.07), mat.plastic('#f0f2f2', 0.48), [0, hl / 2, 0]);
   // seam between base and lid
   add(g, new RoundedBoxGeometry(w - 0.03, 0.03, d - 0.03, 2, 0.01), mat.plastic('#9da3a5', 0.6), [0, hb + 0.006, 0], [0, 0, 0], false);
-  // black framed solar panel on low standoffs, the same footprint as the lid
+  // black framed solar panel on low standoffs, sized to sit exactly on the box
   const panel = new THREE.Group(); panel.position.set(0, h + 0.04 + panelLift + lidOffset, 0); g.add(panel);
   const frame = mat.plastic('#0c0e10', 0.35);
-  add(panel, roundedPlate(w + 0.03, d + 0.03, 0.045, 0.07), frame, [0, 0, 0]);
+  add(panel, roundedPlate(w - 0.02, d - 0.02, 0.045, 0.07), frame, [0, 0, 0]);
   const glass = new THREE.MeshPhysicalMaterial({ map: stripPanelTexture(), roughness: 0.16, metalness: 0.05, clearcoat: 1, clearcoatRoughness: 0.04, envMapIntensity: 0.5 });
-  add(panel, new THREE.PlaneGeometry(w - 0.06, d - 0.09), glass, [0, 0.057, 0], [-Math.PI / 2, 0, 0], false);
+  add(panel, new THREE.PlaneGeometry(w - 0.1, d - 0.13), glass, [0, 0.057, 0], [-Math.PI / 2, 0, 0], false);
   for (const [x, z] of [[-0.55, -0.4], [0.55, -0.4], [-0.55, 0.4], [0.55, 0.4]]) add(g, new THREE.CylinderGeometry(0.035, 0.035, 0.04, 12), mat.metal('#9aa2a7', 0.3), [x, h + 0.02 + lidOffset, z], [0, 0, 0], false);
   // SMA knuckle at the back-right corner, antenna standing up
   const ant = new THREE.Group(); ant.position.set(w / 2 + 0.03, h - 0.05 + lidOffset, -d / 2 + 0.12); g.add(ant);
