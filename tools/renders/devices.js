@@ -200,3 +200,32 @@ export function phoneStand() {
   add(g, new RoundedBoxGeometry(0.62, 0.08, 0.1, 3, 0.02), m, [0, 0.09, 0.14]);
   return g;
 }
+
+// Small surface fill pump: blue pump head with inlet and outlet, grey motor with
+// cooling fins and a fan cowl, terminal box, on a steel base. Origin on the floor,
+// shaft along x (head at +x).
+export function fillPump() {
+  const g = new THREE.Group();
+  const blue = mat.plastic('#2a62a8', 0.35), motor = mat.plastic('#2b3035', 0.4), ay = 0.42;
+  add(g, new RoundedBoxGeometry(1.5, 0.08, 0.7, 2, 0.02), mat.metal('#bfc6cb', 0.3), [0, 0.04, 0]);
+  // motor
+  add(g, new THREE.CylinderGeometry(0.3, 0.3, 0.75, 48), motor, [-0.25, ay, 0], [0, 0, Math.PI / 2]);
+  for (let k = 0; k < 18; k++) { const a = (k / 18) * Math.PI * 2; if (Math.sin(a) < -0.7) continue;
+    add(g, new THREE.BoxGeometry(0.68, 0.06, 0.035), motor, [-0.25, ay + Math.sin(a) * 0.32, Math.cos(a) * 0.32], [a, 0, 0]); }
+  add(g, new THREE.CylinderGeometry(0.33, 0.33, 0.24, 48), mat.plastic('#3a4046', 0.45), [-0.73, ay, 0], [0, 0, Math.PI / 2]);
+  for (let k = 0; k < 5; k++) add(g, new THREE.BoxGeometry(0.02, 0.025, 0.4), mat.plastic('#15181b', 0.5), [-0.855, ay - 0.16 + k * 0.08, 0]);
+  add(g, new RoundedBoxGeometry(0.28, 0.2, 0.28, 3, 0.03), motor, [-0.2, ay + 0.38, 0]);
+  for (const x of [-0.5, 0.0]) add(g, new THREE.BoxGeometry(0.12, 0.14, 0.6), motor, [x, 0.15, 0]);
+  // pump head
+  add(g, new THREE.CylinderGeometry(0.2, 0.27, 0.16, 40), blue, [0.2, ay, 0], [0, 0, Math.PI / 2]);
+  add(g, new THREE.CylinderGeometry(0.34, 0.34, 0.26, 48), blue, [0.4, ay, 0], [0, 0, Math.PI / 2]);
+  for (let k = 0; k < 8; k++) { const a = (k / 8) * Math.PI * 2; add(g, new THREE.CylinderGeometry(0.025, 0.025, 0.05, 10), mat.metal('#dfe4e8', 0.2), [0.54, ay + Math.sin(a) * 0.27, Math.cos(a) * 0.27], [0, 0, Math.PI / 2]); }
+  add(g, new THREE.CylinderGeometry(0.11, 0.11, 0.24, 28), blue, [0.66, ay, 0], [0, 0, Math.PI / 2]);   // inlet, end
+  add(g, new THREE.CylinderGeometry(0.1, 0.1, 0.26, 28), blue, [0.4, ay + 0.42, 0]);                    // outlet, top
+  add(g, new THREE.CylinderGeometry(0.0, 0.03, 0.05, 6), mat.metal('#c9a64e', 0.3), [0.4, ay + 0.57, 0]);
+  for (const x of [0.25, 0.55]) add(g, new THREE.BoxGeometry(0.1, ay - 0.1, 0.4), blue, [x, (ay - 0.1) / 2 + 0.08, 0]);
+  g.userData.inlet = new THREE.Vector3(0.78, ay, 0);
+  g.userData.outlet = new THREE.Vector3(0.4, ay + 0.55, 0);
+  g.userData.terminal = new THREE.Vector3(-0.2, ay + 0.38, 0.15);
+  return g;
+}
