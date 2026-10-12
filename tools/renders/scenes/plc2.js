@@ -1,16 +1,18 @@
 // Compact PLC (owner's reference: a light grey brick PLC seen from above at an
 // angle): vented grey housing with DIN mounting ears, two rows of green
 // pluggable terminal blocks across the top, a stepped front panel with a small
-// LCD, status LEDs and keys, and a lower terminal row. Studio style matches the
-// other product shots.
+// LCD, status LEDs and keys, and a lower terminal row. Dark studio to match the
+// other service images.
 import { studio, THREE, mat, add, canvasTex, rectShadow } from '../studio.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
 export default function () {
   const q = new URLSearchParams(location.search);
-  const S = studio({ w: +(q.get('w') || 1600), h: +(q.get('h') || 1200), bg: '#e7eaec', floor: '#e4e7e9', fogNear: 20, fogFar: 40,
-    cam: [-4.6, 4.6, 6.4], target: [0.1, 0.95, 0.15], fov: 30, aperture: 0.02, softness: 1.4,
-    key: [-2, 11, 6], keyIntensity: 2.3, envIntensity: 0.8, fillIntensity: 0.42, samples: +(q.get('n') || 56) });
+  // dark studio, like the gears and PCB service images
+  const S = studio({ w: +(q.get('w') || 1600), h: +(q.get('h') || 1000), bg: '#161b20', floor: '#1d2329', fogNear: 9, fogFar: 22,
+    cam: [-4.6, 4.2, 6.6], target: [0.3, 0.95, 0.2], fov: 30, aperture: 0.04, softness: 1.2,
+    key: [-2, 8, 5], keyIntensity: 2.6, rim: [5, 4, -5], rimIntensity: 2.4, rimColor: '#8fc2ff',
+    envIntensity: 0.5, fillIntensity: 0.18, shadowSize: 5, samples: +(q.get('n') || 56) });
 
   const shell = mat.plastic('#dfe3e6', 0.45), panel = mat.plastic('#cdd2d6', 0.42), dark = mat.plastic('#3b4248', 0.45);
   const green = mat.plastic('#2f4a3c', 0.5), slot = mat.plastic('#1a1f1c', 0.6), brass = mat.metal('#c9a64e', 0.3);

@@ -735,7 +735,7 @@ details.table-view summary { cursor: pointer; font-weight: 600; color: var(--wat
 /* ---------- New Zealand image band ---------- */
 .nz-band { position: relative; min-height: clamp(460px, 52vw, 640px); display: flex; align-items: flex-end; padding: clamp(48px, 7vw, 88px) 0; overflow: hidden; background: var(--night); color: #fff; }
 .nz-media { position: absolute; inset: 0; }
-.nz-media img { width: 100%; height: 100%; object-fit: cover; object-position: 60% 50%; }
+.nz-media img { width: 100%; height: 100%; object-fit: cover; object-position: 72% 55%; }
 .nz-media::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(20,26,30,0.82) 0%, rgba(20,26,30,0.55) 38%, rgba(20,26,30,0) 65%), linear-gradient(0deg, rgba(20,26,30,0.6) 0%, rgba(20,26,30,0) 45%); }
 .nz-band .wrap { position: relative; width: 100%; }
 .nz-copy { max-width: 560px; }

@@ -42,6 +42,8 @@ Contact details placeholders live in the page HTML and in `assets/js/main.js` (`
 
 The homepage hero is a 3D render (`assets/img/renders/pcb-hero.webp`, scene `tools/renders/scenes/pcbhero.js`). `assets/js/pcb-hero.js` animates light pulses along the board's traces; the trace positions come from the render (`assets/js/pcb-traces.js`, made by `tools/renders/pcb_traces.py`), so if the scene is re-rendered, re-run that script too. The animation stops for visitors who prefer reduced motion and has a pause button.
 
+The homepage About us section uses the owner's photo `assets/img/photos/nz-farm-tank.webp` (green tank by a farm track with sheep).
+
 The tank monitor page hero is a real photo: `assets/img/photos/nz-southland.webp` ("Field in Southland, New Zealand" by Pedro Szekely, CC BY-SA 2.0, via Wikimedia Commons). The licence requires the credit line shown on that page, so keep it if the photo stays.
 
 All product and engineering images in `assets/img/renders/` are 3D renders made with three.js. The tank monitor models (tank unit and probe, receiver, pump controller) are based on the owner's product photos. The scenes are in `tools/renders/` (see its README) and can be changed and re-rendered. To use real photos, replace the `.webp` files with your own of the same name.
