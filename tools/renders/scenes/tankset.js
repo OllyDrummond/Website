@@ -6,20 +6,19 @@ import { receiverWide, phone } from '../devices.js';
 export default function () {
   const q = new URLSearchParams(location.search);
   const S = studio({ w: +(q.get('w') || 1600), h: +(q.get('h') || 1200), bg: '#e7eaec', floor: '#e4e7e9', fogNear: 18, fogFar: 40,
-    cam: [0.85, 4.5, 8.1], target: [0.4, 0.75, 0.0], fov: 30, aperture: 0.055, softness: 1.6,
+    cam: [0.35, 4.4, 6.6], target: [0.05, 1.0, -0.3], fov: 32, aperture: 0.03, softness: 1.6,
     key: [1.5, 12, 4], keyIntensity: 2.3, envIntensity: 0.75, fillIntensity: 0.4, samples: +(q.get('n') || 40) });
   const root = new THREE.Group(); S.scene.add(root);
 
-  // tank unit
-  const u = unit2({ gland: 'side' }); u.position.set(-1.55, 0, -1.05); u.rotation.y = 0.4; root.add(u);
+  // tank unit (its cable gland is underneath, out of sight)
+  const u = unit2(); u.position.set(-1.55, 0, -1.05); u.rotation.y = 0.4; root.add(u);
   u.updateMatrixWorld(true);
-  const gl = u.localToWorld(u.userData.glandOut.clone());
-  const gd = u.userData.glandDir.clone().applyQuaternion(u.quaternion);
+  const U = (x, z) => { const v = u.localToWorld(new THREE.Vector3(x, 0.036, z)); return [v.x, 0.036, v.z]; };
 
-  // cable: leaves the side gland, bends down to the floor and feeds in as the
-  // outer turn of a neat coil; the turns wind inward and the end crosses back
-  // over them to the probe, the way a hand-wound coil lies
-  const coil = [], t0 = -0.2, turns = 4 + (Math.PI / 2 - t0) / (Math.PI * 2), cx = -0.95, cz = 0.85, rxo = 1.0, rzo = 0.66, step = 0.082;
+  // cable: comes out from under the front edge of the box, feeds into the outer
+  // turn of a neat coil, and the end crosses back over the turns and runs off
+  // to the probe lying to the left of the box
+  const coil = [], t0 = -0.9, turns = 4 + (Math.PI - t0) / (Math.PI * 2), cx = -0.95, cz = 0.85, rxo = 1.0, rzo = 0.66, step = 0.082;
   const n = Math.round(turns * 56);
   for (let i = 0; i <= n; i++) {
     const k = i / n, t = t0 + k * turns * Math.PI * 2, shrink = k * turns * step, wob = 0.008 * Math.sin(t * 3 + 1);
@@ -27,25 +26,20 @@ export default function () {
   }
   const c0 = coil[0], c1 = coil[coil.length - 1];
   const tan = [-Math.sin(t0) * rxo, Math.cos(t0) * rzo], tl = Math.hypot(...tan);
-  const lead = [
-    [gl.x, gl.y, gl.z],
-    [gl.x + gd.x * 0.1, gl.y - 0.005, gl.z + gd.z * 0.1],
-    [gl.x + gd.x * 0.24, 0.05, gl.z + gd.z * 0.24 + 0.05],
-    [gl.x + gd.x * 0.36 + 0.08, 0.036, gl.z + 0.32],
-    [c0[0] - (tan[0] / tl) * 0.55, 0.036, c0[2] - (tan[1] / tl) * 0.55],
-    [c0[0] - (tan[0] / tl) * 0.2, 0.036, c0[2] - (tan[1] / tl) * 0.2],
-  ];
-  // the end rides up over the outer turns at the front, then lies flat to the probe
-  const tail = [[c1[0] + 0.12, 0.05, c1[2] + 0.06], [c1[0] + 0.24, 0.1, c1[2] + 0.14], [c1[0] + 0.38, 0.1, c1[2] + 0.22], [c1[0] + 0.55, 0.045, c1[2] + 0.32], [0.05, 0.036, 1.75], [0.45, 0.036, 1.85]];
+  const lead = [U(0.25, 0.1), U(0.3, 0.45), U(0.32, 0.75),
+    [c0[0] - (tan[0] / tl) * 0.45, 0.036, c0[2] - (tan[1] / tl) * 0.45], [c0[0] - (tan[0] / tl) * 0.15, 0.036, c0[2] - (tan[1] / tl) * 0.15]];
+  // end of the coil (left side, inner turn) rides over the outer turns, then out to the probe
+  const pa = [-2.6, 0.05], pb = [-2.68, -0.45];
+  const tail = [[c1[0] - 0.12, 0.05, c1[2] - 0.03], [c1[0] - 0.25, 0.1, c1[2] - 0.06], [c1[0] - 0.4, 0.1, c1[2] - 0.1], [c1[0] - 0.56, 0.045, c1[2] - 0.15],
+    [-2.35, 0.036, 0.45], [pa[0], 0.036, pa[1]], [pb[0], 0.036, pb[1]]];
   cable(root, [...lead, ...coil, ...tail]);
-  const last = tail[tail.length - 1];
-  const p = probe2(); p.rotation.z = Math.PI / 2; p.rotation.y = 0.05; p.position.set(last[0], 0.105, last[2]); root.add(p);
+  const p = probe2(); p.rotation.z = Math.PI / 2; p.rotation.y = Math.atan2(-(pb[1] - pa[1]), pb[0] - pa[0]); p.position.set(pb[0], 0.105, pb[1]); root.add(p);
 
-  // receiver standing upright, a little larger
-  const r = receiverWide(); r.scale.setScalar(1.4); r.position.set(0.9, 0, -0.35); r.rotation.y = -0.2; r.rotation.x = -0.08; root.add(r);
+  // receiver standing upright, set back and to the right
+  const r = receiverWide(); r.scale.setScalar(1.4); r.position.set(1.05, 0, -1.25); r.rotation.y = -0.22; r.rotation.x = -0.08; root.add(r);
 
-  // phone lying on the ground at an angle, right at the receiver's front corner
-  const pg = new THREE.Group(); pg.position.set(1.95, 0, 0.55); pg.rotation.y = -0.62; root.add(pg);
+  // phone lying on the ground at an angle, at the receiver's front corner
+  const pg = new THREE.Group(); pg.position.set(2.1, 0, -0.3); pg.rotation.y = -0.62; root.add(pg);
   const ph = phone(); ph.rotation.x = -Math.PI / 2; ph.position.y = 0.04; pg.add(ph);
 
   rectShadow(u, 1.45, 1.12, 0.55, 0.18); rectShadow(u, 1.42, 1.1, 0.75, 0.04, [0, 0.005, 0]);
