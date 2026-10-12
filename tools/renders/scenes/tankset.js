@@ -37,8 +37,12 @@ export default function () {
   const c0 = coil[0], c1 = coil[coil.length - 1];
   const tan = [-Math.sin(t0) * rxo, Math.cos(t0) * rzo], tl = Math.hypot(...tan);
   // starts behind the box (out of sight), comes round its right-hand side and into the coil
-  const lead = [U(0.2, -0.8), U(0.7, -0.72), U(0.9, -0.35), U(0.92, 0.2), U(0.85, 0.72),
-    [c0[0] - (tan[0] / tl) * 0.55, 0.036, c0[2] - (tan[1] / tl) * 0.55], [c0[0] - (tan[0] / tl) * 0.18, 0.036, c0[2] - (tan[1] / tl) * 0.18]];
+  const side = u.localToWorld(new THREE.Vector3(0, 0, 1)).sub(u.position);   // direction along the right-hand face
+  const B0 = U(0.86, -0.6), B3 = c0;
+  const B1 = [B0[0] + side.x * 0.9, 0.036, B0[2] + side.z * 0.9], B2 = [B3[0] - (tan[0] / tl) * 0.7, 0.036, B3[2] - (tan[1] / tl) * 0.7];
+  const bez = (t) => [0, 2].map((j) => (1 - t) ** 3 * B0[j] + 3 * (1 - t) ** 2 * t * B1[j] + 3 * (1 - t) * t * t * B2[j] + t ** 3 * B3[j]);
+  const lead = [U(0.25, -0.78)];
+  for (let i = 0; i < 24; i++) { const [x, z] = bez(i / 24); lead.push([x, 0.036, z]); }
   // the end rides outward over the turns, then runs straight to the probe
   const rad = [Math.cos(P.end), Math.sin(P.end) * 0.66], rl = Math.hypot(...rad), rn = [rad[0] / rl, rad[1] / rl];
   const inward = P.run < 0; if (inward) { rn[0] = -rn[0]; rn[1] = -rn[1]; }
