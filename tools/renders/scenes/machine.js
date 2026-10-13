@@ -5,12 +5,12 @@ import { studio, THREE, mat, add, gearGeo } from '../studio.js';
 import { SERVICE_STUDIO } from '../service-studio.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
-const alu = mat.metal('#c9cfd3', 0.3), aluDark = mat.metal('#9aa3a9', 0.38), steel = mat.metal('#d4d9dc', 0.22);
-const anod = new THREE.MeshPhysicalMaterial({ color: '#2a2f34', metalness: 0.5, roughness: 0.42, clearcoat: 0.3 });
-const maroon = new THREE.MeshPhysicalMaterial({ color: '#7a1f2b', metalness: 0.55, roughness: 0.32, clearcoat: 0.4 });
-const rb = (w, h, d, r = 0.04) => new RoundedBoxGeometry(w, h, d, 4, r);
-const cyl = (r, l, n = 48) => new THREE.CylinderGeometry(r, r, l, n);
-const X = [0, 0, Math.PI / 2], Z = [Math.PI / 2, 0, 0];
+export const alu = mat.metal('#c9cfd3', 0.3), aluDark = mat.metal('#9aa3a9', 0.38), steel = mat.metal('#d4d9dc', 0.22);
+export const anod = new THREE.MeshPhysicalMaterial({ color: '#2a2f34', metalness: 0.5, roughness: 0.42, clearcoat: 0.3 });
+export const maroon = new THREE.MeshPhysicalMaterial({ color: '#7a1f2b', metalness: 0.55, roughness: 0.32, clearcoat: 0.4 });
+export const rb = (w, h, d, r = 0.04) => new RoundedBoxGeometry(w, h, d, 4, r);
+export const cyl = (r, l, n = 48) => new THREE.CylinderGeometry(r, r, l, n);
+export const X = [0, 0, Math.PI / 2], Z = [Math.PI / 2, 0, 0];
 
 // 40-series style T-slot aluminium profile, length L along the given axis
 function profile(parent, L, axis, pos, s = 0.36) {
@@ -27,7 +27,7 @@ function profile(parent, L, axis, pos, s = 0.36) {
 }
 
 // AC servo motor, shaft pointing +x, axis at the group's origin
-function servo(parent, len = 1.3, s = 0.8, pos = [0, 0, 0], rotY = 0) {
+export function servo(parent, len = 1.3, s = 0.8, pos = [0, 0, 0], rotY = 0) {
   const g = new THREE.Group(); g.position.set(...pos); g.rotation.y = rotY; parent.add(g);
   add(g, rb(len, s, s, 0.06), anod, [-len / 2, 0, 0]);
   add(g, rb(0.12, s + 0.1, s + 0.1, 0.03), aluDark, [0.06, 0, 0]);
@@ -41,7 +41,7 @@ function servo(parent, len = 1.3, s = 0.8, pos = [0, 0, 0], rotY = 0) {
 }
 
 // pillow-block bearing for a shaft along x at height y
-function pillow(parent, x, y, z = 0) {
+export function pillow(parent, x, y, z = 0) {
   add(parent, rb(0.34, 0.16, 1.0, 0.03), aluDark, [x, 0.08, z]);
   add(parent, rb(0.3, y - 0.08, 0.5, 0.03), aluDark, [x, (y - 0.08) / 2 + 0.08, z]);
   add(parent, cyl(0.3, 0.34), aluDark, [x, y, z], X);
