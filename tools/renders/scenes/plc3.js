@@ -10,7 +10,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 export default function () {
   const q = new URLSearchParams(location.search);
   const S = studio({ ...SERVICE_STUDIO, w: +(q.get('w') || 1600), h: +(q.get('h') || 1000),
-    cam: [2.9, 5.6, 8.6], target: [0.35, 1.1, 0], aperture: 0.03, key: [3, 8, 6], samples: +(q.get('n') || 56) });
+    cam: [2.6, 5.6, 8.8], target: [0.25, 1.3, 0.2], aperture: 0.03, key: [3, 8, 6], samples: +(q.get('n') || 56) });
 
   const body = new THREE.MeshPhysicalMaterial({ color: '#eceeef', roughness: 0.5, clearcoat: 0.15 });
   const bodyDark = new THREE.MeshPhysicalMaterial({ color: '#cfd3d6', roughness: 0.55 });

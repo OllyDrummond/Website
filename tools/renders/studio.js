@@ -35,6 +35,17 @@ export function studio(o) {
   floor.rotation.x = -Math.PI / 2;
   floor.receiveShadow = true;
   if (o.floorY !== null) { floor.position.y = o.floorY ?? 0; scene.add(floor); }
+  // Fixed backdrop: a screen-space gradient that is identical in every render,
+  // whatever the camera angle; the floor only catches shadows on top of it.
+  if (o.backdrop) {
+    const bd = document.createElement('canvas'); bd.width = W; bd.height = H;
+    const c = bd.getContext('2d'), [c0, c1] = o.backdrop;
+    const g = c.createRadialGradient(W * 0.5, H * 0.42, 0, W * 0.5, H * 0.42, Math.hypot(W, H) * 0.62);
+    g.addColorStop(0, c0); g.addColorStop(1, c1); c.fillStyle = g; c.fillRect(0, 0, W, H);
+    const t = new THREE.CanvasTexture(bd); t.colorSpace = THREE.SRGBColorSpace;
+    scene.background = t; scene.fog = null;
+    floor.material = new THREE.ShadowMaterial({ opacity: o.shadowOpacity ?? 0.5 });
+  }
 
   const keyPos = new THREE.Vector3(...(o.key ?? [5, 9, 4]));
   const key = new THREE.DirectionalLight(o.keyColor ?? '#fff5ea', o.keyIntensity ?? 2.6);
