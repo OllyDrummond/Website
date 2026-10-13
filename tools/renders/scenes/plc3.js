@@ -10,12 +10,12 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 export default function () {
   const q = new URLSearchParams(location.search);
   const S = studio({ ...SERVICE_STUDIO, w: +(q.get('w') || 1600), h: +(q.get('h') || 1000),
-    cam: [2.7, 2.8, 8.0], target: [0.4, 1.55, 0], aperture: 0.03, key: [3, 8, 6], samples: +(q.get('n') || 56) });
+    cam: [2.9, 5.6, 8.6], target: [0.35, 1.1, 0], aperture: 0.03, key: [3, 8, 6], samples: +(q.get('n') || 56) });
 
   const body = new THREE.MeshPhysicalMaterial({ color: '#eceeef', roughness: 0.5, clearcoat: 0.15 });
   const bodyDark = new THREE.MeshPhysicalMaterial({ color: '#cfd3d6', roughness: 0.55 });
   const blue = mat.plastic('#2f7d4f', 0.45), screw = mat.metal('#c8ccd0', 0.3), hole = mat.plastic('#121417', 0.7);
-  const g = new THREE.Group(); g.rotation.y = -0.28; g.position.y = 0.2; S.scene.add(g);
+  const g = new THREE.Group(); g.rotation.y = -0.28; S.scene.add(g);
   const W = 4.2, H = 2.9;
 
   // stepped housing: back (deepest) at the top and bottom terminal strips, raised centre
@@ -83,7 +83,6 @@ export default function () {
   // dot pattern on the blank right panel
   for (let i = 0; i < 3; i++) for (let j = 0; j < 5; j++) add(g, new THREE.CylinderGeometry(0.02, 0.02, 0.01, 12), hole, [1.4 + i * 0.25, 1.85 - j * 0.28, 0.405], [Math.PI / 2, 0, 0], false);
 
-  servicePlate(S.scene, 7, 3.8, [0.3, 0, -0.3], 0.2);
   rectShadow(g, W + 0.3, 1.2, 0.6, 0.18, [0, 0.006, -0.1]);
   S.finish();
 }
