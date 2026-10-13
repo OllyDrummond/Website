@@ -21,7 +21,7 @@ Then convert to WebP into `assets/img/renders/`. Edit a scene file to change mod
 | `pcb` | `pcb.webp` | Green board (Electronics & PCB design service). `pcb2` is an unused blue alternative |
 | `pcb2` | (unused) | Blue PCB close-up (Electronics & PCB design service), dark studio. Run `finish.py` on the PNG first |
 | `dosing2` | `dosing.webp` | Acid dosing skid concept. Run `finish.py` on the PNG first |
-| `pcbhero` | `pcb-hero.webp` | Homepage hero: blue circuit board to a glowing horizon. Also exports trace paths for the pulse animation (see below) |
+| `pcbhero` | (retired) | Previous homepage hero render; the hero now uses the WebGL image (see below) |
 | `nzhero` | `tank-top.webp` | Monitor on the lid of a green poly tank, NZ farmland and ranges behind |
 | `nzwide` | `nz-farm.webp` | Poly tank in a paddock with fence, cabbage trees and ranges |
 | `unit3` | `unit.webp` | Studio shot of the tank unit, cable and probe |
@@ -37,13 +37,17 @@ Then convert to WebP into `assets/img/renders/`. Edit a scene file to change mod
 mkdir -p out && node render.mjs nzhero "w=2400&h=1300&n=32"   # n = samples per pixel
 ```
 
-### Homepage hero pulses
+### Homepage hero (WebGL)
 
-The `pcbhero` scene projects its visible traces into image pixels (`window.traces`). Save them with the render, then pick the ones the site animates:
+The homepage hero is no longer a render. It is the owner's circuit-board image (`pcb-hd.webp`, 3072 x 2048) shown as a live WebGL surface by `assets/js/pcb-gl.js`: it tilts with the cursor, bends as the page scrolls, pulls focus on load, carries a cursor light, and sends light pulses out from the main chip along the traces (a click sends a ring of signal).
+
+- `pcb-hd.webp` / `pcb-hd-1600.webp`: the source image upscaled 4x with Real-ESRGAN (x4plus, ONNX, run on CPU in 128 px tiles), then resized down.
+- `pcb-hd-data.png`: the trace map the shader reads (R = trace mask, G = distance from the chip along the traces, B = per-trace timing seed), made from the HD image:
 
 ```bash
-node render.mjs pcbhero "w=2400&h=1100&n=48"   # use a runner that also writes out/pcbhero.traces.json
-python3 pcb_traces.py                          # writes assets/js/pcb-traces.js
+python3 pcb_flow.py pcb-hd-3072.png ../../assets/img/renders/pcb-hd-data.png 2048   # needs numpy, scipy, scikit-image
 ```
+
+If the hero image changes, re-run `pcb_flow.py` on it and adjust the chip box at the top of the script. The `pcbhero` scene and `pcb_traces.py` are the previous rendered hero, kept for reference.
 
 `finish.py in.png out.png` adds the subtle vignette and grain used on the product shots.

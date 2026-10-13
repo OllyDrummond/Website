@@ -1034,14 +1034,16 @@ details.table-view summary { cursor: pointer; font-weight: 600; color: var(--wat
   .wm .demo-flag { margin-left: 0; }
 }
 
-/* ---------- Homepage hero: circuit board render with travelling light pulses ---------- */
-.hero-pcb .pcb-stage { position: absolute; inset: 0; transform: scale(1.04); transform-origin: 50% 40%; will-change: transform; }
-.hero-land .hero-pcb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; transform: none; filter: none; animation: none; }
-.pcb-pulses { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; mix-blend-mode: screen; }
-.pulse-glow { fill: none; stroke: #3d9bff; stroke-width: 20; stroke-opacity: 0.5; stroke-linecap: round; stroke-linejoin: round; }
-.pulse-core { fill: none; stroke: #e6f5ff; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
-.pcb-glow { opacity: 0.55; }
-.hero-land .hero-pcb::after { background: linear-gradient(180deg, rgba(6,12,22,0.65) 0%, rgba(6,12,22,0) 18%), linear-gradient(90deg, rgba(10,16,24,0.9) 0%, rgba(10,16,24,0.62) 38%, rgba(10,16,24,0.05) 68%), linear-gradient(0deg, rgba(10,16,24,0.7) 0%, rgba(10,16,24,0) 28%); }
+/* ---------- Homepage hero: circuit board photo as a live WebGL surface (assets/js/pcb-gl.js) ---------- */
+.hero-pcb { background: #03070e; }
+.hero-pcb .pcb-stage { position: absolute; inset: 0; }
+.hero-land .hero-pcb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 64% 50%; transform: none; filter: none; animation: none; transition: opacity 1.2s var(--ease); }
+.pcb-gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity 0.9s var(--ease); }
+.pcb-stage.gl-on .pcb-gl { opacity: 1; }
+.pcb-stage.gl-on img { opacity: 0; }
+.hero-land.hero { cursor: crosshair; }
+.hero-land .hero-copy, .hero-land .product-chips { cursor: auto; }
+.hero-land .hero-pcb::after { background: linear-gradient(180deg, rgba(3,7,14,0.55) 0%, rgba(3,7,14,0) 18%), linear-gradient(90deg, rgba(3,7,14,0.88) 0%, rgba(3,7,14,0.55) 34%, rgba(3,7,14,0) 62%), linear-gradient(0deg, rgba(3,7,14,0.65) 0%, rgba(3,7,14,0) 26%); pointer-events: none; }
 .hero-pcb .motion-toggle { position: absolute; right: var(--gutter); bottom: 14px; z-index: 4; display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 6px 14px 6px 11px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.22); background: rgba(14,22,32,0.55); color: rgba(255,255,255,0.85); font: 600 0.8rem var(--font); cursor: pointer; backdrop-filter: blur(8px); }
 .hero-pcb .motion-toggle:hover { background: rgba(14,22,32,0.8); color: #fff; }
 .hero-pcb .motion-toggle:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
@@ -1049,14 +1051,10 @@ details.table-view summary { cursor: pointer; font-weight: 600; color: var(--wat
 .hero-pcb .motion-toggle .ic-play, .hero-pcb .motion-toggle[aria-pressed="true"] .ic-pause { display: none; }
 .hero-pcb .motion-toggle[aria-pressed="true"] .ic-play { display: block; }
 @media (prefers-reduced-motion: no-preference) {
-  .pcb-glow { animation: pcb-breathe 7s ease-in-out infinite alternate; }
-  .pcb-stage.is-paused .pcb-glow, .motion-paused .product-chips .dot.live { animation-play-state: paused; }
-  .hero-land .hero-pcb img { animation: none; }
+  .motion-paused .product-chips .dot.live { animation-play-state: paused; }
 }
-@keyframes pcb-breathe { from { opacity: 0.3; } to { opacity: 0.85; } }
 @media (max-width: 760px) {
-  .hero-land .hero-pcb img { object-position: 50% 50%; }
-  .hero-pcb .pcb-stage { transform: none; }
+  .hero-land .hero-pcb img { object-position: 66% 50%; }
   .hero-pcb .motion-toggle { right: 12px; bottom: 10px; }
   .hero-land .hero-pcb::after { background: linear-gradient(180deg, #1b2126 0%, rgba(27,33,38,0) 32%); }
 }
