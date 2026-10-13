@@ -3,14 +3,15 @@
 // connector) on a blue board with much more detail: dense routed traces, vias,
 // QFN/SOIC chips, passives, crystal, silkscreen. Shared dark service studio.
 import { studio, THREE, mat, add, canvasTex } from '../studio.js';
-import { SERVICE_STUDIO } from '../service-studio.js';
+import { SERVICE_STUDIO, servicePlate } from '../service-studio.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
 export default function () {
   const q = new URLSearchParams(location.search);
   const S = studio({ ...SERVICE_STUDIO, w: +(q.get('w') || 1600), h: +(q.get('h') || 1000), cam: [2.4, 2.6, 3.6], target: [0.1, 0.05, 0.1],
     aperture: 0.045, samples: +(q.get('n') || 56) });
-  const board = new THREE.Group(); board.rotation.y = -0.25; S.scene.add(board);
+  servicePlate(S.scene, 4.0, 2.7, [0.1, 0, -0.05], 0.2);
+  const board = new THREE.Group(); board.rotation.y = -0.25; board.position.y = 0.2; S.scene.add(board);
   const W = 3.2, D = 2.0, PX = 2048 / W;   // texture pixels per unit
   let seed = 9; const r = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
 

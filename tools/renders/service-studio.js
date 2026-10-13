@@ -7,3 +7,10 @@ export const SERVICE_STUDIO = {
   rim: [-5, 3, -4], rimIntensity: 2.4, rimColor: '#a9cdf5',
   envIntensity: 0.5, fillIntensity: 0.15, shadowSize: 5,
 };
+
+// The lit grey metal base plate from the gears image, which gives the service
+// shots their highlights. Top face sits at y = top.
+import { THREE, mat, add } from './studio.js';
+export function servicePlate(scene, w, d, pos = [0, 0, 0], top = 0) {
+  return add(scene, new THREE.BoxGeometry(w, 0.2, d), mat.metal('#8a949b', 0.42), [pos[0], top - 0.1, pos[2]]);
+}
