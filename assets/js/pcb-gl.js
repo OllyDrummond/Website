@@ -162,12 +162,11 @@
   // Each move maps scroll progress p (0..1) to a camera; t is time for a faint idle drift
   const MOVES = {
     1: (p, t) => ({ pos: [0.04 * Math.sin(t * 0.21), 1 - 0.32 * p, -2.6 * p], yaw: 0.6 * deg * Math.sin(t * 0.17), pitch: -PITCH0 + 1.6 * deg * p, roll: 0, zoom: 1 + 0.05 * p, glow: 0.35 * p, blur: 0 }),
-    2: (p, t) => { const pos = [lerp(0, chip[0] * 0.55, p), lerp(1, 0.72, p), lerp(0, chip[2] * 0.62, p)];
-      const [ya, pa] = aim(pos, chip); const k = 0.6 * ease(Math.min(1, p * 1.2));
-      return { pos, yaw: lerp(0.4 * deg * Math.sin(t * 0.17), ya, k), pitch: lerp(-PITCH0, pa, k), roll: 0, zoom: 1 + 0.5 * ease(p), glow: 0, blur: 1.6 * p, shift: 1 - k }; },
-    3: (p, t) => { const pos = [lerp(-0.25, 1.15, p), 1 - 0.1 * p, lerp(-0.3, -1.6, p)];
-      const target = [chip[0], 0, chip[2]], [ya] = aim(pos, target), [y0] = aim([-0.25, 1, -0.3], target);
-      return { pos, yaw: ya - y0 + 0.4 * deg * Math.sin(t * 0.15), pitch: -PITCH0 - 0.6 * deg * p, roll: 0, zoom: 1.08, glow: 0.1, blur: 0 }; },
+    2: (p, t) => { const k = ease(p);
+      return { pos: [chip[0] * 0.4 * k, 1 - 0.38 * k, chip[2] * 0.55 * k], yaw: 0.4 * deg * Math.sin(t * 0.17), pitch: -PITCH0 - 3.5 * deg * k, roll: 0, zoom: 1 + 0.3 * k, glow: 0, blur: 1.1 * k }; },
+    3: (p, t) => { const k = ease(p), pos = [lerp(-0.35, 0.55, k), 1 - 0.08 * k, lerp(-0.15, -0.9, k)];
+      const target = [chip[0], 0, chip[2]], [ya] = aim(pos, target), [y0] = aim([-0.35, 1, -0.15], target);
+      return { pos, yaw: ya - y0 + 0.4 * deg * Math.sin(t * 0.15), pitch: -PITCH0 - 0.6 * deg * k, roll: 0, zoom: 1.1, glow: 0.1, blur: 0 }; },
     4: (p, t) => { const pos = [chip[0] * 0.25 * p, 1 - 0.15 * p, chip[2] * 0.3 * p];
       return { pos, yaw: 0.5 * deg * Math.sin(t * 0.13), pitch: -PITCH0 - 0.8 * deg * p, roll: -4 * deg * ease(p), zoom: 1.04 + 0.18 * p, glow: 0.05, blur: 0.4 + 3.2 * ease(p) }; },
     5: (p, t) => ({ pos: [0.03 * Math.sin(t * 0.19), 1 - 0.2 * p, -1.4 * p], yaw: 0.5 * deg * Math.sin(t * 0.14) - 2 * deg * p, pitch: -PITCH0 + 4.2 * deg * ease(p), roll: 0, zoom: 1.05 + 0.45 * ease(p), glow: 0.2 + 1.1 * ease(p), blur: 0 }),
