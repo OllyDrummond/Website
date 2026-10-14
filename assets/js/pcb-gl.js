@@ -1,7 +1,6 @@
 /* Homepage hero: the circuit board as a live WebGL surface.
  *
- * - The photo sits on a finely divided plane in 3D that curves away as the
- *   hero scrolls off.
+ * - The photo itself stays still; nothing moves with scrolling.
  * - Light pulses leave the main chip and run out along the copper traces.
  *   assets/img/renders/pcb-hd-data.png holds, per pixel: R = trace mask,
  *   G = distance along the traces from the chip, B = a per-trace timing seed
@@ -24,32 +23,19 @@
   const big = Math.max(innerWidth, innerHeight) * Math.min(devicePixelRatio || 1, 2) > 1700;
   const SRC = { img: big ? canvas.dataset.src : canvas.dataset.srcSmall, data: canvas.dataset.data };
 
+  // The image itself stays still: a flat full-screen quad at a fixed framing
+  // (slightly zoomed in, as before). Only the board's light effects move.
   const VS = `#version 300 es
-  precision highp float;
   in vec2 aPos;
-  uniform float uAspect, uBend, uScroll, uIntro;
-  out vec2 vPos; out float vShade;
-  void main() {
-    vec2 p = aPos;
-    float f = 1.0 / tan(radians(22.0));
-    // curve away like a panel as the hero scrolls off, plus a little from speed;
-    // the plane grows to match so its edges never come into view
-    float bend = uBend + uScroll * 0.9;
-    float S = (1.12 + 0.06 * (1.0 - uIntro)) * (1.0 + (uScroll * 0.8 + bend * 0.55 * uAspect) / f);
-    vec3 w = vec3(p.x * uAspect * S, p.y * S, 0.0);
-    w.z -= bend * (p.x * p.x) * 0.55 * uAspect;
-    float D = f + uScroll * 0.8;
-    w.z -= D;
-    gl_Position = vec4(f * w.x / uAspect, f * w.y, 0.0, -w.z);
-    vPos = p; vShade = clamp(1.0 + w.z + D, 0.6, 1.2);
-  }`;
+  out vec2 vPos;
+  void main() { vPos = aPos / 1.12; gl_Position = vec4(aPos, 0.0, 1.0); }`;
 
   const FS = `#version 300 es
   precision highp float;
-  in vec2 vPos; in float vShade;
+  in vec2 vPos;
   uniform sampler2D uImg, uData;
   uniform vec2 uUvScale, uUvOff;
-  uniform float uTime, uIntro, uScroll;
+  uniform float uTime, uIntro;
   out vec4 o;
   float hash(float n) { return fract(sin(n) * 43758.5453); }
   void main() {
@@ -79,8 +65,7 @@
     float sweep = exp(-pow((uv.x - (uIntro * 1.5 - 0.25)) * 4.0, 2.0)) * exp(-pow((uv.y - 0.34) * 10.0, 2.0)) * sin(uIntro * 3.14159);
     col = col * reveal + vec3(0.5, 0.78, 1.0) * sweep * 0.7;
 
-    // depth shading from the bend, gentle vignette, fine grain
-    col *= vShade * (1.0 - uScroll * 0.45);
+    // gentle vignette, fine grain
     vec2 v = vPos * vec2(0.85, 1.0); col *= 1.0 - 0.18 * dot(v, v) * 0.5;
     col += (hash(dot(gl_FragCoord.xy, vec2(12.9898, 78.233)) + fract(uTime)) - 0.5) * 0.018;
     o = vec4(col, 1.0);
@@ -96,9 +81,9 @@
     if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
   } catch (e) { console.warn("pcb-gl:", e); return; }
   gl.useProgram(prog);
-  const U = {}; for (const n of ["uAspect", "uBend", "uScroll", "uTime", "uIntro", "uImg", "uData", "uUvScale", "uUvOff"]) U[n] = gl.getUniformLocation(prog, n);
+  const U = {}; for (const n of ["uTime", "uIntro", "uImg", "uData", "uUvScale", "uUvOff"]) U[n] = gl.getUniformLocation(prog, n);
 
-  // finely divided plane so it can bend smoothly
+  // full-screen grid the photo is drawn on
   const NX = 96, NY = 64, verts = [], idx = [];
   for (let j = 0; j <= NY; j++) for (let i = 0; i <= NX; i++) verts.push((i / NX) * 2 - 1, (j / NY) * 2 - 1);
   for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) { const a = j * (NX + 1) + i, b = a + 1, c = a + NX + 1, d = c + 1; idx.push(a, c, b, b, c, d); }
@@ -117,8 +102,6 @@
   };
   const load = (src) => new Promise((res, rej) => { const i = new Image(); i.decoding = "async"; i.onload = () => res(i); i.onerror = rej; i.src = src; });
 
-  // ---- scroll state (smoothed) ----
-  const S = { scroll: 0, bend: 0 };
   const hero = stage.closest(".hero") || stage;
 
   let W = 0, H = 0;
@@ -132,7 +115,6 @@
     if (a > IMG_ASPECT) sy = IMG_ASPECT / a; else sx = a / IMG_ASPECT;
     gl.uniform2f(U.uUvScale, sx, sy);
     gl.uniform2f(U.uUvOff, (1 - sx) * FOCUS[0], (1 - sy) * FOCUS[1]);
-    gl.uniform1f(U.uAspect, a);
   };
   new ResizeObserver(resize).observe(canvas);
 
@@ -142,12 +124,7 @@
     const dt = Math.min(0.05, last ? (now - last) / 1000 : 0.016); last = now; time += dt;
     intro = Math.min(1, intro + dt / 2.4);
     const ease = 1 - Math.pow(1 - intro, 3);
-    const r = hero.getBoundingClientRect();
-    const sc = Math.min(1, Math.max(0, -r.top / Math.max(1, r.height)));
-    const sv = sc - S.scroll; S.scroll += sv * (1 - Math.exp(-dt * 8));
-    S.bend += (Math.abs(sv) * 6 - S.bend) * (1 - Math.exp(-dt * 4));
     gl.uniform1f(U.uTime, time); gl.uniform1f(U.uIntro, ease);
-    gl.uniform1f(U.uScroll, S.scroll); gl.uniform1f(U.uBend, Math.min(0.6, S.bend));
     gl.drawElements(gl.TRIANGLES, idx.length, gl.UNSIGNED_SHORT, 0);
     if (!stage.classList.contains("gl-on")) stage.classList.add("gl-on");
     if (running) raf = requestAnimationFrame(frame);
