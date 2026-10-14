@@ -4,20 +4,19 @@
 // keys and a teal OK key, and a memory cartridge slot. Dark studio to match
 // the other service images.
 import { studio, THREE, mat, add, canvasTex, rectShadow } from '../studio.js';
-import { SERVICE_STUDIO, servicePlate } from '../service-studio.js';
+import { gearsStudio } from '../service-studio.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
 export default function () {
   const q = new URLSearchParams(location.search);
-  // Same lit studio floor and camera direction/distance as the custom machine (gears) image
-  const S = studio({ ...SERVICE_STUDIO, backdrop: null, w: +(q.get('w') || 1600), h: +(q.get('h') || 1000),
-    cam: [0.85, 3.95, 5.6], target: [0.15, 1.15, 0.3], aperture: 0.03, samples: +(q.get('n') || 56) });
+  // Exactly the gears image's studio, light and camera, so the background matches it
+  const S = gearsStudio(q);
 
   const body = new THREE.MeshPhysicalMaterial({ color: '#eceeef', roughness: 0.5, clearcoat: 0.15 });
   const bodyDark = new THREE.MeshPhysicalMaterial({ color: '#cfd3d6', roughness: 0.55 });
   const blue = mat.plastic('#2f7d4f', 0.45), screw = mat.metal('#c8ccd0', 0.3), hole = mat.plastic('#121417', 0.7);
   // scaled to sit at the same size and camera distance as the gears and PCB
-  const g = new THREE.Group(); g.rotation.y = -0.28; g.scale.setScalar(0.6); S.scene.add(g);
+  const g = new THREE.Group(); g.rotation.y = -0.28; g.scale.setScalar(0.6); g.position.set(-1.45, 0, 0.45); S.scene.add(g);
   const W = 4.2, H = 2.9;
 
   // stepped housing: back (deepest) at the top and bottom terminal strips, raised centre

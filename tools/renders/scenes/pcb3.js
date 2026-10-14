@@ -3,15 +3,16 @@
 // connector) on a blue board with much more detail: dense routed traces, vias,
 // QFN/SOIC chips, passives, crystal, silkscreen. Shared dark service studio.
 import { studio, THREE, mat, add, canvasTex } from '../studio.js';
-import { SERVICE_STUDIO, servicePlate } from '../service-studio.js';
+import { gearsStudio } from '../service-studio.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
 export default function () {
   const q = new URLSearchParams(location.search);
-  // Same lit studio floor and camera direction/distance as the custom machine (gears) image
-  const S = studio({ ...SERVICE_STUDIO, backdrop: null, w: +(q.get('w') || 1600), h: +(q.get('h') || 1000), cam: [0.7, 2.75, 5.2], target: [0, 0.1, 0],
-    aperture: 0.045, samples: +(q.get('n') || 56) });
-  const board = new THREE.Group(); board.rotation.y = -0.25; S.scene.add(board);
+  // Exactly the gears image's studio, light and camera, so the background matches it
+  const S = gearsStudio(q);
+  // board raised on brass standoffs so it casts a soft shadow, like the gears
+  const LIFT = 0.3, K = 1.2;
+  const board = new THREE.Group(); board.rotation.y = -0.25; board.scale.setScalar(K); board.position.set(0.05, LIFT, -0.35); S.scene.add(board);
   const W = 3.2, D = 2.0, PX = 2048 / W;   // texture pixels per unit
   let seed = 9; const r = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
 
@@ -94,5 +95,7 @@ export default function () {
   box(1.1, 0.12, 0.12, parts.header[0], parts.header[1], new THREE.MeshStandardMaterial({ color: '#111' }));
   for (let k = 0; k < 10; k++) { const [px, pz] = at(parts.header[0] - 0.495 + k * 0.11, parts.header[1]); add(board, new THREE.BoxGeometry(0.03, 0.3, 0.03), mat.metal('#d6b15a', 0.2), [px, top + 0.2, pz]); }
   box(0.3, 0.22, 0.2, 2.8, 1.65, new THREE.MeshStandardMaterial({ color: '#f1f1ec', roughness: 0.5 }));
+  for (const [x, z] of [[0.12, 0.12], [W - 0.12, 0.12], [0.12, D - 0.12], [W - 0.12, D - 0.12]])
+    add(board, new THREE.CylinderGeometry(0.05, 0.05, LIFT / K, 6), mat.metal('#c9a64e', 0.3), [x - W / 2, -LIFT / K / 2, z - D / 2]);
   S.finish();
 }

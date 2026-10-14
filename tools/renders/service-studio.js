@@ -14,3 +14,14 @@ import { THREE, mat, add } from './studio.js';
 export function servicePlate(scene, w, d, pos = [0, 0, 0], top = 0) {
   return add(scene, new THREE.BoxGeometry(w, 0.2, d), mat.metal('#8a949b', 0.42), [pos[0], top - 0.1, pos[2]]);
 }
+
+// The exact studio, lighting and camera of the custom machine (gears) image,
+// so other service images can share its background pixel for pixel: the lit
+// floor (no fixed backdrop), the key light aimed as it was, and the same view.
+import { studio } from './studio.js';
+export function gearsStudio(q) {
+  const S = studio({ ...SERVICE_STUDIO, backdrop: null, w: +(q.get('w') || 1600), h: +(q.get('h') || 1000),
+    cam: [0, 3, 6], target: [0, 0.8, 0], aperture: 0.05, samples: +(q.get('n') || 56) });
+  S.camPos.set(0.6, 4.2, 6.4); S.target.set(0, 0.4, -0.4);
+  return S;
+}
