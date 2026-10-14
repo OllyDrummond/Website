@@ -16,7 +16,7 @@ export default function () {
   const bodyDark = new THREE.MeshPhysicalMaterial({ color: '#cfd3d6', roughness: 0.55 });
   const blue = mat.plastic('#2f7d4f', 0.45), screw = mat.metal('#c8ccd0', 0.3), hole = mat.plastic('#121417', 0.7);
   // scaled to sit at the same size and camera distance as the gears and PCB
-  const g = new THREE.Group(); g.rotation.y = -0.28; g.scale.setScalar(0.6); g.position.set(-1.45, 0, 0.45); S.scene.add(g);
+  const g = new THREE.Group(); g.rotation.y = -0.28; g.scale.setScalar(0.6); g.position.set(-0.05, 0, 0.45); S.scene.add(g);
   const W = 4.2, H = 2.9;
 
   // stepped housing: back (deepest) at the top and bottom terminal strips, raised centre
