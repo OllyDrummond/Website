@@ -185,3 +185,24 @@ if (login) {
     location.href = "dashboard.html";
   });
 }
+
+// Product carousel: arrows step one card at a time and grey out at the ends.
+document.querySelectorAll(".product-rail").forEach((rail) => {
+  const track = rail.querySelector(".product-track");
+  const prev = rail.querySelector(".rail-btn.prev"), next = rail.querySelector(".rail-btn.next");
+  if (!track || !prev || !next) return;
+  const step = () => {
+    const card = track.querySelector(".card");
+    return card ? card.getBoundingClientRect().width + parseFloat(getComputedStyle(track).columnGap || 0) : track.clientWidth;
+  };
+  prev.addEventListener("click", () => track.scrollBy({ left: -step() }));
+  next.addEventListener("click", () => track.scrollBy({ left: step() }));
+  const update = () => {
+    prev.disabled = track.scrollLeft < 4;
+    next.disabled = track.scrollLeft + track.clientWidth >= track.scrollWidth - 4;
+    rail.classList.toggle("no-scroll", track.scrollWidth <= track.clientWidth + 4);
+  };
+  track.addEventListener("scroll", update, { passive: true });
+  addEventListener("resize", update);
+  update();
+});

@@ -17,7 +17,7 @@ from bs4 import BeautifulSoup, NavigableString
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 PAGES = [
     "index.html", "about.html", "services.html", "projects.html",
-    "products/water-monitor.html", "products/smart-filtration.html", "products/acid-dosing.html",
+    "products/water-monitor.html", "products/smart-filtration.html", "products/acid-dosing.html", "products/ai-battery.html",
     "projects/tank-monitor-live.html", "portal/login.html", "portal/dashboard.html",
 ]
 TAGS = ["h1", "h2", "h3", "h4", "p", "li", "dt", "dd", "th", "td", "span", "a", "button", "label", "summary", "figcaption", "cite", "strong", "small", "option"]
