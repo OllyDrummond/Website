@@ -5,8 +5,10 @@ shader reads per pixel:
   R = trace mask (0..1)
   G = distance from the main chip, measured along the traces (0..1)
   B = a timing seed per connected trace (so they don't all fire together)
+and a second PNG with the same distance at 16-bit precision (R = high byte,
+G = low byte), which the shader reads so the pulses glide instead of stepping:
 
-    python3 tools/renders/pcb_flow.py photo.png assets/img/renders/pcb-hd-data.png
+    python3 tools/renders/pcb_flow.py photo.png pcb-hd-data.png 3072 pcb-hd-dist.png
 
 Needs numpy, scipy, scikit-image and Pillow. The chip box below is in
 fractions of the image, so it works at any resolution of the same photo.
@@ -39,14 +41,14 @@ bright_blob = np.clip((blob - 0.42) / 0.12, 0, 1)
 resp = resp * board * (1 - bright_blob)
 
 mask = np.clip((resp - 0.28) / 0.45, 0, 1)
-keep = morphology.remove_small_objects(mask > 0.15, max(30, round(40 * s * s)))
+keep = morphology.remove_small_objects(mask > 0.15, max_size=max(30, round(40 * s * s)))
 mask = mask * keep
 mask = ndi.gaussian_filter(mask, 0.6 * s)
 
 # Distance along the traces from the main chip. Off-trace steps are expensive but
 # allowed, so small gaps in the detection don't strand a trace.
 chip = np.zeros((H, W), bool)
-x0, x1, y0, y1 = 0.56, 0.90, 0.52, 0.66          # the big QFP and its legs
+x0, x1, y0, y1 = 0.58, 0.88, 0.50, 0.585         # the big QFP body (its legs and traces get distances)
 chip[int(y0 * H):int(y1 * H), int(x0 * W):int(x1 * W)] = True
 cost = np.where(mask > 0.2, 1.0, 14.0).astype(np.float64)
 mcp = graph.MCP_Geometric(cost)
@@ -62,4 +64,9 @@ seed = np.where(mask > 0.02, ndi.grey_dilation(seed, size=3), 0)
 
 out = np.dstack([mask, dist, seed])
 Image.fromarray((np.clip(out, 0, 1) * 255 + 0.5).astype(np.uint8)).save(dst, optimize=True)
+if len(sys.argv) > 4:
+    # 16-bit distance, only where there is trace (keeps the file small)
+    d16 = np.round(np.where(mask > 0.01, dist, 0) * 65535).astype(np.uint32)
+    hl = np.dstack([(d16 >> 8), (d16 & 255), np.zeros_like(d16)]).astype(np.uint8)
+    Image.fromarray(hl).save(sys.argv[4], optimize=True)
 print(W, H, "trace px:", int((mask > 0.2).sum()), "traces:", lab.max())

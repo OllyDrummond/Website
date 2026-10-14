@@ -4,7 +4,9 @@
  * - Light pulses leave the main chip and run out along the copper traces.
  *   assets/img/renders/pcb-hd-data.png holds, per pixel: R = trace mask,
  *   G = distance along the traces from the chip, B = a per-trace timing seed
- *   (made by tools/renders/pcb_flow.py from the photo).
+ *   (made by tools/renders/pcb_flow.py from the photo). The distance is also
+ *   kept at 16-bit precision in pcb-hd-dist.png and interpolated in the
+ *   shader, so the pulses glide smoothly instead of stepping.
  *
  * The <img> stays as the fallback and first paint. WebGL fades in over it once
  * the textures are ready. Nothing runs for visitors who ask for reduced motion,
@@ -21,7 +23,7 @@
   const IMG_ASPECT = 1.5;           // photo is 3:2
   const FOCUS = [0.66, 0.5];        // keep the main chip in view when cropping
   const big = Math.max(innerWidth, innerHeight) * Math.min(devicePixelRatio || 1, 2) > 1700;
-  const SRC = { img: big ? canvas.dataset.src : canvas.dataset.srcSmall, data: canvas.dataset.data };
+  const SRC = { img: big ? canvas.dataset.src : canvas.dataset.srcSmall, data: canvas.dataset.data, dist: canvas.dataset.dist };
 
   // The image itself stays still: a flat full-screen quad at a fixed framing
   // (slightly zoomed in, as before). Only the board's light effects move.
@@ -33,11 +35,24 @@
   const FS = `#version 300 es
   precision highp float;
   in vec2 vPos;
-  uniform sampler2D uImg, uData;
+  uniform sampler2D uImg, uData, uDist;
   uniform vec2 uUvScale, uUvOff;
   uniform float uTime, uIntro;
   out vec4 o;
   float hash(float n) { return fract(sin(n) * 43758.5453); }
+  // 16-bit distance along the traces, bilinear over trace pixels only
+  float traceDist(vec2 uv) {
+    vec2 ts = vec2(textureSize(uDist, 0)), f = uv * ts - 0.5, fr = fract(f);
+    ivec2 i0 = ivec2(floor(f)), mx = ivec2(ts) - 1;
+    float sum = 0.0, wsum = 0.0;
+    for (int j = 0; j < 2; j++) for (int i = 0; i < 2; i++) {
+      vec2 t = texelFetch(uDist, clamp(i0 + ivec2(i, j), ivec2(0), mx), 0).rg;
+      float d = (t.r * 65280.0 + t.g * 255.0) / 65535.0;
+      float w = (i == 0 ? 1.0 - fr.x : fr.x) * (j == 0 ? 1.0 - fr.y : fr.y) * step(1e-6, d);
+      sum += d * w; wsum += w;
+    }
+    return wsum > 1e-5 ? sum / wsum : 0.0;
+  }
   void main() {
     vec2 uv = (vPos * 0.5 + 0.5) * uUvScale + uUvOff;
     uv.y = 1.0 - uv.y;
@@ -45,8 +60,8 @@
     float blur = (1.0 - uIntro) * 5.0;
     vec3 col = texture(uImg, uv, blur).rgb;
     vec4 dat = texture(uData, uv);
-    float mask = dat.r, dist = dat.g, seed = dat.b;
-    float halo = textureLod(uData, uv, 3.0).r;
+    float mask = dat.r, dist = traceDist(uv), seed = dat.b;
+    float halo = textureLod(uData, uv, 2.5).r;
     vec3 blue = vec3(0.42, 0.74, 1.0);
 
     // pulses running out from the chip along the traces
@@ -54,10 +69,10 @@
     float cyc = floor(ph);
     float on = step(0.35, hash(cyc * 3.1 + seed * 91.0));
     float p = fract(ph);
-    float head = pow(p, 16.0) * on;
+    float head = pow(p, 20.0) * on;
     float tail = pow(p, 4.0) * on;
     vec3 hot = mix(blue, vec3(0.8, 0.92, 1.0), head * 0.6);
-    col += hot * (mask * (head * 3.6 + tail * 0.55) + halo * (head * 1.6 + tail * 0.2)) * smoothstep(0.0, 0.6, uIntro);
+    col += hot * (mask * (head * 4.4 + tail * 0.5) + halo * (head * 1.3 + tail * 0.15)) * smoothstep(0.0, 0.6, uIntro);
 
     // intro: the board brightens from the chip outwards while a light sweeps the horizon
     float rd = length((uv - vec2(0.72, 0.56)) * vec2(1.5, 1.0));
@@ -81,7 +96,7 @@
     if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
   } catch (e) { console.warn("pcb-gl:", e); return; }
   gl.useProgram(prog);
-  const U = {}; for (const n of ["uTime", "uIntro", "uImg", "uData", "uUvScale", "uUvOff"]) U[n] = gl.getUniformLocation(prog, n);
+  const U = {}; for (const n of ["uTime", "uIntro", "uImg", "uData", "uDist", "uUvScale", "uUvOff"]) U[n] = gl.getUniformLocation(prog, n);
 
   // full-screen grid the photo is drawn on
   const NX = 96, NY = 64, verts = [], idx = [];
@@ -91,13 +106,13 @@
   const loc = gl.getAttribLocation(prog, "aPos"); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, gl.createBuffer()); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(idx), gl.STATIC_DRAW);
 
-  const texture = (unit, img, mip) => {
+  const texture = (unit, img, mip, nearest) => {
     const t = gl.createTexture(); gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, t);
     gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, mip ? gl.LINEAR_MIPMAP_LINEAR : gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, nearest ? gl.NEAREST : mip ? gl.LINEAR_MIPMAP_LINEAR : gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, nearest ? gl.NEAREST : gl.LINEAR);
     if (mip) gl.generateMipmap(gl.TEXTURE_2D);
   };
   const load = (src) => new Promise((res, rej) => { const i = new Image(); i.decoding = "async"; i.onload = () => res(i); i.onerror = rej; i.src = src; });
@@ -106,7 +121,7 @@
 
   let W = 0, H = 0;
   const resize = () => {
-    const r = canvas.getBoundingClientRect(), dpr = Math.min(devicePixelRatio || 1, 1.75);
+    const r = canvas.getBoundingClientRect(), dpr = Math.min(devicePixelRatio || 1, 2);
     W = Math.max(1, Math.round(r.width * dpr)); H = Math.max(1, Math.round(r.height * dpr));
     if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; }
     gl.viewport(0, 0, W, H);
@@ -137,9 +152,9 @@
     hero.classList.toggle("motion-paused", !play);
   };
 
-  Promise.all([load(SRC.img), load(SRC.data)]).then(([img, data]) => {
-    texture(0, img, true); texture(1, data, true);
-    gl.uniform1i(U.uImg, 0); gl.uniform1i(U.uData, 1);
+  Promise.all([load(SRC.img), load(SRC.data), load(SRC.dist)]).then(([img, data, dist]) => {
+    texture(0, img, true); texture(1, data, true); texture(2, dist, false, true);
+    gl.uniform1i(U.uImg, 0); gl.uniform1i(U.uData, 1); gl.uniform1i(U.uDist, 2);
     gl.clearColor(0.02, 0.04, 0.08, 1);
     resize(); ready = true; sync();
   }).catch((e) => console.warn("pcb-gl: textures", e));
