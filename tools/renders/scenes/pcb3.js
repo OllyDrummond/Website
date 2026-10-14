@@ -8,7 +8,8 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 
 export default function () {
   const q = new URLSearchParams(location.search);
-  const S = studio({ ...SERVICE_STUDIO, w: +(q.get('w') || 1600), h: +(q.get('h') || 1000), cam: [2.4, 2.6, 3.6], target: [0.1, 0.05, 0.1],
+  // Same lit studio floor and camera direction/distance as the custom machine (gears) image
+  const S = studio({ ...SERVICE_STUDIO, backdrop: null, w: +(q.get('w') || 1600), h: +(q.get('h') || 1000), cam: [0.7, 2.75, 5.2], target: [0, 0.1, 0],
     aperture: 0.045, samples: +(q.get('n') || 56) });
   const board = new THREE.Group(); board.rotation.y = -0.25; S.scene.add(board);
   const W = 3.2, D = 2.0, PX = 2048 / W;   // texture pixels per unit
@@ -19,15 +20,16 @@ export default function () {
     mcu: [1.25, 0.75, 0.5], rf: [2.2, 0.6, 0.72], soic: [[0.55, 1.05], [0.9, 0.45], [2.6, 1.35], [1.85, 1.55]],
     qfn: [[1.7, 1.1], [2.75, 0.25]], cap: [0.55, 0.6], header: [1.6, 1.8], xtal: [1.0, 1.25],
   };
+  const bumps = [];
   const tex = canvasTex(2048, 1280, (c, w, h) => {
     const P = (x) => x * PX;
-    c.fillStyle = '#0d3f86'; c.fillRect(0, 0, w, h);
+    c.fillStyle = '#163f86'; c.fillRect(0, 0, w, h);
     // ground pour hatch, slightly lighter
-    c.fillStyle = '#114a99'; for (let i = 0; i < 40; i++) c.fillRect(r() * w, r() * h, 120 + r() * 300, 60 + r() * 200);
+    c.fillStyle = '#18438c'; for (let i = 0; i < 40; i++) c.fillRect(r() * w, r() * h, 120 + r() * 300, 60 + r() * 200);
     c.lineCap = 'round'; c.lineJoin = 'round';
-    const trace = (pts, wdt = 5) => { c.strokeStyle = '#3c78c8'; c.lineWidth = wdt + 3; c.beginPath(); pts.forEach(([x, y], i) => i ? c.lineTo(P(x), P(y)) : c.moveTo(P(x), P(y))); c.stroke();
-      c.strokeStyle = '#6fa6e8'; c.lineWidth = wdt; c.stroke(); };
-    const via = (x, y) => { c.fillStyle = '#d7b067'; c.beginPath(); c.arc(P(x), P(y), 8, 0, 7); c.fill(); c.fillStyle = '#0a2d5e'; c.beginPath(); c.arc(P(x), P(y), 3.5, 0, 7); c.fill(); };
+    const trace = (pts, wdt = 5) => { c.strokeStyle = '#1c4a96'; c.lineWidth = wdt + 3; c.beginPath(); pts.forEach(([x, y], i) => i ? c.lineTo(P(x), P(y)) : c.moveTo(P(x), P(y))); c.stroke();
+      c.strokeStyle = '#2556a6'; c.lineWidth = wdt; c.stroke(); bumps.push([pts, wdt]); };
+    const via = (x, y) => { c.fillStyle = '#c4a25a'; c.beginPath(); c.arc(P(x), P(y), 8, 0, 7); c.fill(); c.fillStyle = '#0a2d5e'; c.beginPath(); c.arc(P(x), P(y), 3.5, 0, 7); c.fill(); };
     // fan-out from the MCU on all four sides
     const [mx, my, ms] = parts.mcu;
     for (let i = 0; i < 12; i++) {
@@ -49,7 +51,7 @@ export default function () {
     // power traces
     trace([[0.2, 1.9], [1.0, 1.9], [1.2, 1.7], [2.9, 1.7]], 14); trace([[0.25, 0.2], [0.25, 1.6]], 14);
     // pads under passives and the RF can, gold
-    c.fillStyle = '#d7b067';
+    c.fillStyle = '#c4a25a';
     for (let k = 0; k < 160; k++) { const x = r() * W, y = r() * D, v = r() > 0.5; c.fillRect(P(x), P(y), v ? 10 : 22, v ? 22 : 10); c.fillRect(P(x) + (v ? 0 : 34), P(y) + (v ? 34 : 0), v ? 10 : 22, v ? 22 : 10); }
     // silkscreen
     c.strokeStyle = '#e8eef5'; c.fillStyle = '#e8eef5'; c.lineWidth = 3; c.font = '600 30px Inter';
@@ -59,10 +61,16 @@ export default function () {
     for (let k = 0; k < 30; k++) { c.font = '500 22px Inter'; c.fillText(['R', 'C', 'L', 'D'][k % 4] + (k + 1), r() * w, r() * h); }
     c.font = '700 54px Inter'; c.fillText('KINETIQ  LVL-01  REV D', 80, h - 70);
     // mounting holes
-    for (const [x, y] of [[0.12, 0.12], [W - 0.12, 0.12], [0.12, D - 0.12], [W - 0.12, D - 0.12]]) { c.fillStyle = '#d7b067'; c.beginPath(); c.arc(P(x), P(y), 34, 0, 7); c.fill(); c.fillStyle = '#0a1a33'; c.beginPath(); c.arc(P(x), P(y), 20, 0, 7); c.fill(); }
+    for (const [x, y] of [[0.12, 0.12], [W - 0.12, 0.12], [0.12, D - 0.12], [W - 0.12, D - 0.12]]) { c.fillStyle = '#c4a25a'; c.beginPath(); c.arc(P(x), P(y), 34, 0, 7); c.fill(); c.fillStyle = '#0a1a33'; c.beginPath(); c.arc(P(x), P(y), 20, 0, 7); c.fill(); }
   });
-  const edge = new THREE.MeshStandardMaterial({ color: '#0b346e', roughness: 0.5 });
-  add(board, new THREE.BoxGeometry(W, 0.06, D), [edge, edge, new THREE.MeshPhysicalMaterial({ map: tex, roughness: 0.35, clearcoat: 0.7, clearcoatRoughness: 0.25 }), edge, edge, edge], [0, 0.03, 0]);
+  const bump = canvasTex(2048, 1280, (c, w, h) => {
+    c.fillStyle = '#000'; c.fillRect(0, 0, w, h); c.strokeStyle = '#fff'; c.lineCap = 'round'; c.lineJoin = 'round';
+    for (const [pts, wdt] of bumps) { c.lineWidth = wdt + 2; c.beginPath(); pts.forEach(([x, y], i) => i ? c.lineTo(x * PX, y * PX) : c.moveTo(x * PX, y * PX)); c.stroke(); }
+  });
+  // satin solder mask: soft sheen, no mirror glare; traces slightly raised underneath
+  const edge = new THREE.MeshStandardMaterial({ color: '#0f2f63', roughness: 0.6 });
+  const mask = new THREE.MeshPhysicalMaterial({ map: tex, bumpMap: bump, bumpScale: 1.2, roughness: 0.58, clearcoat: 0.2, clearcoatRoughness: 0.55, envMapIntensity: 0.7 });
+  add(board, new THREE.BoxGeometry(W, 0.06, D), [edge, edge, mask, edge, edge, edge], [0, 0.03, 0]);
 
   const top = 0.06, black = new THREE.MeshStandardMaterial({ color: '#15181b', roughness: 0.5 }), pinM = mat.metal('#c7ccd0', 0.25);
   const at = (x, z) => [x - W / 2, z - D / 2];

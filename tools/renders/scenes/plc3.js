@@ -9,13 +9,15 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 
 export default function () {
   const q = new URLSearchParams(location.search);
-  const S = studio({ ...SERVICE_STUDIO, w: +(q.get('w') || 1600), h: +(q.get('h') || 1000),
-    cam: [2.6, 5.6, 8.8], target: [0.25, 1.3, 0.2], aperture: 0.03, key: [3, 8, 6], samples: +(q.get('n') || 56) });
+  // Same lit studio floor and camera direction/distance as the custom machine (gears) image
+  const S = studio({ ...SERVICE_STUDIO, backdrop: null, w: +(q.get('w') || 1600), h: +(q.get('h') || 1000),
+    cam: [0.85, 3.95, 5.6], target: [0.15, 1.15, 0.3], aperture: 0.03, samples: +(q.get('n') || 56) });
 
   const body = new THREE.MeshPhysicalMaterial({ color: '#eceeef', roughness: 0.5, clearcoat: 0.15 });
   const bodyDark = new THREE.MeshPhysicalMaterial({ color: '#cfd3d6', roughness: 0.55 });
   const blue = mat.plastic('#2f7d4f', 0.45), screw = mat.metal('#c8ccd0', 0.3), hole = mat.plastic('#121417', 0.7);
-  const g = new THREE.Group(); g.rotation.y = -0.28; S.scene.add(g);
+  // scaled to sit at the same size and camera distance as the gears and PCB
+  const g = new THREE.Group(); g.rotation.y = -0.28; g.scale.setScalar(0.6); S.scene.add(g);
   const W = 4.2, H = 2.9;
 
   // stepped housing: back (deepest) at the top and bottom terminal strips, raised centre
