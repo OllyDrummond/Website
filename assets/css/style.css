@@ -1041,13 +1041,6 @@ details.table-view summary { cursor: pointer; font-weight: 600; color: var(--wat
 .pcb-gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity 0.9s var(--ease); }
 .pcb-stage.gl-on .pcb-gl { opacity: 1; }
 .pcb-stage.gl-on img { opacity: 0; }
-.hero-land.hero { cursor: crosshair; }
-.hero-land .hero-copy, .hero-land .product-chips { cursor: auto; }
-/* Desktop: the hero holds still for a stretch of scrolling while the camera moves (class added by pcb-gl.js) */
-@media (min-width: 761px) and (prefers-reduced-motion: no-preference) {
-  .hero-pin.is-pinned { height: calc(min(100svh, 980px) + 85vh); }
-  .hero-pin.is-pinned > .hero { position: sticky; top: var(--pin-top, 0px); }
-}
 .hero-land .hero-pcb::after { background: linear-gradient(180deg, rgba(3,7,14,0.55) 0%, rgba(3,7,14,0) 18%), linear-gradient(90deg, rgba(3,7,14,0.88) 0%, rgba(3,7,14,0.55) 34%, rgba(3,7,14,0) 62%), linear-gradient(0deg, rgba(3,7,14,0.65) 0%, rgba(3,7,14,0) 26%); pointer-events: none; }
 .hero-pcb .motion-toggle { position: absolute; right: var(--gutter); bottom: 14px; z-index: 4; display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 6px 14px 6px 11px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.22); background: rgba(14,22,32,0.55); color: rgba(255,255,255,0.85); font: 600 0.8rem var(--font); cursor: pointer; backdrop-filter: blur(8px); }
 .hero-pcb .motion-toggle:hover { background: rgba(14,22,32,0.8); color: #fff; }
