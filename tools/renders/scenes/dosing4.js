@@ -6,6 +6,10 @@
 //   2 Two-level frame  - acid tank raised on a top deck, pumps and cylinder below
 //   3 Plant room       - cylinder and IBC on the floor, dosing gear on a wall board
 //   4 Acid + alkali    - two chemical tanks, for washes that alternate
+//   5 Enclosed unit    - skid inside a weatherproof housing, near side cut away
+//   6 Twin cylinder    - two hot water cylinders for larger sheds
+//   7 Compact tower    - tall stainless frame, small footprint, everything stacked
+//   8 Corner skid      - L-shaped skid for the corner of a plant room
 import { studio, THREE, mat, add, tube, canvasTex, rectShadow } from '../studio.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
@@ -229,6 +233,95 @@ const V = {
     }
     rectShadow(g, 4.4, 1.7, 0.55, 0.2, [0, 0.003, 0]);
     return { cam: [1.6, 3.2, 9.0], target: [0.0, 1.05, 0] };
+  },
+  // 5. enclosed unit: housing with the near side and roof cut away to show the plant
+  5: (S) => {
+    const g = new THREE.Group(); g.rotation.y = -0.42; S.scene.add(g);
+    const W = 3.2, D = 1.5, H = 2.45, top = 0.17;
+    skid(g, W + 0.1, D + 0.1);
+    const clad = mat.plastic('#e4e6e8', 0.5), trim = steelPaint();
+    // back wall and the far end wall, with louvres
+    add(g, rb(W, H, 0.05, 0.01), clad, [0, top + H / 2, -D / 2]);
+    add(g, rb(0.05, H, D, 0.01), clad, [-W / 2, top + H / 2, 0]);
+    for (let k = 0; k < 8; k++) add(g, rb(0.02, 0.04, 0.7, 0.005), trim, [-W / 2 + 0.03, top + 1.4 + k * 0.1, 0]);
+    // corner posts and a roof edge frame (roof itself left off)
+    for (const x of [-W / 2, W / 2]) for (const z of [-D / 2, D / 2]) add(g, rb(0.07, H, 0.07, 0.01), trim, [x, top + H / 2, z]);
+    for (const z of [-D / 2, D / 2]) add(g, rb(W, 0.07, 0.07, 0.01), trim, [0, top + H, z]);
+    for (const x of [-W / 2, W / 2]) add(g, rb(0.07, 0.07, D, 0.01), trim, [x, top + H, 0]);
+    plate(g, label('WASH PLANT', 'Hot water + acid dosing'), 0.6, 0.3, [0.6, top + 2.05, -D / 2 + 0.03]);
+    cylinder(g, [-0.95, top, -0.2], 0.48, 1.95);
+    acidTank(g, [0.35, top, -0.25], 0.36, 1.0);
+    panel(g, [1.25, top + 1.5, -D / 2 + 0.2], 0, 0.95);
+    circPump(g, [-0.35, top, 0.4], 0, 1.05);
+    meterPump(g, [0.7, top + 0.02, 0.35], 0, 1.0);
+    pipe(g, [[-0.5, top + 0.6, -0.1], [-0.35, top + 0.4, 0.3], [-0.2, top + 0.22, 0.4]]);
+    pipe(g, [[-0.13, top + 0.56, 0.4], [-0.13, top + 1.3, 0.45], [0.1, top + 1.38, 0.45], [W / 2 + 0.4, top + 1.38, 0.45]]);
+    valve(g, [0.9, top + 1.38, 0.45]);
+    tube(g, [[0.35, top + 1.35, -0.25], [0.5, top + 1.45, 0.0], [0.75, top + 0.6, 0.35], [0.9, top + 0.3, 0.35]], 0.016, hoseM());
+    rectShadow(g, W + 0.3, D + 0.3, 0.55, 0.2, [0, 0.003, 0]);
+    return { cam: [2.6, 3.4, 8.4], target: [0.15, 1.15, 0] };
+  },
+  // 6. twin cylinders, acid tank and panel on a wide skid
+  6: (S) => {
+    const g = new THREE.Group(); g.rotation.y = -0.3; S.scene.add(g);
+    const top = 0.17;
+    skid(g, 4.0, 1.5);
+    cylinder(g, [-1.45, top, -0.2], 0.46, 1.95);
+    cylinder(g, [-0.45, top, -0.2], 0.46, 1.95);
+    acidTank(g, [0.8, top, -0.2], 0.4, 1.1);
+    for (const x of [1.55, 2.0]) add(g, rb(0.06, 1.75, 0.06, 0.01), steelPaint(), [x, top + 0.87, -0.35]);
+    panel(g, [1.78, top + 1.3, -0.2], 0, 0.95);
+    circPump(g, [-0.95, top, 0.45], 0, 1.05);
+    meterPump(g, [1.05, top + 0.02, 0.45], 0, 1.0);
+    // common header off both cylinders
+    pipe(g, [[-1.45, top + 0.7, 0.26], [-1.45, top + 0.7, 0.4], [-0.45, top + 0.7, 0.4], [-0.45, top + 0.7, 0.26]]);
+    pipe(g, [[-0.95, top + 0.7, 0.4], [-0.85, top + 0.4, 0.45], [-0.75, top + 0.22, 0.45]]);
+    pipe(g, [[-0.68, top + 0.56, 0.45], [-0.68, top + 1.25, 0.55], [-0.4, top + 1.33, 0.6], [2.2, top + 1.33, 0.6]]);
+    valve(g, [0.1, top + 1.33, 0.6]); valve(g, [-1.2, top + 0.7, 0.4]);
+    tube(g, [[0.8, top + 1.45, -0.2], [0.95, top + 1.55, 0.1], [1.15, top + 0.6, 0.45], [1.25, top + 0.3, 0.45]], 0.016, hoseM());
+    rectShadow(g, 4.2, 1.7, 0.55, 0.2, [0, 0.003, 0]);
+    return { cam: [1.9, 3.3, 9.0], target: [0.15, 1.05, 0] };
+  },
+  // 7. compact tower: stainless frame, cylinder in the middle, tank on a side shelf, panel on the front
+  7: (S) => {
+    const g = new THREE.Group(); g.rotation.y = -0.55; S.scene.add(g);
+    const W = 1.7, D = 1.25, H = 2.6, top = 0.17, sf = mat.metal('#cfd4d8', 0.3);
+    skid(g, W + 0.9, D + 0.1, [0.4, 0, 0]);
+    for (const x of [-W / 2, W / 2]) for (const z of [-D / 2, D / 2]) add(g, rb(0.06, H, 0.06, 0.01), sf, [x, top + H / 2, z]);
+    for (const y of [top + 0.9, top + H]) { for (const z of [-D / 2, D / 2]) add(g, rb(W, 0.05, 0.05, 0.01), sf, [0, y, z]); for (const x of [-W / 2, W / 2]) add(g, rb(0.05, 0.05, D, 0.01), sf, [x, y, 0]); }
+    cylinder(g, [-0.35, top, -0.15], 0.45, 1.95);
+    // side shelf holding the acid tank, at mid height
+    add(g, rb(0.95, 0.05, D, 0.01), sf, [W / 2 + 0.45, top + 0.9, 0]);
+    for (const z of [-D / 2, D / 2]) add(g, rb(0.05, 0.9, 0.05, 0.01), sf, [W / 2 + 0.9, top + 0.45, z]);
+    acidTank(g, [W / 2 + 0.45, top + 0.92, 0], 0.32, 0.8);
+    panel(g, [0.5, top + 1.6, D / 2 + 0.15], 0, 0.72);
+    circPump(g, [0.35, top, 0.15], 0, 1.0);
+    meterPump(g, [W / 2 + 0.35, top + 0.02, 0.2], 0, 0.95);
+    pipe(g, [[-0.3, top + 0.6, 0.35], [-0.1, top + 0.4, 0.3], [0.15, top + 0.22, 0.15]]);
+    pipe(g, [[0.6, top + 0.53, 0.15], [0.6, top + 2.45, 0.15], [0.8, top + 2.5, 0.15], [W / 2 + 1.0, top + 2.5, 0.15]]);
+    valve(g, [1.15, top + 2.5, 0.15]);
+    tube(g, [[W / 2 + 0.45, top + 1.95, 0], [W / 2 + 0.6, top + 2.0, 0.3], [W / 2 + 0.55, top + 0.6, 0.25], [W / 2 + 0.55, top + 0.3, 0.2]], 0.016, hoseM());
+    rectShadow(g, W + 1.1, D + 0.3, 0.55, 0.2, [0.4, 0.003, 0]);
+    return { cam: [2.2, 3.4, 8.2], target: [0.35, 1.3, 0] };
+  },
+  // 8. corner skid: L-shaped base, cylinder in the corner, tank and panel on the wings
+  8: (S) => {
+    const g = new THREE.Group(); g.rotation.y = -0.78; S.scene.add(g);
+    const top = 0.17;
+    skid(g, 3.0, 1.2, [0.3, 0, -0.6]);
+    skid(g, 1.2, 1.8, [-0.6, 0, 0.9]);
+    cylinder(g, [-0.6, top, -0.6], 0.5, 2.05);
+    acidTank(g, [0.85, top, -0.65], 0.38, 1.1);
+    panel(g, [-0.6, top + 1.25, 1.75], 0, 0.95);
+    for (const x of [-0.85, -0.35]) add(g, rb(0.06, 1.7, 0.06, 0.01), steelPaint(), [x, top + 0.85, 1.6]);
+    circPump(g, [-0.65, top, 0.65], Math.PI / 2, 1.05);
+    meterPump(g, [1.35, top + 0.02, -0.25], 0, 1.0);
+    pipe(g, [[-0.6, top + 0.6, -0.08], [-0.65, top + 0.38, 0.2], [-0.65, top + 0.2, 0.36]]);
+    pipe(g, [[-0.65, top + 0.53, 0.49], [-0.65, top + 1.3, 0.49], [-0.45, top + 1.38, 0.49], [1.8, top + 1.38, 0.49]]);
+    valve(g, [0.3, top + 1.38, 0.49]);
+    tube(g, [[0.85, top + 1.45, -0.65], [1.0, top + 1.55, -0.4], [1.25, top + 0.6, -0.25], [1.35, top + 0.3, -0.25]], 0.016, hoseM());
+    rectShadow(g, 3.2, 1.4, 0.55, 0.2, [0.3, 0.003, -0.6]); rectShadow(g, 1.4, 2.0, 0.5, 0.2, [-0.6, 0.003, 0.9]);
+    return { cam: [2.4, 3.6, 8.4], target: [0.2, 1.0, 0.2] };
   },
 };
 
