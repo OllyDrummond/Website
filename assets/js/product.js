@@ -134,6 +134,6 @@ if (new URLSearchParams(location.search).has("compare")) {
   const bar = document.createElement("nav");
   bar.setAttribute("aria-label", "Compare designs");
   bar.style.cssText = "position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:999;display:flex;gap:4px;padding:5px;border-radius:999px;background:rgba(22,26,30,.92);box-shadow:0 10px 30px rgba(0,0,0,.3);font:600 13px/1 Archivo,system-ui,sans-serif";
-  bar.innerHTML = '<a href="water-monitor.html?compare" aria-current="page" style="padding:10px 16px;border-radius:999px;text-decoration:none;background:#fff;color:#16191c">Version A</a><a href="water-monitor-b.html" style="padding:10px 16px;border-radius:999px;text-decoration:none;color:#fff">Version B</a>';
+  bar.innerHTML = '<a href="water-monitor.html?compare" aria-current="page" style="padding:10px 16px;border-radius:999px;text-decoration:none;background:#fff;color:#16191c">Version A</a><a href="water-monitor-b.html" style="padding:10px 16px;border-radius:999px;text-decoration:none;color:#fff">Version B</a><a href="water-monitor-c.html" style="padding:10px 16px;border-radius:999px;text-decoration:none;color:#fff">Version C</a>';
   document.body.appendChild(bar);
 }
