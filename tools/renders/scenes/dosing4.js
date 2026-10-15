@@ -13,18 +13,18 @@
 import { studio, THREE, mat, add, tube, canvasTex, rectShadow } from '../studio.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
-const rb = (w, h, d, r = 0.03) => new RoundedBoxGeometry(w, h, d, 4, r);
-const cyl = (r, h, n = 48) => new THREE.CylinderGeometry(r, r, h, n);
-const ss = () => mat.metal('#d3d8dc', 0.24);              // brushed stainless
-const ssDull = () => mat.metal('#b9bfc4', 0.38);
-const steelPaint = () => mat.plastic('#3d4349', 0.5);     // painted skid steel
-const ral7035 = () => mat.plastic('#d6d8d4', 0.45);       // control panel grey
-const poly = () => new THREE.MeshPhysicalMaterial({ color: '#eceee6', roughness: 0.55, clearcoat: 0.1 });
-const maroon = () => mat.plastic('#7a1f2b', 0.4);
-const dark = () => mat.plastic('#22262a', 0.45);
-const X = [0, 0, Math.PI / 2], Z = [Math.PI / 2, 0, 0];
+export const rb = (w, h, d, r = 0.03) => new RoundedBoxGeometry(w, h, d, 4, r);
+export const cyl = (r, h, n = 48) => new THREE.CylinderGeometry(r, r, h, n);
+export const ss = () => mat.metal('#d3d8dc', 0.24);              // brushed stainless
+export const ssDull = () => mat.metal('#b9bfc4', 0.38);
+export const steelPaint = () => mat.plastic('#3d4349', 0.5);     // painted skid steel
+export const ral7035 = () => mat.plastic('#d6d8d4', 0.45);       // control panel grey
+export const poly = () => new THREE.MeshPhysicalMaterial({ color: '#eceee6', roughness: 0.55, clearcoat: 0.1 });
+export const maroon = () => mat.plastic('#7a1f2b', 0.4);
+export const dark = () => mat.plastic('#22262a', 0.45);
+export const X = [0, 0, Math.PI / 2], Z = [Math.PI / 2, 0, 0];
 
-function screenTex() {
+export function screenTex() {
   return canvasTex(640, 400, (c, w, h) => {
     c.fillStyle = '#0f1316'; c.fillRect(0, 0, w, h);
     c.fillStyle = '#9aa5ad'; c.font = '600 28px Inter'; c.fillText('Plant wash · acid', 30, 52);
@@ -35,15 +35,15 @@ function screenTex() {
     c.fillStyle = '#28323a'; c.fillRect(30, 340, w - 60, 10); c.fillStyle = '#3d8fe6'; c.fillRect(30, 340, (w - 60) * 0.68, 10);
   });
 }
-const label = (txt, sub, bg = '#ffffff', fg = '#1c2227') => canvasTex(320, 160, (c, w, h) => {
+export const label = (txt, sub, bg = '#ffffff', fg = '#1c2227') => canvasTex(320, 160, (c, w, h) => {
   c.fillStyle = bg; c.fillRect(0, 0, w, h); c.fillStyle = '#7a1f2b'; c.fillRect(0, 0, w, 30);
   c.fillStyle = '#fff'; c.font = '700 20px Inter'; c.fillText('KINETIQ', 12, 22);
   c.fillStyle = fg; c.font = '700 30px Inter'; c.fillText(txt, 14, 78); c.font = '500 20px Inter'; c.fillText(sub, 14, 112);
 });
-const plate = (parent, tex, w, h, pos, rot = [0, 0, 0]) => add(parent, new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5 }), pos, rot, false);
+export const plate = (parent, tex, w, h, pos, rot = [0, 0, 0]) => add(parent, new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5 }), pos, rot, false);
 
 // Hot water cylinder: insulated stainless body, domed top, legs, element housing, gauge, relief valve
-function cylinder(p, pos, R = 0.48, H = 2.0) {
+export function cylinder(p, pos, R = 0.48, H = 2.0) {
   const g = new THREE.Group(); g.position.set(...pos); p.add(g);
   for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2 + Math.PI / 4; add(g, cyl(0.04, 0.22, 16), ssDull(), [Math.cos(a) * R * 0.7, 0.11, Math.sin(a) * R * 0.7]); }
   add(g, cyl(R, H, 64), ss(), [0, 0.22 + H / 2, 0]);
@@ -65,7 +65,7 @@ function cylinder(p, pos, R = 0.48, H = 2.0) {
   return g;
 }
 // Acid storage: natural poly tank with lid, sight tube and label, standing in a bund
-function acidTank(p, pos, R = 0.42, H = 1.2, name = 'ACID', sub = 'Wash solution') {
+export function acidTank(p, pos, R = 0.42, H = 1.2, name = 'ACID', sub = 'Wash solution') {
   const g = new THREE.Group(); g.position.set(...pos); p.add(g);
   add(g, rb(R * 2 + 0.3, 0.3, R * 2 + 0.3, 0.03), mat.plastic('#2b3136', 0.55), [0, 0.15, 0]);
   add(g, rb(R * 2 + 0.2, 0.02, R * 2 + 0.2, 0.01), mat.plastic('#1b1f23', 0.6), [0, 0.3, 0]);
@@ -78,7 +78,7 @@ function acidTank(p, pos, R = 0.42, H = 1.2, name = 'ACID', sub = 'Wash solution
   return g;
 }
 // Centrifugal circulation pump: finned motor, stainless volute, base plate. Outlet up.
-function circPump(p, pos, rotY = 0, s = 1) {
+export function circPump(p, pos, rotY = 0, s = 1) {
   const g = new THREE.Group(); g.position.set(...pos); g.rotation.y = rotY; g.scale.setScalar(s); p.add(g);
   add(g, rb(0.7, 0.04, 0.32, 0.01), steelPaint(), [0, 0.02, 0]);
   add(g, cyl(0.13, 0.42, 40), mat.plastic('#5c6670', 0.4), [-0.12, 0.18, 0], X);
@@ -91,7 +91,7 @@ function circPump(p, pos, rotY = 0, s = 1) {
   return g;
 }
 // Diaphragm metering pump, head facing +x
-function meterPump(p, pos, rotY = 0, s = 1) {
+export function meterPump(p, pos, rotY = 0, s = 1) {
   const g = new THREE.Group(); g.position.set(...pos); g.rotation.y = rotY; g.scale.setScalar(s); p.add(g);
   add(g, rb(0.36, 0.3, 0.26, 0.04), mat.plastic('#eef0f1', 0.42), [0, 0.15, 0]);
   add(g, rb(0.37, 0.05, 0.27, 0.015), maroon(), [0, 0.27, 0]);
@@ -100,7 +100,7 @@ function meterPump(p, pos, rotY = 0, s = 1) {
   return g;
 }
 // Industrial control enclosure with HMI, lamps, isolator. Door faces +z.
-function panel(p, pos, rotY = 0, s = 1) {
+export function panel(p, pos, rotY = 0, s = 1) {
   const g = new THREE.Group(); g.position.set(...pos); g.rotation.y = rotY; g.scale.setScalar(s); p.add(g);
   add(g, rb(0.8, 1.0, 0.3, 0.025), ral7035(), [0, 0, 0]);
   add(g, rb(0.76, 0.96, 0.02, 0.015), ral7035(), [0, 0, 0.155]);
@@ -115,17 +115,17 @@ function panel(p, pos, rotY = 0, s = 1) {
   return g;
 }
 // Ball valve with lever, on a pipe along x
-function valve(p, pos, rotY = 0) {
+export function valve(p, pos, rotY = 0) {
   const g = new THREE.Group(); g.position.set(...pos); g.rotation.y = rotY; p.add(g);
   add(g, cyl(0.06, 0.14, 24), ss(), [0, 0, 0], X);
   add(g, rb(0.18, 0.025, 0.035, 0.01), maroon(), [0.04, 0.09, 0]);
   add(g, cyl(0.015, 0.06, 12), ss(), [0, 0.06, 0]);
   return g;
 }
-const pipe = (p, pts, r = 0.035) => tube(p, pts, r, ss(), 160);
-const hoseM = () => new THREE.MeshPhysicalMaterial({ color: '#eef2f4', roughness: 0.3, transmission: 0.3, thickness: 0.02 });
+export const pipe = (p, pts, r = 0.035) => tube(p, pts, r, ss(), 160);
+export const hoseM = () => new THREE.MeshPhysicalMaterial({ color: '#eef2f4', roughness: 0.3, transmission: 0.3, thickness: 0.02 });
 // Steel skid: two channels, cross members, chequer deck
-function skid(p, W, D, pos = [0, 0, 0]) {
+export function skid(p, W, D, pos = [0, 0, 0]) {
   const g = new THREE.Group(); g.position.set(...pos); p.add(g);
   for (const z of [-D / 2 + 0.06, D / 2 - 0.06]) add(g, rb(W, 0.14, 0.12, 0.01), steelPaint(), [0, 0.07, z]);
   for (let k = 0; k <= 4; k++) add(g, rb(0.1, 0.1, D - 0.2, 0.01), steelPaint(), [-W / 2 + 0.1 + k * (W - 0.2) / 4, 0.07, 0]);
