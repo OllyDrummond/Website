@@ -14,8 +14,8 @@
   const tanksOut = document.getElementById("tanks-out");
   const pumpsOut = document.getElementById("pumps-out");
   const pumpsRow = document.getElementById("pumps-row");
-  const summary = document.getElementById("kit-summary");
-  const barSummary = document.getElementById("ob-summary");
+  const summary = document.getElementById("kit-out");
+  const barSummary = document.getElementById("ob-out");
 
   const kitItems = () => {
     const items = [plural(state.tanks, "tank unit", "tank units"), "1 receiver"];

@@ -48,17 +48,17 @@
           <div class="g-dots" aria-hidden="true"></div>
         </div>
 
-        <aside class="buy-panel" aria-label="Order the tank monitor">
+        <div class="buy-panel" role="region" aria-label="Order the tank monitor">
           <p data-e="1" class="crumbs"><a href="../index.html#products">Products</a> / Water tank monitoring</p>
           <div class="bp-title">
-            <h1 id="pdp-title">Kinetiq Tank Monitor</h1>
+            <h1 data-e="118" id="pdp-title">Kinetiq Tank Monitor</h1>
             <span data-e="2" class="badge ready">Completed · trials open</span>
           </div>
           <p data-e="3" class="bp-tagline">Know how much water is in every tank, from anywhere.</p>
           <dl class="bp-meta">
-            <div><dt>Status</dt><dd>Trial kits available</dd></div>
-            <div><dt>Made in</dt><dd>New Zealand</dd></div>
-            <div><dt>Range</dt><dd>Up to 5 km to the house (design target)</dd></div>
+            <div><dt data-e="119">Status</dt><dd data-e="120">Trial kits available</dd></div>
+            <div><dt data-e="121">Made in</dt><dd data-e="122">New Zealand</dd></div>
+            <div><dt data-e="123">Range</dt><dd data-e="124">Up to 5 km to the house (design target)</dd></div>
           </dl>
 
           <form class="config" id="config" novalidate>
@@ -67,17 +67,17 @@
               <label class="choice">
                 <input type="radio" name="system" value="monitor" checked>
                 <span class="choice-img"><img src="../assets/img/renders/unit.webp" alt="" width="1600" height="1200" loading="lazy"></span>
-                <span class="choice-text"><strong>Monitoring</strong><span>A tank unit on each tank and a receiver in the house.</span></span>
+                <span class="choice-text"><strong data-e="125">Monitoring</strong><span data-e="126">A tank unit on each tank and a receiver in the house.</span></span>
               </label>
               <label class="choice">
                 <input type="radio" name="system" value="pump">
                 <span class="choice-img"><img src="../assets/img/renders/controller.webp" alt="" width="1600" height="1200" loading="lazy"></span>
-                <span class="choice-text"><strong>Monitoring and pump control</strong><span>Adds a pump controller that fills tanks by hand, by level or on a schedule.</span></span>
+                <span class="choice-text"><strong data-e="127">Monitoring and pump control</strong><span data-e="128">Adds a pump controller that fills tanks by hand, by level or on a schedule.</span></span>
               </label>
             </fieldset>
 
             <div class="opt opt-row">
-              <div><p class="opt-label" id="tanks-label">Tanks to monitor</p><p class="opt-hint">One tank unit per tank, all on one receiver.</p></div>
+              <div><p data-e="129" class="opt-label" id="tanks-label">Tanks to monitor</p><p data-e="130" class="opt-hint">One tank unit per tank, all on one receiver.</p></div>
               <div class="stepper" role="group" aria-labelledby="tanks-label">
                 <button type="button" data-step="tanks" data-d="-1" aria-label="One fewer tank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M5 12h14"/></svg></button>
                 <output id="tanks-out" aria-live="polite">1</output>
@@ -85,7 +85,7 @@
               </div>
             </div>
             <div class="opt opt-row" id="pumps-row" hidden>
-              <div><p class="opt-label" id="pumps-label">Pumps to control</p><p class="opt-hint">One pump controller per fill pump.</p></div>
+              <div><p data-e="131" class="opt-label" id="pumps-label">Pumps to control</p><p data-e="132" class="opt-hint">One pump controller per fill pump.</p></div>
               <div class="stepper" role="group" aria-labelledby="pumps-label">
                 <button type="button" data-step="pumps" data-d="-1" aria-label="One fewer pump"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M5 12h14"/></svg></button>
                 <output id="pumps-out" aria-live="polite">1</output>
@@ -93,7 +93,7 @@
               </div>
             </div>
             <div class="opt opt-row opt-select">
-              <label class="opt-label" for="distance">Furthest tank from the house</label>
+              <label data-e="133" class="opt-label" for="distance">Furthest tank from the house</label>
               <select id="distance" name="distance">
                 <option>Under 1 km</option>
                 <option>1 to 3 km</option>
@@ -104,16 +104,16 @@
             </div>
 
             <figure class="sys">
-              <svg id="sys-svg" viewBox="0 28 360 124" role="img" aria-labelledby="kit-summary"></svg>
-              <figcaption id="kit-summary">In your kit: 1 tank unit and 1 receiver</figcaption>
+              <svg id="sys-svg" viewBox="0 28 360 124" role="img" aria-labelledby="kit-out"></svg>
+              <figcaption id="kit-out">In your kit: 1 tank unit and 1 receiver</figcaption>
             </figure>
 
             <div class="price">
-              <p class="price-v">Price to be confirmed</p>
-              <p class="price-note">We're setting prices during the trial. Send an order request and we'll reply with a price for your site.</p>
+              <p data-e="134" class="price-v">Price to be confirmed</p>
+              <p data-e="135" class="price-note">We're setting prices during the trial. Send an order request and we'll reply with a price for your site.</p>
             </div>
             <div class="bp-actions" id="bp-actions">
-              <button type="button" class="btn btn-primary" data-order>Request to order</button>
+              <button data-e="136" type="button" class="btn btn-primary" data-order>Request to order</button>
               <a data-e="5" class="btn btn-ghost" href="../projects/tank-monitor-live.html">Open the live demo</a>
             </div>
           </form>
@@ -153,7 +153,7 @@
               </div>
             </details>
           </div>
-        </aside>
+        </div>
       </div>
     </section>
 
@@ -320,7 +320,7 @@
   </main>
 
   <div class="order-bar" id="order-bar" aria-hidden="true">
-    <div class="ob-text"><strong data-e="105">Kinetiq Tank Monitor</strong><span data-e="106" id="ob-summary">1 tank, monitoring</span></div>
+    <div class="ob-text"><strong data-e="105">Kinetiq Tank Monitor</strong><span id="ob-out">1 tank, monitoring</span></div>
     <button data-e="107" type="button" class="btn btn-primary btn-sm" data-order tabindex="-1">Request to order</button>
   </div>
 
