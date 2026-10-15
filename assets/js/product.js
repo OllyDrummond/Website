@@ -27,6 +27,7 @@
   const total = () => lines().reduce((s, [, p]) => s + p, 0);
 
   document.querySelectorAll("[data-example-flag]").forEach((el) => { el.hidden = !EXAMPLE_PRICES; });
+  document.querySelectorAll("[data-price]").forEach((el) => { el.textContent = money(PRICES[el.dataset.price]); });
   $("from-out").textContent = money(PRICES.tankUnit + PRICES.receiver);
 
   // ---------- Kit builder ----------
@@ -67,19 +68,29 @@
   const form = $("order-form");
   const status = $("order-status");
   const kitList = $("od-kit-list");
-  const details = () => [
-    ...lines().map(([name, price]) => `${name}: ${money(price)}`),
-    `Total incl. GST: ${money(total())}`,
-  ];
+  // What's being ordered: the kit from the buy box, or a single part from its Buy button
+  const PART_NAMES = { tankUnit: "1 tank unit", receiver: "1 receiver", pumpController: "1 pump controller" };
+  let single = null;
+  const orderLines = () => (single ? [[PART_NAMES[single], PRICES[single]]] : lines());
+  const details = () => {
+    const ls = orderLines();
+    return [
+      ...ls.map(([name, price]) => `${name}: ${money(price)}`),
+      `Total incl. GST: ${money(ls.reduce((t, [, p]) => t + p, 0))}`,
+    ];
+  };
   let opener = null;
-  document.querySelectorAll("[data-order]").forEach((b) => b.addEventListener("click", () => {
+  const openOrder = (b, part) => {
     opener = b;
+    single = part;
     kitList.innerHTML = "";
     details().forEach((t) => kitList.append(Object.assign(document.createElement("li"), { textContent: t })));
     status.textContent = ""; status.className = "form-status";
     dialog.showModal();
     $("o-name").focus();
-  }));
+  };
+  document.querySelectorAll("[data-order]").forEach((b) => b.addEventListener("click", () => openOrder(b, null)));
+  document.querySelectorAll("[data-buy]").forEach((b) => b.addEventListener("click", () => openOrder(b, b.dataset.buy)));
   dialog.querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", () => dialog.close()));
   dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
   dialog.addEventListener("close", () => { if (opener) opener.focus(); });

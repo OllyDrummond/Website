@@ -27,16 +27,17 @@
 .tm-subnav-links a:not(.btn):hover { color: var(--ink); }
 .tm-subnav .btn-sm { padding: 7px 16px; font-size: 0.88rem; }
 
-/* Hero */
-.tm-hero { text-align: center; padding: clamp(56px, 7vw, 88px) 0 0; background: linear-gradient(180deg, #fff 0%, var(--stage) 72%); color: var(--stage-ink); overflow: hidden; }
-.tm-status { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 18px; font-size: 0.9rem; font-weight: 600; color: var(--stage-ink-2); }
-.tm-dot { width: 8px; height: 8px; border-radius: 50%; background: #2e7d4f; box-shadow: 0 0 0 4px rgba(46,125,79,0.15); }
-.tm-hero h1 { margin: 0; font-size: clamp(3rem, 8vw, 6rem); font-weight: 800; font-stretch: 115%; letter-spacing: -0.035em; line-height: 1; }
-.tm-tagline { margin: 16px auto 0; max-width: 24ch; font-size: clamp(1.2rem, 2.3vw, 1.65rem); line-height: 1.3; color: var(--stage-ink-2); }
+/* Hero: full-bleed NZ farm photo with the title over the sky */
+.tm-hero { position: relative; isolation: isolate; display: flex; align-items: flex-start; justify-content: center; min-height: calc(100svh - var(--hdr, 72px) - 53px); padding: clamp(56px, 9vh, 104px) 0 48px; text-align: center; color: #fff; overflow: hidden; background: #2b3a2f; }
+.tm-hero-bg { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: 50% 62%; }
+.tm-hero::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(12,18,22,0.62) 0%, rgba(12,18,22,0.32) 38%, rgba(12,18,22,0) 62%), linear-gradient(0deg, rgba(12,18,22,0.35) 0%, rgba(12,18,22,0) 25%); }
+.tm-status { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 18px; font-size: 0.9rem; font-weight: 600; color: rgba(255,255,255,0.88); }
+.tm-dot { width: 8px; height: 8px; border-radius: 50%; background: #5cbf86; box-shadow: 0 0 0 4px rgba(92,191,134,0.25); }
+.tm-hero h1 { margin: 0; font-size: clamp(3rem, 8vw, 6rem); font-weight: 800; font-stretch: 115%; letter-spacing: -0.035em; line-height: 1; color: #fff; text-shadow: 0 2px 30px rgba(0,0,0,0.25); }
+.tm-tagline { margin: 16px auto 0; max-width: 24ch; font-size: clamp(1.2rem, 2.3vw, 1.65rem); line-height: 1.3; color: rgba(255,255,255,0.9); }
 .tm-ctas { margin-top: 28px; display: flex; gap: 14px 24px; justify-content: center; align-items: center; flex-wrap: wrap; }
 .tm-btn-lg { padding: 15px 28px; font-size: 1.02rem; }
-.tm-hero .tm-link { color: #1f6fb2; }
-.tm-hero-img { margin: clamp(16px, 3vw, 32px) auto 0; width: min(1000px, 100%); height: auto; }
+.tm-hero .tm-link { color: #fff; text-decoration: underline; text-underline-offset: 4px; text-decoration-color: rgba(255,255,255,0.5); }
 
 /* Key figures */
 .tm-facts { padding: clamp(72px, 9vw, 112px) 0; }
@@ -198,3 +199,21 @@
 .tm-lb-close { top: 18px; right: 18px; }
 .tm-lb-prev { left: 18px; top: 50%; transform: translateY(-50%); }
 .tm-lb-next { right: 18px; top: 50%; transform: translateY(-50%); }
+
+/* The three parts, each with a price and its own Buy button */
+.tm-parts-sub { margin: 14px auto 0; text-align: center; color: var(--ink-2); max-width: none; }
+.tm-parts { margin-top: clamp(32px, 4vw, 48px); }
+.tm-parts > li { display: flex; flex-direction: column; }
+.tm-part { display: flex; flex-direction: column; flex: 1; padding: 18px 4px 0; }
+.tm-part-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.tm-part h3 { margin: 0; font-size: 1.3rem; font-weight: 800; font-stretch: 108%; }
+.tm-price { margin: 0; font-size: 1.3rem; font-weight: 800; font-stretch: 112%; font-variant-numeric: tabular-nums; }
+.tm-part-desc { margin: 8px 0 18px; font-size: 0.96rem; color: var(--ink-2); }
+.tm-part-buy { margin-top: auto; width: 100%; }
+.tm-gallery-sec .tm-note { margin-top: 28px; }
+@media (max-width: 760px) {
+  .tm-parts { grid-template-columns: 1fr; gap: 36px; }
+  .tm-parts > li, .tm-parts > li:nth-child(3) { grid-column: auto; }
+  .tm-parts li:nth-child(3) .tm-shot { aspect-ratio: 4 / 3; }
+}
+@media (max-width: 640px) { .tm-hero-bg { object-position: 70% 62%; } }
