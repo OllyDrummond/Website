@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Water Tank Monitoring | Kinetiq</title>
+  <title>Kinetiq Tank Monitor | Kinetiq</title>
   <meta name="description" content="The Kinetiq tank monitor: a submersible pressure probe, solar-powered sensor unit and LoRa receiver that put tank levels, usage and pump control on your phone.">
   <meta name="theme-color" content="#1b2126">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,7 +15,7 @@
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
-  <header class="site-header over-hero">
+  <header class="site-header">
     <div class="wrap">
       <a class="brand" href="../index.html" aria-label="Kinetiq home"><img class="logo logo-on-dark" src="../assets/img/brand/kinetiq-full-white.webp?v=2" alt="Kinetiq, engineering solutions" width="1180" height="300"><img class="logo logo-on-light" src="../assets/img/brand/kinetiq-full-dark.webp?v=2" alt="" width="1180" height="300" aria-hidden="true"></a>
       <nav class="nav" id="nav" aria-label="Main">
@@ -33,19 +33,135 @@
     </div>
   </header>
 
-  <main id="main" class="wm">
-    <section class="wm-hero on-dark" aria-labelledby="wm-title">
-      <div class="wm-media" aria-hidden="true"><img src="../assets/img/photos/nz-southland.webp" srcset="../assets/img/photos/nz-southland-1200.webp 1200w, ../assets/img/photos/nz-southland.webp 2400w" sizes="100vw" alt="" width="2400" height="1100" fetchpriority="high" decoding="async"></div>
-      <div class="wrap wm-hero-grid">
-        <div class="wm-hero-copy">
-          <p data-e="1" class="crumbs"><a href="../projects.html">Projects</a> / Water tank monitoring</p>
-          <span data-e="2" class="badge ready">Completed · trials open</span>
-          <h1 data-e="3" id="wm-title">Know how much water is in every tank, from anywhere.</h1>
-          <p data-e="4" class="lede">A stainless pressure probe on the tank floor measures the depth. A solar-powered sensor unit sends it by LoRa radio to a receiver in the house, which uploads it over Wi-Fi to the Kinetiq app and website.</p>
-          <div class="hero-actions">
-            <a data-e="5" class="btn btn-primary" href="../projects/tank-monitor-live.html">Open the live demo</a>
-            <a data-e="6" class="btn btn-ghost" href="../index.html?product=Tank%20monitor%20trial#contact">Join the trial</a>
+  <main id="main" class="wm pdp">
+    <section class="buy" aria-labelledby="pdp-title">
+      <div class="wrap buy-grid">
+        <div class="gallery-col">
+          <div class="gallery" id="gallery" tabindex="0" role="region" aria-label="Product images">
+            <figure class="g-item g-lead"><img src="../assets/img/renders/tank-monitor.webp" alt="The Kinetiq tank monitor: solar tank unit with pressure probe, the receiver showing a tank at 68%, and the app on a phone" width="1600" height="1200" fetchpriority="high" decoding="async"><figcaption data-e="98">Tank unit, receiver and app</figcaption></figure>
+            <figure class="g-item"><img src="../assets/img/renders/unit.webp" alt="Tank unit: white enclosure with a black solar panel lid, whip antenna and stainless pressure probe on a cable" width="1600" height="1200" loading="lazy" decoding="async"><figcaption data-e="99">Tank unit with solar lid and pressure probe</figcaption></figure>
+            <figure class="g-item"><img src="../assets/img/renders/receiver.webp" alt="Receiver: small white case with a colour screen showing the tank level" width="1600" height="1200" loading="lazy" decoding="async"><figcaption data-e="100">Receiver for the house</figcaption></figure>
+            <figure class="g-item"><img src="../assets/img/renders/controller.webp" alt="Pump controller: black metal enclosure with a small display window, cable gland and antenna" width="1600" height="1200" loading="lazy" decoding="async"><figcaption data-e="101">Pump controller</figcaption></figure>
+            <figure class="g-item"><img src="../assets/img/renders/installed.webp" alt="Cutaway of a green poly tank with the tank unit on the lid and the probe cable running down to the tank floor" width="1600" height="1200" loading="lazy" decoding="async"><figcaption data-e="102">Probe on the tank floor, unit on the lid</figcaption></figure>
+            <figure class="g-item g-wide"><img src="../assets/img/renders/kit.webp" alt="The Kinetiq tank monitor system: solar tank unit with probe, white receiver with screen, and black pump controller" width="2400" height="1300" loading="lazy" decoding="async"><figcaption data-e="103">The full system with pump control</figcaption></figure>
           </div>
+          <div class="g-dots" aria-hidden="true"></div>
+        </div>
+
+        <aside class="buy-panel" aria-label="Order the tank monitor">
+          <p data-e="1" class="crumbs"><a href="../index.html#products">Products</a> / Water tank monitoring</p>
+          <div class="bp-title">
+            <h1 id="pdp-title">Kinetiq Tank Monitor</h1>
+            <span data-e="2" class="badge ready">Completed · trials open</span>
+          </div>
+          <p data-e="3" class="bp-tagline">Know how much water is in every tank, from anywhere.</p>
+          <dl class="bp-meta">
+            <div><dt>Status</dt><dd>Trial kits available</dd></div>
+            <div><dt>Made in</dt><dd>New Zealand</dd></div>
+            <div><dt>Range</dt><dd>Up to 5 km to the house (design target)</dd></div>
+          </dl>
+
+          <form class="config" id="config" novalidate>
+            <fieldset class="opt">
+              <legend class="opt-label">System</legend>
+              <label class="choice">
+                <input type="radio" name="system" value="monitor" checked>
+                <span class="choice-img"><img src="../assets/img/renders/unit.webp" alt="" width="1600" height="1200" loading="lazy"></span>
+                <span class="choice-text"><strong>Monitoring</strong><span>A tank unit on each tank and a receiver in the house.</span></span>
+              </label>
+              <label class="choice">
+                <input type="radio" name="system" value="pump">
+                <span class="choice-img"><img src="../assets/img/renders/controller.webp" alt="" width="1600" height="1200" loading="lazy"></span>
+                <span class="choice-text"><strong>Monitoring and pump control</strong><span>Adds a pump controller that fills tanks by hand, by level or on a schedule.</span></span>
+              </label>
+            </fieldset>
+
+            <div class="opt opt-row">
+              <div><p class="opt-label" id="tanks-label">Tanks to monitor</p><p class="opt-hint">One tank unit per tank, all on one receiver.</p></div>
+              <div class="stepper" role="group" aria-labelledby="tanks-label">
+                <button type="button" data-step="tanks" data-d="-1" aria-label="One fewer tank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+                <output id="tanks-out" aria-live="polite">1</output>
+                <button type="button" data-step="tanks" data-d="1" aria-label="One more tank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+              </div>
+            </div>
+            <div class="opt opt-row" id="pumps-row" hidden>
+              <div><p class="opt-label" id="pumps-label">Pumps to control</p><p class="opt-hint">One pump controller per fill pump.</p></div>
+              <div class="stepper" role="group" aria-labelledby="pumps-label">
+                <button type="button" data-step="pumps" data-d="-1" aria-label="One fewer pump"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+                <output id="pumps-out" aria-live="polite">1</output>
+                <button type="button" data-step="pumps" data-d="1" aria-label="One more pump"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+              </div>
+            </div>
+            <div class="opt opt-row opt-select">
+              <label class="opt-label" for="distance">Furthest tank from the house</label>
+              <select id="distance" name="distance">
+                <option>Under 1 km</option>
+                <option>1 to 3 km</option>
+                <option>3 to 5 km</option>
+                <option>Over 5 km</option>
+                <option selected>Not sure</option>
+              </select>
+            </div>
+
+            <figure class="sys">
+              <svg id="sys-svg" viewBox="0 28 360 124" role="img" aria-labelledby="kit-summary"></svg>
+              <figcaption id="kit-summary">In your kit: 1 tank unit and 1 receiver</figcaption>
+            </figure>
+
+            <div class="price">
+              <p class="price-v">Price to be confirmed</p>
+              <p class="price-note">We're setting prices during the trial. Send an order request and we'll reply with a price for your site.</p>
+            </div>
+            <div class="bp-actions" id="bp-actions">
+              <button type="button" class="btn btn-primary" data-order>Request to order</button>
+              <a data-e="5" class="btn btn-ghost" href="../projects/tank-monitor-live.html">Open the live demo</a>
+            </div>
+          </form>
+
+          <div class="bp-acc">
+            <details>
+              <summary><span data-e="64">Specifications (design targets)</span></summary>
+              <div class="acc-body">
+                <table class="spec-table">
+            <tr><th data-e="65" scope="row">Level sensor</th><td data-e="66">Submersible pressure probe, stainless steel</td></tr>
+            <tr><th data-e="67" scope="row">Tank depth</th><td data-e="68">Up to 5 m</td></tr>
+            <tr><th data-e="69" scope="row">Resolution</th><td data-e="70">1 cm</td></tr>
+            <tr><th data-e="71" scope="row">Power</th><td data-e="72">Solar panel with rechargeable battery</td></tr>
+            <tr><th data-e="73" scope="row">Radio</th><td data-e="74">LoRa to receiver, up to 5 km line of sight</td></tr>
+            <tr><th data-e="75" scope="row">Reading interval</th><td data-e="76">Every 15 minutes; faster while the pump runs</td></tr>
+            <tr><th data-e="77" scope="row">Receiver</th><td data-e="78">Mains powered, on-screen levels, Wi-Fi upload to the cloud</td></tr>
+            <tr><th data-e="79" scope="row">Pump control</th><td data-e="80">Manual, auto by level, schedule; dry-run, overfill and run-time cut-outs</td></tr>
+                </table>
+              </div>
+            </details>
+            <details>
+              <summary><span data-e="86">Three parts, one system</span></summary>
+              <div class="acc-body">
+                <p data-e="87">A tank unit on each tank, a receiver in the house and, where a pump fills the tank, a pump controller. All three talk over LoRa radio.</p>
+                <ul class="kit-list">
+                  <li><div class="kit-thumb"><img src="../assets/img/renders/unit.webp" alt="Tank unit: white enclosure with a black solar panel lid, whip antenna and stainless pressure probe on a cable" width="1600" height="1200" loading="lazy" decoding="async"></div><div><h4 data-e="88">Tank unit</h4><p data-e="89">Sits on the tank lid. A solar panel on top charges its battery, and the stainless probe on the tank floor measures the water depth.</p><span data-e="90" class="tag">On the tank</span></div></li>
+                  <li><div class="kit-thumb"><img src="../assets/img/renders/receiver.webp" alt="Receiver: small white case with a colour screen showing the tank level and a button above and below" width="1600" height="1200" loading="lazy" decoding="async"></div><div><h4 data-e="91">Receiver</h4><p data-e="92">Lives in the house. Its screen shows each tank's level and use, and it uploads readings over your Wi-Fi to the app and website.</p><span data-e="93" class="tag">In the house</span></div></li>
+                  <li><div class="kit-thumb"><img src="../assets/img/renders/controller.webp" alt="Pump controller: gloss black metal enclosure with a small display window, cable gland and antenna" width="1600" height="1200" loading="lazy" decoding="async"></div><div><h4 data-e="94">Pump controller</h4><p data-e="95">Wired to the fill pump. It switches the pump by hand, by tank level or on a schedule, and cuts it out on dry-run, overfill or run time.</p><span data-e="96" class="tag">At the pump</span></div></li>
+                </ul>
+              </div>
+            </details>
+            <details>
+              <summary><span data-e="82">Want monitors on your tanks?</span></summary>
+              <div class="acc-body">
+                <p data-e="83">We're taking sites for the trial now. Tell us how many tanks you have and how far they are from the house.</p>
+                <a data-e="84" class="link-arrow" href="../index.html?product=Tank%20monitor%20trial#contact">Talk to an engineer</a>
+              </div>
+            </details>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="pdp-story on-dark" aria-labelledby="story-title">
+      <div class="wrap story-grid">
+        <div>
+          <h2 class="visually-hidden" id="story-title">How the tank monitor works</h2>
+          <p data-e="4" class="story-lede">A stainless pressure probe on the tank floor measures the depth. A solar-powered sensor unit sends it by LoRa radio to a receiver in the house, which uploads it over Wi-Fi to the Kinetiq app and website.</p>
         </div>
         <aside class="live-tank" aria-label="Example reading from the app, sample data">
           <div class="lt-head">
@@ -77,10 +193,6 @@
           <div class="lt-pump"><span class="lt-dot" aria-hidden="true"></span><p><strong>Pump off.</strong> Auto fill starts at 40%.</p></div>
         </aside>
       </div>
-      <p class="photo-credit">Photo: <a href="https://commons.wikimedia.org/wiki/File:Field_in_Southland,_New_Zealand.jpg" rel="noopener">Pedro Szekely</a>, <a href="https://creativecommons.org/licenses/by-sa/2.0/" rel="noopener license">CC BY-SA 2.0</a></p>
-    </section>
-
-    <section class="wm-strip" aria-label="Design targets">
       <div class="wrap">
         <div class="strip" data-stagger>
           <div class="strip-cell"><p class="num" data-count="5">5<small>km</small></p><p data-e="7">LoRa range to the receiver, line of sight</p></div>
@@ -89,33 +201,6 @@
           <div class="strip-cell"><p class="num" data-count="5">5<small>m</small></p><p data-e="10">Maximum tank depth</p></div>
         </div>
         <p data-e="11" class="strip-note">Design targets for the production unit.</p>
-      </div>
-    </section>
-
-    <section id="system" class="wm-system" aria-labelledby="system-title">
-      <div class="wrap">
-        <div class="section-head" data-reveal><p data-e="85" class="kicker">The system</p><h2 data-e="86" id="system-title">Three parts, one system</h2><p data-e="87" class="lede">A tank unit on each tank, a receiver in the house and, where a pump fills the tank, a pump controller. All three talk over LoRa radio.</p></div>
-        <div class="kit-media" data-reveal="zoom"><img src="../assets/img/renders/kit.webp" alt="The Kinetiq tank monitor system: solar tank unit with probe, white receiver with screen, and black pump controller" width="2400" height="1300" loading="lazy" decoding="async"></div>
-        <div class="parts" data-stagger>
-          <article class="part">
-            <div class="part-media"><img src="../assets/img/renders/unit.webp" alt="Tank unit: white enclosure with a black solar panel lid, whip antenna and stainless pressure probe on a cable" width="1600" height="1200" loading="lazy" decoding="async"></div>
-            <h3 data-e="88">Tank unit</h3>
-            <p data-e="89">Sits on the tank lid. A solar panel on top charges its battery, and the stainless probe on the tank floor measures the water depth.</p>
-            <span data-e="90" class="tag">On the tank</span>
-          </article>
-          <article class="part">
-            <div class="part-media"><img src="../assets/img/renders/receiver.webp" alt="Receiver: small white case with a colour screen showing the tank level and a button above and below" width="1600" height="1200" loading="lazy" decoding="async"></div>
-            <h3 data-e="91">Receiver</h3>
-            <p data-e="92">Lives in the house. Its screen shows each tank's level and use, and it uploads readings over your Wi-Fi to the app and website.</p>
-            <span data-e="93" class="tag">In the house</span>
-          </article>
-          <article class="part">
-            <div class="part-media"><img src="../assets/img/renders/controller.webp" alt="Pump controller: gloss black metal enclosure with a small display window, cable gland and antenna" width="1600" height="1200" loading="lazy" decoding="async"></div>
-            <h3 data-e="94">Pump controller</h3>
-            <p data-e="95">Wired to the fill pump. It switches the pump by hand, by tank level or on a schedule, and cuts it out on dry-run, overfill or run time.</p>
-            <span data-e="96" class="tag">At the pump</span>
-          </article>
-        </div>
       </div>
     </section>
 
@@ -221,41 +306,51 @@
     </section>
 
     <section class="wm-inside" aria-labelledby="inside-title">
-      <div class="wrap split-2">
+      <div class="wrap inside-grid">
+        <div class="inside-media" data-reveal><img src="../assets/img/renders/exploded.webp" alt="Exploded view of the Kinetiq tank monitor: solar panel, enclosure, circuit board, battery and probe" width="1600" height="1200" loading="lazy" decoding="async"></div>
         <div data-reveal>
           <p data-e="61" class="kicker">Inside the unit</p>
           <h2 data-e="62" id="inside-title">Built to sit on a tank for years</h2>
           <p data-e="63" class="lede">A sealed enclosure holds the controller board, LoRa radio and rechargeable battery, with the solar panel fixed on the lid.</p>
-          <div class="flagship-media inside-media"><img src="../assets/img/renders/exploded.webp" alt="Exploded view of the Kinetiq tank monitor: solar panel, enclosure, circuit board, battery and probe" width="1600" height="1200" loading="lazy" decoding="async"></div>
+          <button data-e="104" type="button" class="btn btn-primary" data-order>Request to order</button>
         </div>
-        <div class="spec-panel" data-reveal>
-          <p data-e="64" class="kicker">Specifications (design targets)</p>
-          <table class="spec-table">
-            <tr><th data-e="65" scope="row">Level sensor</th><td data-e="66">Submersible pressure probe, stainless steel</td></tr>
-            <tr><th data-e="67" scope="row">Tank depth</th><td data-e="68">Up to 5 m</td></tr>
-            <tr><th data-e="69" scope="row">Resolution</th><td data-e="70">1 cm</td></tr>
-            <tr><th data-e="71" scope="row">Power</th><td data-e="72">Solar panel with rechargeable battery</td></tr>
-            <tr><th data-e="73" scope="row">Radio</th><td data-e="74">LoRa to receiver, up to 5 km line of sight</td></tr>
-            <tr><th data-e="75" scope="row">Reading interval</th><td data-e="76">Every 15 minutes; faster while the pump runs</td></tr>
-            <tr><th data-e="77" scope="row">Receiver</th><td data-e="78">Mains powered, on-screen levels, Wi-Fi upload to the cloud</td></tr>
-            <tr><th data-e="79" scope="row">Pump control</th><td data-e="80">Manual, auto by level, schedule; dry-run, overfill and run-time cut-outs</td></tr>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <section class="cta">
-      <svg class="bg-mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="5" y="4" width="5" height="24" rx="1.5" fill="#fff"/><path d="M14 16 25 5M14 16l11 11" stroke="#fff" stroke-width="5" stroke-linecap="round"/></svg>
-      <div class="wrap" data-reveal>
-        <div>
-          <h2 data-e="82">Want monitors on your tanks?</h2>
-          <p data-e="83">We're taking sites for the trial now. Tell us how many tanks you have and how far they are from the house.</p>
-        </div>
-        <a data-e="84" class="btn" href="../index.html#contact">Talk to an engineer</a>
       </div>
     </section>
 
   </main>
+
+  <div class="order-bar" id="order-bar" aria-hidden="true">
+    <div class="ob-text"><strong data-e="105">Kinetiq Tank Monitor</strong><span data-e="106" id="ob-summary">1 tank, monitoring</span></div>
+    <button data-e="107" type="button" class="btn btn-primary btn-sm" data-order tabindex="-1">Request to order</button>
+  </div>
+
+  <dialog class="order-dialog" id="order-dialog" aria-labelledby="od-title">
+    <form class="od-form" id="order-form" novalidate>
+      <div class="od-head">
+        <h2 data-e="108" id="od-title">Request to order</h2>
+        <button type="button" class="od-close" data-close aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+      <p data-e="109" class="od-intro">We'll reply with a price for your site and the next steps.</p>
+      <div class="od-kit">
+        <p data-e="110" class="od-kit-title">Your kit</p>
+        <ul id="od-kit-list"></ul>
+      </div>
+      <div class="od-fields">
+        <div class="field"><label data-e="111" for="o-name">Name</label><input id="o-name" name="name" autocomplete="name" required><p class="error" id="o-name-err">Enter your name.</p></div>
+        <div class="field"><label data-e="112" for="o-email">Email</label><input id="o-email" name="email" type="email" autocomplete="email" required><p class="error" id="o-email-err">Enter an email address like name@example.com.</p></div>
+        <div class="field"><label data-e="113" for="o-phone">Phone <span class="hint">(optional)</span></label><input id="o-phone" name="phone" type="tel" autocomplete="tel"></div>
+        <div class="field"><label data-e="114" for="o-place">Nearest town</label><input id="o-place" name="place" autocomplete="address-level2" required><p class="error" id="o-place-err">Enter the town nearest your tanks.</p></div>
+        <div class="field full"><label data-e="115" for="o-notes">Anything else about your site <span class="hint">(optional)</span></label><textarea id="o-notes" name="notes" rows="3" placeholder="Tank sizes, what the pump runs on, how you use the water"></textarea></div>
+      </div>
+      <p class="form-status" id="order-status" role="status"></p>
+      <div class="od-actions">
+        <button data-e="116" type="submit" class="btn btn-primary">Send order request</button>
+        <button data-e="117" type="button" class="btn btn-ghost" data-close>Cancel</button>
+      </div>
+    </form>
+  </dialog>
 
   <footer class="site-footer">
     <div class="wrap">
@@ -301,6 +396,7 @@
 
   <script src="../assets/js/main.js"></script>
   <script src="../assets/js/dashboard.js"></script>
+  <script src="../assets/js/product.js"></script>
   <script src="../assets/js/editor.js" defer></script>
 </body>
 </html>
