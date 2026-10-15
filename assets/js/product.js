@@ -129,6 +129,34 @@
   });
 })();
 
+// Photo viewer: click a gallery photo to see it large; arrows and Esc work too
+(() => {
+  const box = document.getElementById("lightbox");
+  if (!box) return;
+  const shots = [...document.querySelectorAll("[data-shot]")];
+  const img = document.getElementById("lb-img");
+  const cap = document.getElementById("lb-cap");
+  let at = 0, opener = null;
+  const show = (i) => {
+    at = (i + shots.length) % shots.length;
+    const src = shots[at].querySelector("img");
+    img.src = src.currentSrc || src.src;
+    img.alt = src.alt;
+    cap.textContent = shots[at].nextElementSibling ? shots[at].nextElementSibling.textContent : "";
+  };
+  shots.forEach((b, i) => b.addEventListener("click", () => { opener = b; show(i); box.showModal(); }));
+  box.addEventListener("click", (e) => {
+    const k = e.target.closest("[data-lb]")?.dataset.lb;
+    if (k === "close" || e.target === box) box.close();
+    else if (k) show(at + Number(k));
+  });
+  box.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowRight") show(at + 1);
+    if (e.key === "ArrowLeft") show(at - 1);
+  });
+  box.addEventListener("close", () => { if (opener) opener.focus(); });
+})();
+
 // Design comparison: water-monitor.html?compare and version D show a switcher
 // between the versions (B and C have their own copy of it)
 const page = location.pathname.split("/").pop();
