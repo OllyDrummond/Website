@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tank Monitor (version D) | Kinetiq</title>
+  <meta name="robots" content="noindex">
+  <meta name="description" content="The Kinetiq tank monitor: a submersible pressure probe, solar-powered sensor unit and LoRa receiver that put tank levels, usage and pump control on your phone.">
+  <meta name="theme-color" content="#1b2126">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/tank-monitor.css">
+  <link rel="stylesheet" href="../assets/css/tank-monitor-d.css">
+  <link rel="icon" type="image/png" href="../assets/img/brand/kiwi-64.png?v=2">
+  <link rel="apple-touch-icon" href="../assets/img/brand/kiwi-180.png?v=2">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header over-hero">
+    <div class="wrap">
+      <a class="brand" href="../index.html" aria-label="Kinetiq home"><img class="logo logo-on-dark" src="../assets/img/brand/kinetiq-full-white.webp?v=2" alt="Kinetiq, engineering solutions" width="1180" height="300"><img class="logo logo-on-light" src="../assets/img/brand/kinetiq-full-dark.webp?v=2" alt="" width="1180" height="300" aria-hidden="true"></a>
+      <nav class="nav" id="nav" aria-label="Main">
+        <a href="../index.html#products" aria-current="page">Products</a>
+        <a href="../services.html">Services</a>
+        <a href="../projects.html">Projects</a>
+        <a href="../about.html">About</a>
+        <a href="../index.html#contact">Contact</a>
+      </nav>
+      <div class="header-actions">
+        <a class="btn btn-ghost btn-sm hide-sm" href="tel:+640000000000"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2z"/></svg>000 000 0000</a>
+        <a class="btn btn-primary btn-sm" href="../portal/login.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Client login</a>
+      </div>
+      <button class="menu-toggle" aria-expanded="false" aria-controls="nav">Menu</button>
+    </div>
+  </header>
+
+  <main id="main" class="tm tmd">
+    <section class="d-hero" aria-labelledby="tm-title">
+      <img class="d-hero-img" src="../assets/img/renders/exploded.webp" alt="Exploded view of the Kinetiq tank unit: solar panel, case, circuit board, battery and stainless pressure probe" width="1600" height="1200" fetchpriority="high" decoding="async">
+      <div class="wrap d-hero-text">
+        <p class="tm-status"><span class="tm-dot" aria-hidden="true"></span>Trial kits available now</p>
+        <h1 id="tm-title">Tank Monitor</h1>
+        <p class="d-tagline">Solar powered. Long range. Accurate to the centimetre.</p>
+        <div class="tm-ctas d-ctas">
+          <a class="btn btn-primary tm-btn-lg" href="#buy"><span>Buy from <span id="from-out">$748</span></span></a>
+          <a class="d-link" href="#how">See how it works</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="d-statement" aria-label="What it does">
+      <div class="wrap"><p><b>Know what's in every tank.</b> Without driving out to check. The level, the daily use and the days left, on your phone.</p></div>
+    </section>
+
+    <section class="d-facts" aria-labelledby="facts-title">
+      <div class="wrap">
+        <h2 id="facts-title" class="visually-hidden">Key figures</h2>
+        <div class="d-facts-grid">
+          <div class="d-fact"><p class="tm-n">1<small>cm</small></p><p>Level accuracy from a probe on the tank floor</p></div>
+          <div class="d-fact"><p class="tm-n">5<small>km</small></p><p>Radio range to the house, no mobile coverage needed</p></div>
+          <div class="d-fact"><p class="tm-n">15<small>min</small></p><p>Between readings, faster while the pump runs</p></div>
+        </div>
+        <p class="d-note">These figures are design targets for the production unit.</p>
+      </div>
+    </section>
+
+    <section class="d-tiles-sec" id="how" aria-labelledby="how-title">
+      <div class="wrap">
+        <h2 id="how-title" class="d-h2">From the tank floor to your phone.</h2>
+        <div class="tm-tiles">
+          <div class="tm-tile"><div class="tm-tile-text"><h3>On the tank.</h3><p>The solar unit sits on the lid. Its stainless probe rests on the tank floor and measures the depth.</p></div><img class="tm-fade" src="../assets/img/renders/unit.webp" alt="Tank unit: white enclosure with a black solar panel lid, whip antenna and stainless pressure probe on a cable" width="1600" height="1200" loading="lazy" decoding="async"></div>
+          <div class="tm-tile"><div class="tm-tile-text"><h3>In the house.</h3><p>The receiver shows every tank on its screen and sends readings over your Wi-Fi to the app.</p></div><img class="tm-fade" src="../assets/img/renders/receiver.webp" alt="Receiver: small white case with a colour screen showing the tank level" width="1600" height="1200" loading="lazy" decoding="async"></div>
+          <div class="tm-tile"><div class="tm-tile-text"><h3>At the pump.</h3><p>Add a pump controller to fill tanks by hand, by level or on a schedule, with automatic safety cut-outs.</p></div><img class="tm-fade" src="../assets/img/renders/controller.webp" alt="Pump controller: black metal enclosure with a small display window, cable gland and antenna" width="1600" height="1200" loading="lazy" decoding="async"></div>
+          <div class="tm-tile"><div class="tm-tile-text"><h3>Fits through the lid.</h3><p>The probe drops to the tank floor on its cable. Foam and condensation don't affect the reading.</p></div><img class="tm-fade" src="../assets/img/renders/installed.webp" alt="Cutaway of a green poly tank with the tank unit on the lid and the probe cable running down to the tank floor" width="1600" height="1200" loading="lazy" decoding="async"></div>
+        </div>
+        <p class="tm-demo"><a class="d-link" href="../projects/tank-monitor-live.html">Try the app in the live demo</a></p>
+      </div>
+    </section>
+
+    <section class="d-specs" id="specs" aria-labelledby="specs-title">
+      <div class="wrap">
+        <h2 id="specs-title" class="d-h2 d-left">Specifications</h2>
+        <dl class="d-spec-list">
+          <div><dt>Level sensor</dt><dd>Submersible pressure probe, stainless steel</dd></div>
+          <div><dt>Resolution</dt><dd>1 cm</dd></div>
+          <div><dt>Tank depth</dt><dd>Up to 5 m</dd></div>
+          <div><dt>Radio</dt><dd>LoRa to the receiver, up to 5 km line of sight</dd></div>
+          <div><dt>Power</dt><dd>Solar panel with rechargeable battery</dd></div>
+          <div><dt>Reading interval</dt><dd>Every 15 minutes; faster while the pump runs</dd></div>
+          <div><dt>Receiver</dt><dd>Mains powered, on-screen levels, Wi-Fi upload to the app</dd></div>
+          <div><dt>Pump control</dt><dd>Manual, auto by level or schedule; dry-run, overfill and run-time cut-outs</dd></div>
+        </dl>
+        <p class="d-note d-left">Design targets for the production unit.</p>
+      </div>
+    </section>
+
+    <section class="d-buy" id="buy" aria-labelledby="buy-title">
+      <div class="wrap">
+        <div class="d-card">
+          <div class="d-card-pic"><img src="../assets/img/renders/kit.webp" alt="The full system: solar tank unit with probe, white receiver with screen, and black pump controller" width="2400" height="1300" loading="lazy" decoding="async"></div>
+          <div class="d-card-body">
+            <h2 id="buy-title" class="d-card-title">Order yours. <span>Ready to fit.</span></h2>
+            <form class="tm-box d-form" id="config" novalidate>
+          <fieldset class="tm-opts">
+            <legend>Choose your system</legend>
+            <label class="tm-opt"><input type="radio" name="system" value="monitor" checked><span><strong data-e="45">Monitoring</strong><span data-e="46">See every tank's level, use and days left</span></span></label>
+            <label class="tm-opt"><input type="radio" name="system" value="pump"><span><strong data-e="47">Monitoring and pump control</strong><span data-e="48">Also fills your tanks automatically</span></span></label>
+          </fieldset>
+          <div class="tm-row">
+            <p data-e="49" class="tm-row-label" id="tanks-label">Number of tanks</p>
+            <div class="tm-step" role="group" aria-labelledby="tanks-label">
+              <button data-e="50" type="button" data-step="tanks" data-d="-1" aria-label="One fewer tank">−</button>
+              <output id="tanks-out" aria-live="polite">1</output>
+              <button data-e="51" type="button" data-step="tanks" data-d="1" aria-label="One more tank">+</button>
+            </div>
+          </div>
+          <div class="tm-row" id="pumps-row" hidden>
+            <p data-e="52" class="tm-row-label" id="pumps-label">Number of pumps</p>
+            <div class="tm-step" role="group" aria-labelledby="pumps-label">
+              <button data-e="53" type="button" data-step="pumps" data-d="-1" aria-label="One fewer pump">−</button>
+              <output id="pumps-out" aria-live="polite">1</output>
+              <button data-e="54" type="button" data-step="pumps" data-d="1" aria-label="One more pump">+</button>
+            </div>
+          </div>
+          <ul class="tm-lines" id="lines-out"></ul>
+          <div class="tm-total">
+            <p data-e="55">Total <span class="tm-flag" data-example-flag>Example prices</span></p>
+            <p class="tm-total-v" id="total-out">$748</p>
+          </div>
+          <p data-e="56" class="tm-gst">Prices include GST. Shipping is added at checkout.</p>
+          <button data-e="57" type="button" class="btn btn-primary tm-btn-buy" data-order>Buy now</button>
+          <p data-e="58" class="tm-ask">Not sure what you need? <a href="../index.html?product=Tank%20monitor#contact">Talk to an engineer</a></p>
+        </form>
+          </div>
+        </div>
+        <div class="tm-acc">
+          <details><summary data-e="59">What's in the box</summary><p data-e="60">A tank unit with its pressure probe for each tank, one receiver for the house, and a pump controller for each pump if you choose pump control.</p></details>
+          <details><summary data-e="61">Delivery and installation</summary><p data-e="62">Kits ship from New Zealand, paired and ready for your site. Delivery times and costs are being finalised for launch.</p></details>
+          <details><summary data-e="63">Warranty and support</summary><p data-e="64">Warranty terms are being finalised for launch. Support comes straight from the engineers who designed the system.</p></details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <dialog class="order-dialog" id="order-dialog" aria-labelledby="od-title">
+    <form class="od-form" id="order-form" novalidate>
+      <div class="od-head">
+        <h2 data-e="65" id="od-title">Place your order</h2>
+        <button type="button" class="od-close" data-close aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+      <p data-e="66" class="od-intro">We'll check the kit suits your site, then email you a secure payment link and a delivery date.</p>
+      <div class="od-kit">
+        <p data-e="67" class="od-kit-title">Your kit</p>
+        <ul id="od-kit-list"></ul>
+      </div>
+      <div class="od-fields">
+        <div class="field"><label data-e="68" for="o-name">Name</label><input id="o-name" name="name" autocomplete="name" required><p class="error" id="o-name-err">Enter your name.</p></div>
+        <div class="field"><label data-e="69" for="o-email">Email</label><input id="o-email" name="email" type="email" autocomplete="email" required><p class="error" id="o-email-err">Enter an email address like name@example.com.</p></div>
+        <div class="field"><label data-e="70" for="o-phone">Phone <span class="hint">(optional)</span></label><input id="o-phone" name="phone" type="tel" autocomplete="tel"></div>
+        <div class="field"><label data-e="71" for="o-place">Nearest town</label><input id="o-place" name="place" autocomplete="address-level2" required><p class="error" id="o-place-err">Enter the town nearest your tanks.</p></div>
+        <div class="field full"><label data-e="72" for="o-notes">Anything else about your site <span class="hint">(optional)</span></label><textarea id="o-notes" name="notes" rows="3" placeholder="Tank sizes, how far the tanks are from the house, what the pump runs on"></textarea></div>
+      </div>
+      <p class="form-status" id="order-status" role="status"></p>
+      <div class="od-actions">
+        <button data-e="73" type="submit" class="btn btn-primary">Send my order</button>
+        <button data-e="74" type="button" class="btn btn-ghost" data-close>Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-grid">
+        <div>
+          <a class="brand" href="../index.html" aria-label="Kinetiq home"><img class="logo logo-on-dark" src="../assets/img/brand/kinetiq-full-white.webp?v=2" alt="Kinetiq, engineering solutions" width="1180" height="300"><img class="logo logo-on-light" src="../assets/img/brand/kinetiq-full-dark.webp?v=2" alt="" width="1180" height="300" aria-hidden="true"></a>
+          <p>New Zealand engineering company building tank monitoring, pump control and automation for farms, rural properties and organisations.</p>
+        </div>
+        <div>
+          <h4>Products</h4>
+          <ul>
+            <li><a href="../products/water-monitor.html">Water tank monitoring</a></li>
+            <li><a href="../projects/tank-monitor-live.html">Live demo &amp; pump control</a></li>
+            <li><a href="../products/smart-filtration.html">Smart filtration</a></li>
+            <li><a href="../products/acid-dosing.html">Automated acid dosing</a></li>
+            <li><a href="../products/ai-battery.html">AI battery</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Company</h4>
+          <ul>
+            <li><a href="../services.html">Services</a></li>
+            <li><a href="../projects.html">Projects</a></li>
+            <li><a href="../about.html">About</a></li>
+            <li><a href="../portal/login.html">Client login</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Get in touch</h4>
+          <ul>
+            <li><a href="tel:+640000000000">000 000 0000</a></li>
+            <li><a href="mailto:hello@example.com">hello@example.com</a></li>
+            <li>New Zealand</li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-base">
+        <p>© <span data-year></span> Kinetiq</p>
+        <p>Designed and built in New Zealand</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../assets/js/main.js"></script>
+  <script src="../assets/js/product.js"></script>
+  <script src="../assets/js/editor.js" defer></script>
+</body>
+</html>
