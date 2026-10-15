@@ -141,9 +141,26 @@ p { margin: 0 0 1em; max-width: 66ch; }
 }
 .site-header .wrap { display: flex; align-items: center; gap: 28px; min-height: 72px; }
 .brand { display: flex; align-items: center; gap: 10px; color: var(--ink); text-decoration: none; font-weight: 800; font-stretch: 125%; font-size: 1.3rem; letter-spacing: -0.02em; }
-.brand svg { width: 32px; height: 32px; }
-.brand .bar, .brand .pivot { fill: currentColor; }
-.brand .pivot-hole { fill: var(--bg); }
+/* Logo: black version on light backgrounds, white version on dark ones */
+.brand { flex-shrink: 0; }
+.brand .logo { display: block; height: 46px; width: auto; max-width: none; }
+.brand .logo-on-dark { display: none; }
+.site-header.over-hero .brand .logo-on-dark, .site-footer .brand .logo-on-dark, .app-side .brand .logo-on-dark { display: block; }
+.site-header.over-hero .brand .logo-on-light, .site-footer .brand .logo-on-light, .app-side .brand .logo-on-light { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .brand .logo-on-dark { display: block; }
+  :root:not([data-theme="light"]) .brand .logo-on-light { display: none; }
+}
+:root[data-theme="dark"] .brand .logo-on-dark { display: block; }
+:root[data-theme="dark"] .brand .logo-on-light { display: none; }
+.site-footer .brand .logo { height: 76px; }
+.auth-panel .brand .logo { height: 56px; }
+.app-side .brand .logo { height: 44px; }
+@media (max-width: 760px) { .site-header .wrap { gap: 12px; } .site-header .brand .logo { height: 34px; } .app-side .brand .logo { height: 34px; } }
+@media (max-width: 400px) { .site-header .brand .logo { height: 29px; } .site-header .btn-sm { padding-inline: 12px; } }
+@media (max-width: 370px) { .site-header .wrap { gap: 8px; } .site-header .brand .logo { height: 25px; } .site-header .header-actions { gap: 6px; } }
+@media (max-width: 420px) { .app-side .brand .logo { height: 30px; } .app-top .who > span:first-child { display: none; } }
+@media (max-width: 335px) { .site-header .brand .logo { height: 21px; } .site-header .btn-sm { padding-inline: 10px; } }
 .nav { display: flex; gap: 26px; margin-left: auto; }
 .nav a { color: inherit; text-decoration: none; font-weight: 500; font-size: 0.98rem; position: relative; padding: 6px 0; }
 .nav a::after { content: ""; position: absolute; left: 0; right: 100%; bottom: 0; height: 2px; background: var(--maroon); transition: right 0.25s var(--ease); }
@@ -154,7 +171,6 @@ p { margin: 0 0 1em; max-width: 66ch; }
 /* Transparent header over the dark home hero */
 .site-header.over-hero { position: fixed; left: 0; right: 0; background: transparent; border-color: transparent; color: #fff; backdrop-filter: none; }
 .site-header.over-hero .brand { color: #fff; }
-.site-header.over-hero .brand .pivot-hole { fill: var(--night); }
 .site-header.over-hero .btn-ghost { color: #fff; }
 .site-header.over-hero .btn-ghost:hover { background: #fff; color: var(--night); border-color: #fff; }
 .site-header.over-hero.scrolled { background: color-mix(in srgb, var(--night) 88%, transparent); backdrop-filter: blur(10px); border-color: var(--night-line); }
@@ -353,7 +369,6 @@ a.service:hover .service-media img { transform: scale(1.04); }
 .site-footer { background: var(--night); color: var(--night-ink-2); padding: 64px 0 36px; font-size: 0.95rem; }
 .footer-grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 32px; }
 .site-footer .brand { color: #fff; margin-bottom: 14px; }
-.site-footer .brand .pivot-hole { fill: var(--night); }
 .site-footer h4 { color: #fff; font-size: 0.98rem; font-stretch: 100%; margin-bottom: 14px; }
 .site-footer ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
 .site-footer a { color: var(--night-ink-2); text-decoration: none; }
@@ -519,7 +534,6 @@ details.table-view summary { cursor: pointer; font-weight: 600; color: var(--wat
 .app { display: grid; grid-template-columns: 250px 1fr; min-height: 100svh; }
 .app-side { background: var(--night); color: var(--night-ink-2); padding: 24px 18px; display: flex; flex-direction: column; gap: 28px; position: sticky; top: 0; height: 100svh; }
 .app-side .brand { color: #fff; padding: 0 8px; }
-.app-side .brand .pivot-hole { fill: var(--night); }
 .app-nav { display: grid; gap: 4px; }
 .app-nav a { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; color: var(--night-ink-2); text-decoration: none; font-weight: 600; font-size: 0.97rem; }
 .app-nav a svg { width: 20px; height: 20px; }
