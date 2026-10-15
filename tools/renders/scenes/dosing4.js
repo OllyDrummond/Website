@@ -178,6 +178,13 @@ const V = {
     pipe(g, [[0.63, top + 0.55, 0.25], [0.63, top + 1.25, 0.25], [0.9, top + 1.32, 0.3], [W / 2 + 0.4, top + 1.32, 0.45]]);
     valve(g, [0.9, top + 1.32, 0.3]);
     tube(g, [[0.55, top + deck + 0.35, 0.3], [0.6, top + 1.3, -0.05], [0.7, top + 1.05, -0.2], [0.75, top + 0.9, -0.2]], 0.016, hoseM());
+    // dosing line: metering pump discharge across into the hot water cylinder,
+    // through an injection fitting with a check valve on the cylinder's side
+    const inj = [-0.75 + 0.46, top + 1.2, 0.08];
+    add(g, cyl(0.03, 0.12, 20), mat.metal('#d3d8dc', 0.24), [inj[0] + 0.05, inj[1], inj[2]], X);
+    add(g, rb(0.09, 0.07, 0.07, 0.015), maroon(), [inj[0] + 0.15, inj[1], inj[2]]);
+    tube(g, [[0.86, top + 0.95, -0.12], [0.86, top + 1.12, -0.02], [0.6, top + 1.2, 0.06], [0.1, top + 1.2, 0.08], [inj[0] + 0.19, inj[1], inj[2]]], 0.017,
+      new THREE.MeshPhysicalMaterial({ color: '#f1d9dc', roughness: 0.3, transmission: 0.25, thickness: 0.02 }));
     rectShadow(g, W + 0.2, D + 0.2, 0.55, 0.2, [0, 0.003, 0]);
     return { cam: [2.4, 3.2, 8.2], target: [0.1, 1.3, 0] };
   },
