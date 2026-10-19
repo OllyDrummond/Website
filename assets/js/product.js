@@ -153,7 +153,8 @@
     const src = shots[at].querySelector("img");
     img.src = src.currentSrc || src.src;
     img.alt = src.alt;
-    cap.textContent = shots[at].nextElementSibling ? shots[at].nextElementSibling.textContent : "";
+    const title = shots[at].closest("article")?.querySelector("h3");
+    cap.textContent = title ? title.textContent : "";
   };
   shots.forEach((b, i) => b.addEventListener("click", () => { opener = b; show(i); box.showModal(); }));
   box.addEventListener("click", (e) => {
