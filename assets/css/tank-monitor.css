@@ -37,7 +37,7 @@
 
 /* ---------- Hero ---------- */
 .fx-hero { position: relative; isolation: isolate; min-height: calc(100svh - var(--hdr, 72px)); display: flex; color: #fff; overflow: hidden; background: #2b3a2f; }
-.fx-hero-bg { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: 60% 60%; }
+.fx-hero-bg { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: 72% 45%; }
 .fx-hero::after { content: ""; position: absolute; inset: 0; z-index: -1; background:
   linear-gradient(90deg, rgba(10,14,16,0.72) 0%, rgba(10,14,16,0.45) 38%, rgba(10,14,16,0) 68%),
   linear-gradient(0deg, rgba(10,14,16,0.6) 0%, rgba(10,14,16,0) 40%); }
@@ -209,7 +209,7 @@
   .fx-how-grid, .fx-faq-grid { grid-template-columns: 1fr; }
   .fx-cards { grid-template-columns: 1fr; }
   .fx-features { grid-template-columns: 1fr; }
-  .fx-hero-bg { object-position: 72% 60%; }
+  .fx-hero-bg { object-position: 34% 45%; }
   .fx-hero::after { background: linear-gradient(180deg, rgba(10,14,16,0.72) 0%, rgba(10,14,16,0.55) 45%, rgba(10,14,16,0.15) 70%, rgba(10,14,16,0.65) 100%); }
 }
 @media (max-width: 640px) {
