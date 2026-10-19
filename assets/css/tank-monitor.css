@@ -36,12 +36,12 @@
 .fx-hero, .fx-split, .fx-buy-sec { padding: 0; }
 
 /* ---------- Hero ---------- */
-.fx-hero { position: relative; isolation: isolate; min-height: calc(100svh - var(--hdr, 72px) - 53px); display: flex; color: #fff; overflow: hidden; background: #2b3a2f; }
+.fx-hero { position: relative; isolation: isolate; min-height: calc(100svh - var(--hdr, 72px)); display: flex; color: #fff; overflow: hidden; background: #2b3a2f; }
 .fx-hero-bg { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: 60% 60%; }
 .fx-hero::after { content: ""; position: absolute; inset: 0; z-index: -1; background:
   linear-gradient(90deg, rgba(10,14,16,0.72) 0%, rgba(10,14,16,0.45) 38%, rgba(10,14,16,0) 68%),
   linear-gradient(0deg, rgba(10,14,16,0.6) 0%, rgba(10,14,16,0) 40%); }
-.fx-hero-inner { width: 100%; display: flex; flex-direction: column; justify-content: flex-end; gap: 36px; padding-top: 64px; padding-bottom: clamp(28px, 4vw, 44px); }
+.fx-hero-inner { width: 100%; display: flex; flex-direction: column; justify-content: space-between; gap: 36px; padding-top: clamp(48px, 9vh, 104px); padding-bottom: clamp(28px, 4vw, 44px); }
 .fx-hero-copy { max-width: 620px; }
 .fx-hero h1 { margin: 0; font-size: clamp(2.8rem, 6.4vw, 5.6rem); font-weight: 700; font-stretch: 105%; letter-spacing: -0.035em; line-height: 0.98; color: #fff; }
 .fx-hero-desc { margin: 20px 0 0; max-width: 44ch; font-size: clamp(1.05rem, 1.6vw, 1.25rem); line-height: 1.5; color: rgba(255,255,255,0.88); }
@@ -210,7 +210,7 @@
   .fx-cards { grid-template-columns: 1fr; }
   .fx-features { grid-template-columns: 1fr; }
   .fx-hero-bg { object-position: 72% 60%; }
-  .fx-hero::after { background: linear-gradient(0deg, rgba(10,14,16,0.82) 0%, rgba(10,14,16,0.5) 45%, rgba(10,14,16,0.1) 75%); }
+  .fx-hero::after { background: linear-gradient(180deg, rgba(10,14,16,0.72) 0%, rgba(10,14,16,0.55) 45%, rgba(10,14,16,0.15) 70%, rgba(10,14,16,0.65) 100%); }
 }
 @media (max-width: 640px) {
   .tm-subnav-links a:not(.btn) { display: none; }
