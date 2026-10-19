@@ -100,9 +100,16 @@ export function receiverWide() {
   return g;
 }
 
-function oledTexture() {
+function oledTexture(lines) {
   return canvasTex(256, 200, (c, w, h) => {
     c.fillStyle = '#0a0c10'; c.fillRect(0, 0, w, h);
+    if (lines) {
+      // Status message, centred, one or two lines
+      c.fillStyle = '#7fd6a2'; c.font = '800 46px Inter'; c.textAlign = 'center'; c.textBaseline = 'middle';
+      const gap = 56, y0 = h / 2 - ((lines.length - 1) * gap) / 2;
+      lines.forEach((t, i) => c.fillText(t, w / 2, y0 + i * gap));
+      return;
+    }
     c.fillStyle = '#cfe6ff'; c.font = '700 30px Inter'; c.fillText('PUMP', 18, 52);
     c.fillStyle = '#7fd6a2'; c.fillText('RUN', 120, 52);
     c.fillStyle = '#cfe6ff'; c.font = '500 22px Inter'; c.fillText('Tank 68%', 18, 100); c.fillText('Auto  RSSI -92', 18, 140);
@@ -110,7 +117,9 @@ function oledTexture() {
   });
 }
 
-export function pumpController() {
+// pumpController({ upright: true, screen: ['TANK', 'RUNNING'] }) stands the box on its
+// long edge with the lid and window facing forward (+z) and the antenna pointing up.
+export function pumpController({ upright = false, screen = null } = {}) {
   const g = new THREE.Group();
   const W = 1.62, D = 0.98, Hb = 0.42, Hl = 0.1;
   const black = new THREE.MeshPhysicalMaterial({ color: '#0b0c0e', roughness: 0.22, metalness: 0.3, clearcoat: 1, clearcoatRoughness: 0.18 });
@@ -125,7 +134,8 @@ export function pumpController() {
   }
   // window over the radio board's OLED
   add(g, new THREE.BoxGeometry(0.4, 0.012, 0.32), mat.metal('#3a3d40', 0.3), [-0.32, top + 0.001, 0.04], [0, 0, 0], false);
-  const oled = new THREE.MeshStandardMaterial({ map: oledTexture(), emissiveMap: oledTexture(), emissive: '#ffffff', emissiveIntensity: 0.9, roughness: 0.1 });
+  const oledTex = oledTexture(screen);
+  const oled = new THREE.MeshStandardMaterial({ map: oledTex, emissiveMap: oledTex, emissive: '#ffffff', emissiveIntensity: 0.9, roughness: 0.1 });
   add(g, new THREE.PlaneGeometry(0.34, 0.27), oled, [-0.32, top + 0.008, 0.04], [-Math.PI / 2, 0, 0], false);
   add(g, new THREE.PlaneGeometry(0.38, 0.3), new THREE.MeshPhysicalMaterial({ color: '#000', roughness: 0.02, transparent: true, opacity: 0.18, clearcoat: 1 }), [-0.32, top + 0.011, 0.04], [-Math.PI / 2, 0, 0], false);
   // cable gland on the left end for the pump wiring
@@ -137,8 +147,15 @@ export function pumpController() {
   g.userData.glandOut = new THREE.Vector3(-W / 2 - 0.27, Hb * 0.55, 0.05);
   // SMA antenna on the back long edge, near the right
   const ant = whip(1.9); ant.position.set(0.52, Hb * 0.62, -D / 2); ant.rotation.x = -Math.PI / 2; g.add(ant);
-  ant.userData.rod.rotation.x = Math.PI / 2;
-  return g;
+  if (!upright) { ant.userData.rod.rotation.x = Math.PI / 2; return g; }
+  // Upright: tip the box forward 90 degrees about x so the lid faces +z and the
+  // back edge (with the antenna) is on top; the rod then points straight up.
+  const out = new THREE.Group();
+  g.rotation.x = Math.PI / 2; g.position.y = D / 2 + 0.01; out.add(g);
+  const go = g.userData.glandOut;
+  out.userData.glandOut = new THREE.Vector3(go.x, -go.z + D / 2 + 0.01, go.y);
+  out.userData.depth = Hb + Hl + 0.02;   // front-to-back thickness when standing
+  return out;
 }
 
 // A phone showing the Kinetiq app with the same reading as the receiver.

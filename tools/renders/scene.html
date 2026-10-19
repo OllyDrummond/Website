@@ -1,8 +1,8 @@
-<!doctype html><html><body>
+<!doctype html><html><head><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&display=block"></head><body>
 <script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
 <script type="module">
 const s = new URLSearchParams(location.search).get('s');
-await document.fonts.load('800 40px Inter'); await document.fonts.load('500 40px Inter');
+await Promise.all(['500', '600', '700', '800'].map((w) => document.fonts.load(w + ' 40px Inter')));
 const mod = await import('./scenes/' + s + '.js?' + Date.now());
 mod.default();
 </script></body></html>
