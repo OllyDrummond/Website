@@ -1,3 +1,6 @@
 node_modules/
 tools/renders/out/
 docs-private/
+# Local secrets and test output for the monitor app
+monitor/**/.env
+monitor/**/node_modules/

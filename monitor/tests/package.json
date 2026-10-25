@@ -1,0 +1,12 @@
+{
+  "name": "kinetiq-monitor-tests",
+  "private": true,
+  "type": "module",
+  "description": "Runs monitor/supabase/migrations against an in-process PostgreSQL (PGlite) and checks the ingest rules.",
+  "scripts": {
+    "test": "node --test"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.3.14"
+  }
+}
