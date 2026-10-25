@@ -219,9 +219,6 @@
   .fx-chips { gap: 10px 20px; }
 }
 
-/* Web login and app buttons under the product name in the hero */
-.fx-hero-access { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
-.fx-access-btn { display: inline-flex; align-items: center; gap: 9px; padding: 9px 16px 9px 13px; border-radius: 999px; background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.35); color: #fff; font-weight: 700; font-size: 0.95rem; text-decoration: none; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); transition: background .2s, border-color .2s; }
-.fx-access-btn:hover { background: rgba(255,255,255,0.26); border-color: rgba(255,255,255,0.6); }
-.fx-access-btn svg { width: 18px; height: 18px; flex: none; }
-.fx-soon { margin-left: 2px; padding: 1px 7px; border-radius: 999px; background: rgba(255,255,255,0.2); font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+/* Hero buttons carry an icon */
+.fx-hero-ctas svg { width: 18px; height: 18px; flex: none; }
+.fx-btn-ghost { gap: 8px; }

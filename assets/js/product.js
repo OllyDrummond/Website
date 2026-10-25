@@ -28,7 +28,8 @@
 
   document.querySelectorAll("[data-example-flag]").forEach((el) => { el.hidden = !EXAMPLE_PRICES; });
   document.querySelectorAll("[data-price]").forEach((el) => { el.textContent = money(PRICES[el.dataset.price]); });
-  $("from-out").textContent = money(PRICES.tankUnit + PRICES.receiver);
+  // "Buy from" price, where a page still shows one.
+  if ($("from-out")) $("from-out").textContent = money(PRICES.tankUnit + PRICES.receiver);
 
   // ---------- Kit builder ----------
   function update() {
