@@ -1,10 +1,11 @@
 // Kinetiq Tank Monitor dashboard (v2, "control room").
 //
-// One screen per selected tank:
-//   hero photo with glass panels (level, water, days left, status)
-//   level chart with range tabs and water-use bars underneath
-//   gauge, water use, pump and receiver cards
-//   all tanks (click to switch) and recent pump activity
+// One screen per selected tank, fitted to the window on a computer (no
+// scrolling); phones and small windows stack the same parts and scroll:
+//   top bar: tank picker, live light, previous/next tank, receiver
+//   key figures (level, water, days left, last reading), level chart with
+//   range tabs and water-use bars, gauge / water use / pump / receiver cards
+//   side column: all tanks, status of the selected tank, activity
 // Data comes from data.js (Supabase or the in-browser demo). Read-only except
 // renaming tanks and setting their size.
 
@@ -301,8 +302,8 @@ function onLiveChange({ table, row }) {
   }
   updateTop();
   if (!selected) return;
-  if (table === 'tank_state' && row.tank_id === selected) { renderHero(); renderGauge(); }
-  if (table === 'pump_state') { renderHero(); renderPumpCard(); renderActivity(); if (row.tank_id === selected) renderChart(true); }
+  if (table === 'tank_state' && row.tank_id === selected) { renderKpis(); renderStatus(); renderGauge(); }
+  if (table === 'pump_state') { renderStatus(); renderPumpCard(); renderActivity(); if (row.tank_id === selected) renderChart(true); }
   if (table === 'gateways') renderSystemCard();
   if (table === 'tank_state') renderTankList();
 }
@@ -386,10 +387,12 @@ function receiverStatus() {
     : { key: 'offline', text: `Receiver offline since ${when(gw.last_seen_at)}`, short: 'Offline' };
 }
 
+const FIT = matchMedia('(min-width: 1100px) and (min-height: 680px)');
+
 function renderShell() {
   document.title = 'Tank Monitor | Kinetiq';
   const nav = [
-    ['top', 'grid', 'Overview'],
+    ['kpis', 'grid', 'Overview'],
     ['history', 'chart', 'History'],
     ['tanks', 'tanks', 'All tanks'],
     ['activity', 'bell', 'Activity'],
@@ -413,52 +416,52 @@ function renderShell() {
           </button>
           <ul class="picker-list" id="picker-list" role="listbox" aria-label="Choose a tank" hidden></ul>
         </div>
+        <span class="chip" id="fresh-chip"></span>
+        <div class="tank-nav" id="tank-nav"></div>
         <p class="site-name">${esc(site.installation.name)}</p>
         <div class="top-right">
+          ${source.demo ? '<span class="demo-tag" title="Sample data. Tank 1 is filling and updates every few seconds; Tank 3 shows what an offline tank looks like.">Demo data</span>' : ''}
           <span class="top-date">${icon('calendar')}${esc(dateLong.format(new Date()))}</span>
           <span class="pill" id="receiver-pill"></span>
         </div>
       </header>
-      ${source.demo ? '<p class="demo-note">Demo with sample data. Tank 1 is filling and updates every few seconds; Tank 3 shows what an offline tank looks like.</p>' : ''}
-      <div id="receiver-banner"></div>
 
-      <section class="hero" id="top" aria-label="Selected tank">
-        <img class="hero-bg" src="../../assets/img/photos/nz-farm-tank.webp" alt="" width="1536" height="1024">
-        <div class="hero-inner" id="hero" aria-live="polite"></div>
-      </section>
+      <div class="main-col">
+        <div class="alerts" id="alerts" aria-live="polite"><div id="receiver-banner"></div><div id="tank-alerts"></div></div>
+        <section class="kpis" id="kpis" aria-label="Selected tank"></section>
 
-      <section class="card chart-card" id="history" aria-labelledby="chart-title">
-        <div class="chart-top">
-          <div>
+        <section class="card chart-card" id="history" aria-labelledby="chart-title">
+          <div class="chart-top">
             <h2 id="chart-title">Tank level</h2>
-            <div class="chart-stats" id="chart-stats"></div>
+            <dl class="cs-row" id="chart-stats"></dl>
+            <div class="seg" role="group" aria-label="Time range">
+              ${Object.entries(RANGES).map(([k, r]) => `<button type="button" data-range="${k}" aria-pressed="${k === range}" title="Last ${r.long}">${r.label}</button>`).join('')}
+            </div>
           </div>
-          <div class="seg" role="group" aria-label="Time range">
-            ${Object.entries(RANGES).map(([k, r]) => `<button type="button" data-range="${k}" aria-pressed="${k === range}" title="Last ${r.long}">${r.label}</button>`).join('')}
+          <div class="chart-wrap" id="chart-wrap"></div>
+          <div class="chart-legend">
+            <span><i class="lg-line"></i>Level</span>
+            <span><i class="lg-run"></i>Pump running</span>
+            <span><i class="lg-bar"></i>Water used</span>
+            <span id="lg-threshold"><i class="lg-dash"></i>Fill starts / stops</span>
           </div>
-        </div>
-        <div class="chart-wrap" id="chart-wrap"></div>
-        <div class="chart-legend">
-          <span><i class="lg-line"></i>Level</span>
-          <span><i class="lg-run"></i>Pump running</span>
-          <span><i class="lg-bar"></i>Water used</span>
-          <span id="lg-threshold"><i class="lg-dash"></i>Fill starts / stops</span>
-        </div>
-      </section>
+        </section>
 
-      <div class="grid-4">
-        <section class="card" aria-labelledby="gauge-title"><h2 id="gauge-title" class="card-title">${icon('drop')}Live level</h2><div id="gauge"></div></section>
-        <section class="card" aria-labelledby="use-title"><h2 id="use-title" class="card-title">${icon('chart')}Water use</h2><div id="use"></div></section>
-        <section class="card" aria-labelledby="pump-title"><h2 id="pump-title" class="card-title">${icon('pump')}Pump</h2><div id="pump"></div></section>
-        <section class="card" aria-labelledby="sys-title"><h2 id="sys-title" class="card-title">${icon('receiver')}Receiver</h2><div id="system"></div></section>
+        <div class="grid-4">
+          <section class="card" aria-labelledby="gauge-title"><h2 id="gauge-title" class="card-title">${icon('drop')}Live level</h2><div id="gauge"></div></section>
+          <section class="card" aria-labelledby="use-title"><h2 id="use-title" class="card-title">${icon('chart')}Water use</h2><div id="use"></div></section>
+          <section class="card" aria-labelledby="pump-title"><h2 id="pump-title" class="card-title">${icon('pump')}Pump</h2><div id="pump"></div></section>
+          <section class="card" aria-labelledby="sys-title"><h2 id="sys-title" class="card-title">${icon('receiver')}Receiver</h2><div id="system"></div></section>
+        </div>
       </div>
 
-      <div class="grid-2">
+      <aside class="side-col">
         <section class="card" id="tanks" aria-labelledby="tanks-title">
           <div class="card-head"><h2 id="tanks-title" class="card-title">${icon('tanks')}All tanks</h2><span class="muted" id="tanks-count"></span></div>
           <ul class="tank-list" id="tank-list"></ul>
         </section>
-        <section class="card" id="activity" aria-labelledby="act-title">
+        <section class="card" id="status" aria-labelledby="status-title"></section>
+        <section class="card activity-card" id="activity" aria-labelledby="act-title">
           <div class="card-head">
             <h2 id="act-title" class="card-title">${icon('bell')}Activity</h2>
             <div class="seg seg-sm" role="group" aria-label="Show">
@@ -468,7 +471,7 @@ function renderShell() {
           </div>
           <ul class="activity" id="activity-list"></ul>
         </section>
-      </div>
+      </aside>
       <p class="foot-note">Readings arrive about every 20 seconds. <a href="../../products/water-monitor.html">About the Kinetiq Tank Monitor</a></p>
     </div>
   </div>
@@ -479,9 +482,15 @@ function renderShell() {
     <form id="tank-form" class="tank-form" novalidate></form>
   </aside>`;
 
-  // navigation
+  // navigation: scroll to the part on small screens; on a fitted screen
+  // everything is already in view, so just highlight it
   document.querySelectorAll('[data-jump]').forEach((b) => b.addEventListener('click', () => {
-    document.getElementById(b.dataset.jump)?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+    const target = document.getElementById(b.dataset.jump);
+    if (!target) return;
+    target.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+    target.classList.remove('flash');
+    void target.offsetWidth;
+    target.classList.add('flash');
     document.querySelectorAll('.rail-btn').forEach((x) => x.classList.toggle('is-on', x === b));
   }));
   document.getElementById('signout').addEventListener('click', signOut);
@@ -506,8 +515,15 @@ function renderShell() {
     renderActivity();
   }));
 
-  let resizeT;
-  addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => renderChart(), 200); });
+  // redraw the chart when its box changes size (window resize, alerts appearing)
+  let resizeT, lastSize = '';
+  new ResizeObserver(([entry]) => {
+    const size = `${Math.round(entry.contentRect.width)}x${FIT.matches ? Math.round(entry.contentRect.height) : 0}`;
+    if (size === lastSize) return;
+    lastSize = size;
+    clearTimeout(resizeT);
+    resizeT = setTimeout(() => renderChart(true), 150);
+  }).observe(document.getElementById('chart-wrap'));
 
   updateTop();
   renderAll();
@@ -515,10 +531,11 @@ function renderShell() {
 
 function renderAll() {
   if (!selected) {
-    document.getElementById('hero').innerHTML = `<div class="hero-empty"><h1>Waiting for the first reading</h1><p>Your receiver is linked. Tanks appear here automatically as soon as each tank unit sends its first reading (every 20 seconds).</p></div>`;
+    document.getElementById('kpis').innerHTML = `<div class="kpi-empty"><h1>Waiting for the first reading</h1><p>Your receiver is linked. Tanks appear here automatically as soon as each tank unit sends its first reading (every 20 seconds).</p></div>`;
     return;
   }
-  renderHero();
+  renderKpis();
+  renderStatus();
   renderChart();
   renderGauge();
   renderUseCard();
@@ -541,6 +558,24 @@ function updateTop() {
   const t = selected && tankById(selected);
   const nameEl = document.getElementById('picker-name');
   if (nameEl) nameEl.textContent = t ? t.name : 'No tanks yet';
+  const chip = document.getElementById('fresh-chip');
+  if (chip) {
+    const st = t && stateOf(t.id);
+    const f = freshness(st?.last_heard_at);
+    chip.className = `chip chip-${f.key}`;
+    chip.hidden = !t;
+    chip.innerHTML = `<span class="dot" aria-hidden="true"></span>${f.label}${st ? ` <span class="chip-age" data-age="${esc(st.last_heard_at)}">${esc(ago(st.last_heard_at))}</span>` : ''}`;
+  }
+  const navEl = document.getElementById('tank-nav');
+  if (navEl && t && site.tanks.length > 1) {
+    const idx = site.tanks.indexOf(t);
+    navEl.innerHTML = `
+      <button type="button" class="nav-btn" id="prev-tank" aria-label="Previous tank" ${idx <= 0 ? 'disabled' : ''}>${icon('left')}</button>
+      <span>${idx + 1} of ${site.tanks.length}</span>
+      <button type="button" class="nav-btn" id="next-tank" aria-label="Next tank" ${idx >= site.tanks.length - 1 ? 'disabled' : ''}>${icon('right')}</button>`;
+    document.getElementById('prev-tank').addEventListener('click', () => selectTank(site.tanks[idx - 1].id));
+    document.getElementById('next-tank').addEventListener('click', () => selectTank(site.tanks[idx + 1].id));
+  }
   const pill = document.getElementById('receiver-pill');
   if (!pill) return;
   const rs = receiverStatus();
@@ -586,66 +621,74 @@ function closePicker() {
 }
 
 // ---------------------------------------------------------------------------
-// Hero: glass panels over the photo
+// Key figures, status and alerts for the selected tank
 // ---------------------------------------------------------------------------
 
-async function renderHero() {
+async function renderKpis() {
+  const t = tankById(selected);
+  const st = stateOf(t.id);
+  const f = freshness(st?.last_heard_at);
+  const cap = capacityOf(t);
+  const pct = st ? Math.max(0, Math.min(100, st.tank_percent)) : 0;
+  const marks = t.fill_start_percent != null
+    ? [t.fill_start_percent, t.fill_stop_percent].map((p) => `<b style="left:${p}%"></b>`).join('') : '';
+  document.getElementById('kpis').innerHTML = `
+    <div class="kpi kpi-main">
+      <p class="kpi-l">Level</p>
+      <p class="kpi-v">${st ? nf1.format(st.tank_percent) : '–'}<small>%</small></p>
+      <div class="kpi-bar ${f.key === 'offline' ? 'is-stale' : ''}" aria-hidden="true"><i style="width:${pct}%"></i>${marks}</div>
+    </div>
+    <div class="kpi">
+      <p class="kpi-l">Water in tank</p>
+      <p class="kpi-v">${st ? nf0.format(st.tank_volume_l) : '–'}<small> L</small></p>
+      <p class="kpi-s">${cap ? `of ${nf0.format(cap)} L` : 'Set the tank size in Settings'}</p>
+    </div>
+    <div class="kpi">
+      <p class="kpi-l">Lasts about</p>
+      <p class="kpi-v kpi-v-sm" id="kpi-days">…</p>
+      <p class="kpi-s">at your average use</p>
+    </div>
+    <div class="kpi">
+      <p class="kpi-l">Last reading</p>
+      <p class="kpi-v kpi-v-sm">${st ? esc(timeFmt.format(new Date(st.last_heard_at))) : 'None yet'}</p>
+      <p class="kpi-s">${st ? `${esc(when(st.last_heard_at).replace(/ [^ ]+( [ap]m)?$/, ''))}${st.heard_at_approx ? ' · time approx.' : ''}` : 'Waiting for the tank unit'}</p>
+    </div>`;
+  try {
+    const w = await weekData(t);
+    if (selected !== t.id) return;
+    const stats = cap && st ? usageStats(w.points, w.runs, cap, st.tank_volume_l) : null;
+    const d = document.getElementById('kpi-days');
+    if (d) d.textContent = daysLeftText(stats);
+  } catch { /* leave placeholder */ }
+}
+
+function renderStatus() {
   const t = tankById(selected);
   const st = stateOf(t.id);
   const pump = pumpOf(t.id);
   const f = freshness(st?.last_heard_at);
-  const cap = capacityOf(t);
-  const idx = site.tanks.indexOf(t);
 
   let pumpText = 'Not reported yet', pumpKey = 'unknown';
   if (pump?.state === 'running') { pumpText = `Running, ${duration(Date.now() - Date.parse(pump.since))}`; pumpKey = 'running'; }
   else if (pump?.state === 'stopped') { pumpText = `Off since ${timeFmt.format(new Date(pump.since))}`; pumpKey = 'stopped'; }
   else if (pump?.state === 'fault') { pumpText = 'Stopped by safety check'; pumpKey = 'fault'; }
-
   const sensor = st?.sensor_status === 'fault' ? ['fault', 'Fault'] : st?.sensor_status === 'ok' ? ['ok', 'OK'] : ['unknown', 'Not reported'];
+  const problem = pumpKey === 'fault' || sensor[0] === 'fault';
+  const tag = problem ? ['fault', 'Needs attention'] : f.key === 'offline' ? ['offline', 'Offline'] : ['ok', 'Normal'];
 
-  const el = document.getElementById('hero');
-  el.innerHTML = `
-    <div class="hero-left">
-      <div class="hero-title">
-        <h1>${esc(t.name)}</h1>
-        <span class="chip chip-${f.key}"><span class="dot" aria-hidden="true"></span>${f.label}${st ? ` <span class="chip-age" data-age="${esc(st.last_heard_at)}">${esc(ago(st.last_heard_at))}</span>` : ''}</span>
-      </div>
-      <div class="glass-row">
-        <div class="glass stat stat-main"><p>Level</p><p class="stat-v">${st ? nf1.format(st.tank_percent) : '–'}<small>%</small></p></div>
-        <div class="glass stat"><p>Water</p><p class="stat-v">${st ? nf0.format(st.tank_volume_l) : '–'}<small> L</small></p>${cap ? `<p class="stat-sub">of ${nf0.format(cap)} L</p>` : ''}</div>
-        <div class="glass stat"><p>Lasts about</p><p class="stat-v stat-v-sm" id="hero-days">…</p><p class="stat-sub">at your average use</p></div>
-      </div>
-      ${site.tanks.length > 1 ? `<div class="hero-nav">
-        <button type="button" class="glass-btn" id="prev-tank" aria-label="Previous tank" ${idx <= 0 ? 'disabled' : ''}>${icon('left')}</button>
-        <span>${idx + 1} of ${site.tanks.length}</span>
-        <button type="button" class="glass-btn" id="next-tank" aria-label="Next tank" ${idx >= site.tanks.length - 1 ? 'disabled' : ''}>${icon('right')}</button>
-      </div>` : ''}
-    </div>
-    <div class="glass status-panel">
-      <div class="status-head"><h2>Status</h2><span class="tag tag-${pumpKey === 'fault' || sensor[0] === 'fault' ? 'fault' : f.key === 'offline' ? 'offline' : 'ok'}">${pumpKey === 'fault' || sensor[0] === 'fault' ? 'Needs attention' : f.key === 'offline' ? 'Offline' : 'Normal'}</span></div>
-      <dl>
-        <div><dt>Last reading</dt><dd>${st ? esc(when(st.last_heard_at)) : 'None yet'}${st?.heard_at_approx ? ' (approx.)' : ''}</dd></div>
-        <div><dt>Pump</dt><dd class="st-${pumpKey}">${pumpKey === 'running' ? `<span class="spin">${icon('pump')}</span>` : ''}${esc(pumpText)}</dd></div>
-        <div><dt>Depth</dt><dd>${st ? `${nf2.format(st.water_height_m)} m` : '–'}${t.height_m ? ` of ${nf2.format(t.height_m)} m` : ''}</dd></div>
-        <div><dt>Level sensor</dt><dd class="st-${sensor[0]}">${sensor[1]}</dd></div>
-        <div><dt>Radio</dt><dd>${st?.lora_rssi != null ? `${signal(st.lora_rssi, true)} ${st.lora_rssi} dBm` : 'Unknown'}</dd></div>
-        <div><dt>Route</dt><dd>${st?.hop_count ? `Relayed ${st.hop_count}×` : st ? 'Direct' : '–'}</dd></div>
-      </dl>
-    </div>
-    ${pumpKey === 'fault' ? `<div class="glass hero-alert" role="alert">${icon('alert')}<span><strong>Pump stopped by a safety check</strong> ${esc(when(pump.since))}. The tank wasn't filling as expected. Check the pump, pipes and water supply, then turn the pump controller off and on again to reset it.</span></div>` : ''}
-    ${sensor[0] === 'fault' ? `<div class="glass hero-alert" role="alert">${icon('alert')}<span><strong>Level sensor fault.</strong> This reading may be wrong, so the tank won't ask for water until the sensor reads normally. Check the probe and its cable.</span></div>` : ''}`;
+  document.getElementById('status').innerHTML = `
+    <div class="card-head"><h2 id="status-title" class="card-title">${icon('radio')}${esc(t.name)} status</h2><span class="tag tag-${tag[0]}">${tag[1]}</span></div>
+    <dl class="kv-list">
+      <div><dt>Pump</dt><dd class="st-${pumpKey}">${pumpKey === 'running' ? `<span class="spin">${icon('pump')}</span>` : ''}${esc(pumpText)}</dd></div>
+      <div><dt>Depth</dt><dd>${st ? `${nf2.format(st.water_height_m)} m` : '–'}${t.height_m ? ` of ${nf2.format(t.height_m)} m` : ''}</dd></div>
+      <div><dt>Level sensor</dt><dd class="st-${sensor[0]}">${sensor[1]}</dd></div>
+      <div><dt>Radio</dt><dd>${st?.lora_rssi != null ? `${signal(st.lora_rssi)} ${st.lora_rssi} dBm` : 'Unknown'}</dd></div>
+      <div><dt>Route</dt><dd>${st?.hop_count ? `Relayed ${st.hop_count}×` : st ? 'Direct to receiver' : '–'}</dd></div>
+    </dl>`;
 
-  document.getElementById('prev-tank')?.addEventListener('click', () => selectTank(site.tanks[idx - 1].id));
-  document.getElementById('next-tank')?.addEventListener('click', () => selectTank(site.tanks[idx + 1].id));
-
-  try {
-    const w = await weekData(t);
-    if (selected !== t.id) return;
-    const stats = cap && st ? usageStats(w.points, w.runs, cap, st.tank_volume_l) : null;
-    const d = document.getElementById('hero-days');
-    if (d) d.textContent = daysLeftText(stats);
-  } catch { /* leave placeholder */ }
+  document.getElementById('tank-alerts').innerHTML = `
+    ${pumpKey === 'fault' ? `<div class="banner banner-warn" role="alert">${icon('alert')}<span><strong>${esc(t.name)}: pump stopped by a safety check</strong> ${esc(when(pump.since))}. The tank wasn't filling as expected. Check the pump, pipes and water supply, then turn the pump controller off and on again to reset it.</span></div>` : ''}
+    ${sensor[0] === 'fault' ? `<div class="banner banner-warn" role="alert">${icon('alert')}<span><strong>${esc(t.name)}: level sensor fault.</strong> This reading may be wrong, so the tank won't ask for water until the sensor reads normally. Check the probe and its cable.</span></div>` : ''}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -683,19 +726,16 @@ async function renderChart(quiet = false) {
   const totalUse = bins.reduce((s, b) => s + b.litres, 0);
   const runTime = d.runs.reduce((s, run) => s + ((run.end ?? Date.now()) - run.start), 0);
   document.getElementById('chart-stats').innerHTML = `
-    <p class="cs-main">${nf1.format(last)}<small>%</small>
-      <span class="delta ${change >= 0 ? 'up' : 'down'}">${change >= 0 ? '▲' : '▼'} ${nf1.format(Math.abs(change))}%</span>
-      <span class="cs-over">over ${r.long}</span></p>
-    <dl class="cs-row">
+      <div><dt>Change</dt><dd><span class="delta ${change >= 0 ? 'up' : 'down'}">${change >= 0 ? '▲' : '▼'} ${nf1.format(Math.abs(change))}%</span></dd></div>
       <div><dt>Lowest</dt><dd>${nf1.format(lo)}%</dd></div>
       <div><dt>Highest</dt><dd>${nf1.format(hi)}%</dd></div>
       ${cap ? `<div><dt>Water used</dt><dd>${nf0.format(Math.round(totalUse / 10) * 10)} L</dd></div>` : ''}
-      <div><dt>Pump ran</dt><dd>${d.runs.length ? `${d.runs.length}× · ${duration(runTime)}` : 'Not at all'}</dd></div>
-    </dl>`;
+      <div><dt>Pump ran</dt><dd>${d.runs.length ? `${d.runs.length}× · ${duration(runTime)}` : 'Not at all'}</dd></div>`;
 
   const now = Date.now(), since = d.since;
-  const W = Math.max(300, wrap.clientWidth), H = W < 600 ? 260 : 320;
-  const barH = cap ? (W < 600 ? 48 : 64) : 0;
+  const W = Math.max(300, wrap.clientWidth);
+  const H = FIT.matches ? Math.max(120, wrap.clientHeight) : W < 600 ? 260 : 320;
+  const barH = cap ? Math.round(Math.min(64, Math.max(32, H * 0.2))) : 0;
   const pad = { l: 44, r: 14, t: 14, b: 26 };
   const lineBottom = H - pad.b - (barH ? barH + 14 : 0);
   const x = (ms) => pad.l + ((ms - since) / (now - since)) * (W - pad.l - pad.r);
@@ -887,7 +927,7 @@ async function renderPumpCard() {
     <dl class="kv-list">
       <div><dt>Run time today</dt><dd>${esc(duration(todayMs))}</dd></div>
       <div><dt>Fills in 7 days</dt><dd>${runs.length}</dd></div>
-      <div><dt>Last fill ended</dt><dd>${lastDone ? esc(when(new Date(lastDone.end).toISOString())) : '–'}</dd></div>
+      <div><dt>Last fill</dt><dd>${lastDone ? esc(when(new Date(lastDone.end).toISOString())) : '–'}</dd></div>
       <div><dt>Controller</dt><dd>${t.controller_node ? `Node ${t.controller_node}` : '–'}</dd></div>
     </dl>`;
 }
@@ -935,7 +975,7 @@ async function renderTankList() {
   }).join('');
   list.querySelectorAll('[data-tank]').forEach((b) => b.addEventListener('click', () => {
     selectTank(b.dataset.tank);
-    document.getElementById('top').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' });
+    document.getElementById('kpis').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' });
   }));
   for (const t of site.tanks) {
     try {
