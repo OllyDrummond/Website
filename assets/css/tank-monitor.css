@@ -218,3 +218,8 @@
   .od-fields { grid-template-columns: 1fr; }
   .fx-chips { gap: 10px 20px; }
 }
+
+/* Live monitoring and app section */
+.fx-monitor-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.fx-monitor-note { margin-top: 14px; font-size: 0.9rem; color: var(--ink-3); }
+.fx-monitor .fx-split-media img { object-fit: contain; }

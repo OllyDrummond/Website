@@ -1266,3 +1266,6 @@ fieldset.opt .choice { clear: both; }
 @media (max-width: 980px) { .nav.open .nav-phone-only { display: block; } }
 .show-xs { display: none; }
 @media (max-width: 430px) { .hide-xs { display: none; } .show-xs { display: inline; } }
+
+/* Header has no action buttons now: keep the phone Menu button on the right */
+@media (max-width: 980px) { .site-header .menu-toggle { margin-left: auto; } }
