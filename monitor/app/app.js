@@ -1,10 +1,11 @@
-// Kinetiq Tank Monitor dashboard (v2, "control room").
+// Kinetiq Tank Monitor dashboard (v3, Qubix-style layout).
 //
 // One screen per selected tank:
-//   hero photo with glass panels (level, water, days left, status)
-//   level chart with range tabs and water-use bars underneath
-//   gauge, water use, pump and receiver cards
-//   all tanks (click to switch) and recent pump activity
+//   dark band: tank picker, range tabs, key facts and a full-width level chart
+//   with pump-run bands and water-use bars underneath
+//   white cards: live level gauge + tiles, pump, water use + receiver tiles,
+//   and the list of tanks in the system (click to switch)
+//   drawer: activity feed or tank settings
 // Data comes from data.js (Supabase or the in-browser demo). Read-only except
 // renaming tanks and setting their size.
 
@@ -20,9 +21,9 @@ let selected = null;           // tank id
 let range = '24h';
 let unsubscribe = null;
 let chartTimer = null;
-let activityFilter = 'all';
 
 const RANGES = {
+  '6h': { label: '6H', long: '6 hours', ms: 6 * 3600_000, bucket: 300, bin: 1800_000 },
   '24h': { label: '24H', long: '24 hours', ms: 86400_000, bucket: 300, bin: 3600_000 },
   '7d': { label: '7D', long: '7 days', ms: 7 * 86400_000, bucket: 1800, bin: 86400_000 },
   '30d': { label: '30D', long: '30 days', ms: 30 * 86400_000, bucket: 7200, bin: 86400_000 },
@@ -86,6 +87,7 @@ function signalBars(rssi) {
 }
 
 const ICONS = {
+  menu: '<path d="M4 7h16M4 12h16M4 17h10"/>',
   grid: '<rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/>',
   tanks: '<path d="M5 6c0-1.7 3.1-3 7-3s7 1.3 7 3v12c0 1.7-3.1 3-7 3s-7-1.3-7-3z"/><path d="M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/>',
   chart: '<path d="M3 20h18"/><path d="M5 16l4-5 4 3 6-8"/>',
@@ -301,10 +303,10 @@ function onLiveChange({ table, row }) {
   }
   updateTop();
   if (!selected) return;
-  if (table === 'tank_state' && row.tank_id === selected) { renderHero(); renderGauge(); }
-  if (table === 'pump_state') { renderHero(); renderPumpCard(); renderActivity(); if (row.tank_id === selected) renderChart(true); }
-  if (table === 'gateways') renderSystemCard();
-  if (table === 'tank_state') renderTankList();
+  if (table === 'tank_state' && row.tank_id === selected) renderLevel();
+  if (table === 'pump_state' && row.tank_id === selected) { renderPump(); renderUseTiles(); renderChart(true); }
+  if (table === 'gateways') renderUseTiles();
+  if (table === 'tank_state' || table === 'pump_state') renderTankList();
 }
 
 function tick() {
@@ -388,111 +390,94 @@ function receiverStatus() {
 
 function renderShell() {
   document.title = 'Tank Monitor | Kinetiq';
-  const nav = [
-    ['top', 'grid', 'Overview'],
-    ['history', 'chart', 'History'],
-    ['tanks', 'tanks', 'All tanks'],
-    ['activity', 'bell', 'Activity'],
-  ];
   app.innerHTML = `
   <div class="dash">
-    <nav class="rail" aria-label="Dashboard">
-      <a class="rail-logo" href="../../index.html" aria-label="Kinetiq website"><img src="../../assets/img/brand/nz-64.png?v=3" alt="" width="64" height="64"></a>
-      <div class="rail-items">
-        ${nav.map(([id, ic, label], i) => `<button type="button" class="rail-btn ${i === 0 ? 'is-on' : ''}" data-jump="${id}" aria-label="${label}" title="${label}">${icon(ic)}<span>${label}</span></button>`).join('')}
-        <button type="button" class="rail-btn" id="open-settings" aria-label="Tank settings" title="Tank settings">${icon('cog')}<span>Settings</span></button>
+    <header class="topbar">
+      <a class="brand" href="../../products/water-monitor.html" aria-label="Kinetiq Tank Monitor, back to the website">
+        <img src="../../assets/img/brand/kinetiq-full-white.webp?v=4" alt="Kinetiq" width="1178" height="400">
+        <span>Tank Monitor</span>
+      </a>
+      <nav class="tabs" aria-label="Dashboard">
+        <button type="button" class="tab is-on" aria-current="page">Dashboard</button>
+        <button type="button" class="tab" data-open="activity">Activity</button>
+        <button type="button" class="tab" data-open="settings">Tank settings</button>
+      </nav>
+      <div class="top-right">
+        ${source.demo ? '<span class="demo-tag" title="Sample data. Tank 1 is filling and updates every few seconds; Tank 3 shows an offline tank.">Demo</span>' : ''}
+        <span class="pill" id="receiver-pill"></span>
+        <button type="button" class="round-btn" data-open="activity" aria-label="Activity">${icon('bell')}<span class="badge" id="fault-badge" hidden></span></button>
+        <button type="button" class="round-btn" id="signout" aria-label="${source.demo ? 'Exit demo' : 'Sign out'}" title="${source.demo ? 'Exit demo' : 'Sign out'}">${icon('out')}</button>
       </div>
-      <button type="button" class="rail-btn rail-out" id="signout" aria-label="${source.demo ? 'Exit demo' : 'Sign out'}" title="${source.demo ? 'Exit demo' : 'Sign out'}">${icon('out')}<span>${source.demo ? 'Exit' : 'Sign out'}</span></button>
-    </nav>
+    </header>
 
-    <div class="dash-main">
-      <header class="topbar">
+    <div id="receiver-banner"></div>
+
+    <section class="band" aria-labelledby="chart-title">
+      <div class="band-bar">
         <div class="picker" id="picker">
           <button type="button" class="picker-btn" id="picker-btn" aria-haspopup="listbox" aria-expanded="false">
-            ${icon('tanks')}<span id="picker-name"></span>${icon('down', 'icon caret')}
+            ${icon('menu')}<span class="picker-tank">${icon('tanks')}</span><span id="picker-name"></span><span class="picker-site">· ${esc(site.installation.name)}</span>${icon('down', 'icon caret')}
           </button>
           <ul class="picker-list" id="picker-list" role="listbox" aria-label="Choose a tank" hidden></ul>
         </div>
-        <p class="site-name">${esc(site.installation.name)}</p>
-        <div class="top-right">
-          <span class="top-date">${icon('calendar')}${esc(dateLong.format(new Date()))}</span>
-          <span class="pill" id="receiver-pill"></span>
+        <span class="chip" id="fresh-chip"></span>
+        <div class="seg" role="group" aria-label="Time range">
+          ${Object.entries(RANGES).map(([k, r]) => `<button type="button" data-range="${k}" aria-pressed="${k === range}" title="Last ${r.long}">${r.label}</button>`).join('')}
         </div>
-      </header>
-      ${source.demo ? '<p class="demo-note">Demo with sample data. Tank 1 is filling and updates every few seconds; Tank 3 shows what an offline tank looks like.</p>' : ''}
-      <div id="receiver-banner"></div>
-
-      <section class="hero" id="top" aria-label="Selected tank">
-        <img class="hero-bg" src="../../assets/img/photos/nz-farm-tank.webp" alt="" width="1536" height="1024">
-        <div class="hero-inner" id="hero" aria-live="polite"></div>
-      </section>
-
-      <section class="card chart-card" id="history" aria-labelledby="chart-title">
-        <div class="chart-top">
-          <div>
-            <h2 id="chart-title">Tank level</h2>
-            <div class="chart-stats" id="chart-stats"></div>
-          </div>
-          <div class="seg" role="group" aria-label="Time range">
-            ${Object.entries(RANGES).map(([k, r]) => `<button type="button" data-range="${k}" aria-pressed="${k === range}" title="Last ${r.long}">${r.label}</button>`).join('')}
-          </div>
-        </div>
+      </div>
+      <h2 id="chart-title" class="visually-hidden">Tank level chart</h2>
+      <div class="band-body">
+        <dl class="facts" id="facts"></dl>
         <div class="chart-wrap" id="chart-wrap"></div>
-        <div class="chart-legend">
-          <span><i class="lg-line"></i>Level</span>
-          <span><i class="lg-run"></i>Pump running</span>
-          <span><i class="lg-bar"></i>Water used</span>
-          <span id="lg-threshold"><i class="lg-dash"></i>Fill starts / stops</span>
-        </div>
+      </div>
+      <div class="chart-legend">
+        <span><i class="lg-line"></i>Level</span>
+        <span><i class="lg-run"></i>Pump running</span>
+        <span><i class="lg-bar"></i>Water used</span>
+        <span id="lg-threshold"><i class="lg-dash"></i>Pump starts / stops</span>
+      </div>
+    </section>
+
+    <div class="cards">
+      <section class="card col-a" aria-labelledby="level-title">
+        <div class="card-head"><h2 id="level-title">Live level</h2><span class="muted" id="level-when"></span></div>
+        <div id="gauge"></div>
+        <div class="tiles" id="level-tiles"></div>
       </section>
 
-      <div class="grid-4">
-        <section class="card" aria-labelledby="gauge-title"><h2 id="gauge-title" class="card-title">${icon('drop')}Live level</h2><div id="gauge"></div></section>
-        <section class="card" aria-labelledby="use-title"><h2 id="use-title" class="card-title">${icon('chart')}Water use</h2><div id="use"></div></section>
-        <section class="card" aria-labelledby="pump-title"><h2 id="pump-title" class="card-title">${icon('pump')}Pump</h2><div id="pump"></div></section>
-        <section class="card" aria-labelledby="sys-title"><h2 id="sys-title" class="card-title">${icon('receiver')}Receiver</h2><div id="system"></div></section>
+      <div class="col-b">
+        <section class="card" aria-labelledby="pump-title">
+          <div class="card-head"><h2 id="pump-title">Pump</h2></div>
+          <div id="pump"></div>
+        </section>
+        <div class="tiles tiles-cards" id="use-tiles"></div>
       </div>
 
-      <div class="grid-2">
-        <section class="card" id="tanks" aria-labelledby="tanks-title">
-          <div class="card-head"><h2 id="tanks-title" class="card-title">${icon('tanks')}All tanks</h2><span class="muted" id="tanks-count"></span></div>
-          <ul class="tank-list" id="tank-list"></ul>
-        </section>
-        <section class="card" id="activity" aria-labelledby="act-title">
-          <div class="card-head">
-            <h2 id="act-title" class="card-title">${icon('bell')}Activity</h2>
-            <div class="seg seg-sm" role="group" aria-label="Show">
-              <button type="button" data-act="all" aria-pressed="true">All</button>
-              <button type="button" data-act="faults" aria-pressed="false">Faults</button>
-            </div>
-          </div>
-          <ul class="activity" id="activity-list"></ul>
-        </section>
-      </div>
-      <p class="foot-note">Readings arrive about every 20 seconds. <a href="../../products/water-monitor.html">About the Kinetiq Tank Monitor</a></p>
+      <section class="card col-c" aria-labelledby="tanks-title">
+        <div class="card-head"><h2 id="tanks-title">Tanks in system</h2><span class="muted" id="tanks-count"></span></div>
+        <div class="switch" role="group" aria-label="Show">
+          <button type="button" data-filter="all" aria-pressed="true">All tanks</button>
+          <button type="button" data-filter="attention" aria-pressed="false">Needs attention</button>
+        </div>
+        <ul class="tank-list" id="tank-list"></ul>
+      </section>
     </div>
+    <p class="foot-note">Readings arrive about every 20 seconds. <a href="../../products/water-monitor.html">About the Kinetiq Tank Monitor</a></p>
   </div>
 
   <div class="drawer-scrim" id="drawer-scrim" hidden></div>
   <aside class="drawer" id="drawer" aria-labelledby="drawer-title" hidden>
-    <div class="drawer-head"><h2 id="drawer-title">Tank settings</h2><button type="button" class="icon-btn" id="drawer-close" aria-label="Close">${icon('close')}</button></div>
-    <form id="tank-form" class="tank-form" novalidate></form>
+    <div class="drawer-head"><h2 id="drawer-title"></h2><button type="button" class="round-btn" id="drawer-close" aria-label="Close">${icon('close')}</button></div>
+    <div id="drawer-body"></div>
   </aside>`;
 
-  // navigation
-  document.querySelectorAll('[data-jump]').forEach((b) => b.addEventListener('click', () => {
-    document.getElementById(b.dataset.jump)?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
-    document.querySelectorAll('.rail-btn').forEach((x) => x.classList.toggle('is-on', x === b));
-  }));
   document.getElementById('signout').addEventListener('click', signOut);
-  document.getElementById('open-settings').addEventListener('click', openDrawer);
+  document.querySelectorAll('[data-open]').forEach((b) => b.addEventListener('click', () => openDrawer(b.dataset.open, b)));
   document.getElementById('drawer-close').addEventListener('click', closeDrawer);
   document.getElementById('drawer-scrim').addEventListener('click', closeDrawer);
   addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeDrawer(); closePicker(); } });
 
-  // tank picker
-  const pickBtn = document.getElementById('picker-btn');
-  pickBtn.addEventListener('click', () => (document.getElementById('picker-list').hidden ? openPicker() : closePicker()));
+  document.getElementById('picker-btn').addEventListener('click', () => (document.getElementById('picker-list').hidden ? openPicker() : closePicker()));
   document.addEventListener('click', (e) => { if (!e.target.closest('#picker')) closePicker(); });
 
   document.querySelectorAll('[data-range]').forEach((b) => b.addEventListener('click', () => {
@@ -500,14 +485,19 @@ function renderShell() {
     document.querySelectorAll('[data-range]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
     renderChart();
   }));
-  document.querySelectorAll('[data-act]').forEach((b) => b.addEventListener('click', () => {
-    activityFilter = b.dataset.act;
-    document.querySelectorAll('[data-act]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
-    renderActivity();
+  document.querySelectorAll('[data-filter]').forEach((b) => b.addEventListener('click', () => {
+    tankFilter = b.dataset.filter;
+    document.querySelectorAll('[data-filter]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    renderTankList();
   }));
 
-  let resizeT;
-  addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => renderChart(), 200); });
+  let resizeT, lastW = innerWidth;
+  addEventListener('resize', () => {
+    if (innerWidth === lastW) return;
+    lastW = innerWidth;
+    clearTimeout(resizeT);
+    resizeT = setTimeout(() => renderChart(), 200);
+  });
 
   updateTop();
   renderAll();
@@ -515,17 +505,14 @@ function renderShell() {
 
 function renderAll() {
   if (!selected) {
-    document.getElementById('hero').innerHTML = `<div class="hero-empty"><h1>Waiting for the first reading</h1><p>Your receiver is linked. Tanks appear here automatically as soon as each tank unit sends its first reading (every 20 seconds).</p></div>`;
+    document.getElementById('chart-wrap').innerHTML = '<p class="chart-empty">Waiting for the first reading. Tanks appear here automatically as soon as each tank unit reports (every 20 seconds).</p>';
     return;
   }
-  renderHero();
   renderChart();
-  renderGauge();
-  renderUseCard();
-  renderPumpCard();
-  renderSystemCard();
+  renderLevel();
+  renderPump();
+  renderUseTiles();
   renderTankList();
-  renderActivity();
   clearInterval(chartTimer);
   chartTimer = setInterval(() => renderChart(true), 60_000);
 }
@@ -537,18 +524,33 @@ function selectTank(id, pushHash = true) {
   renderAll();
 }
 
+function needsAttention(t) {
+  const st = stateOf(t.id);
+  return !st || freshness(st.last_heard_at).key === 'offline' || st.sensor_status === 'fault' || pumpOf(t.id)?.state === 'fault';
+}
+
 function updateTop() {
   const t = selected && tankById(selected);
   const nameEl = document.getElementById('picker-name');
   if (nameEl) nameEl.textContent = t ? t.name : 'No tanks yet';
+  const chip = document.getElementById('fresh-chip');
+  if (chip && t) {
+    const st = stateOf(t.id);
+    const f = freshness(st?.last_heard_at);
+    chip.className = `chip chip-${f.key}`;
+    chip.innerHTML = `<span class="dot" aria-hidden="true"></span>${f.label}${st ? ` <span class="chip-age" data-age="${esc(st.last_heard_at)}">${esc(ago(st.last_heard_at))}</span>` : ''}`;
+  }
   const pill = document.getElementById('receiver-pill');
   if (!pill) return;
   const rs = receiverStatus();
   pill.className = `pill pill-${rs.key}`;
-  pill.innerHTML = `<span class="dot" aria-hidden="true"></span>${esc(rs.text)}`;
-  const banner = document.getElementById('receiver-banner');
-  banner.innerHTML = rs.key === 'offline'
-    ? `<div class="banner banner-warn" role="status">${icon('wifi')}<span><strong>${esc(rs.text)}.</strong> Readings can't reach the website until it reconnects. Your tanks and pump keep working as normal, and the receiver sends what it has stored when it's back online.</span></div>`
+  pill.innerHTML = `<span class="dot" aria-hidden="true"></span><span class="pill-text">${esc(rs.text)}</span>`;
+  const faults = site.tanks.filter(needsAttention).length;
+  const badge = document.getElementById('fault-badge');
+  badge.hidden = !faults;
+  badge.textContent = faults;
+  document.getElementById('receiver-banner').innerHTML = rs.key === 'offline'
+    ? `<div class="banner" role="status">${icon('wifi')}<span><strong>${esc(rs.text)}.</strong> Readings can't reach the website until it reconnects. Your tanks and pump keep working as normal, and the receiver sends what it has stored when it's back online.</span></div>`
     : '';
 }
 
@@ -558,9 +560,9 @@ function openPicker() {
     const st = stateOf(t.id);
     const f = freshness(st?.last_heard_at);
     return `<li role="option" aria-selected="${t.id === selected}" tabindex="-1" data-id="${esc(t.id)}">
+      <span class="dot dot-${f.key}" aria-hidden="true"></span>
       <span class="pick-name">${esc(t.name)}</span>
       <span class="pick-val">${st ? `${nf0.format(st.tank_percent)}%` : '–'}</span>
-      <span class="dot dot-${f.key}" aria-hidden="true"></span>
     </li>`;
   }).join('');
   list.hidden = false;
@@ -586,70 +588,7 @@ function closePicker() {
 }
 
 // ---------------------------------------------------------------------------
-// Hero: glass panels over the photo
-// ---------------------------------------------------------------------------
-
-async function renderHero() {
-  const t = tankById(selected);
-  const st = stateOf(t.id);
-  const pump = pumpOf(t.id);
-  const f = freshness(st?.last_heard_at);
-  const cap = capacityOf(t);
-  const idx = site.tanks.indexOf(t);
-
-  let pumpText = 'Not reported yet', pumpKey = 'unknown';
-  if (pump?.state === 'running') { pumpText = `Running, ${duration(Date.now() - Date.parse(pump.since))}`; pumpKey = 'running'; }
-  else if (pump?.state === 'stopped') { pumpText = `Off since ${timeFmt.format(new Date(pump.since))}`; pumpKey = 'stopped'; }
-  else if (pump?.state === 'fault') { pumpText = 'Stopped by safety check'; pumpKey = 'fault'; }
-
-  const sensor = st?.sensor_status === 'fault' ? ['fault', 'Fault'] : st?.sensor_status === 'ok' ? ['ok', 'OK'] : ['unknown', 'Not reported'];
-
-  const el = document.getElementById('hero');
-  el.innerHTML = `
-    <div class="hero-left">
-      <div class="hero-title">
-        <h1>${esc(t.name)}</h1>
-        <span class="chip chip-${f.key}"><span class="dot" aria-hidden="true"></span>${f.label}${st ? ` <span class="chip-age" data-age="${esc(st.last_heard_at)}">${esc(ago(st.last_heard_at))}</span>` : ''}</span>
-      </div>
-      <div class="glass-row">
-        <div class="glass stat stat-main"><p>Level</p><p class="stat-v">${st ? nf1.format(st.tank_percent) : '–'}<small>%</small></p></div>
-        <div class="glass stat"><p>Water</p><p class="stat-v">${st ? nf0.format(st.tank_volume_l) : '–'}<small> L</small></p>${cap ? `<p class="stat-sub">of ${nf0.format(cap)} L</p>` : ''}</div>
-        <div class="glass stat"><p>Lasts about</p><p class="stat-v stat-v-sm" id="hero-days">…</p><p class="stat-sub">at your average use</p></div>
-      </div>
-      ${site.tanks.length > 1 ? `<div class="hero-nav">
-        <button type="button" class="glass-btn" id="prev-tank" aria-label="Previous tank" ${idx <= 0 ? 'disabled' : ''}>${icon('left')}</button>
-        <span>${idx + 1} of ${site.tanks.length}</span>
-        <button type="button" class="glass-btn" id="next-tank" aria-label="Next tank" ${idx >= site.tanks.length - 1 ? 'disabled' : ''}>${icon('right')}</button>
-      </div>` : ''}
-    </div>
-    <div class="glass status-panel">
-      <div class="status-head"><h2>Status</h2><span class="tag tag-${pumpKey === 'fault' || sensor[0] === 'fault' ? 'fault' : f.key === 'offline' ? 'offline' : 'ok'}">${pumpKey === 'fault' || sensor[0] === 'fault' ? 'Needs attention' : f.key === 'offline' ? 'Offline' : 'Normal'}</span></div>
-      <dl>
-        <div><dt>Last reading</dt><dd>${st ? esc(when(st.last_heard_at)) : 'None yet'}${st?.heard_at_approx ? ' (approx.)' : ''}</dd></div>
-        <div><dt>Pump</dt><dd class="st-${pumpKey}">${pumpKey === 'running' ? `<span class="spin">${icon('pump')}</span>` : ''}${esc(pumpText)}</dd></div>
-        <div><dt>Depth</dt><dd>${st ? `${nf2.format(st.water_height_m)} m` : '–'}${t.height_m ? ` of ${nf2.format(t.height_m)} m` : ''}</dd></div>
-        <div><dt>Level sensor</dt><dd class="st-${sensor[0]}">${sensor[1]}</dd></div>
-        <div><dt>Radio</dt><dd>${st?.lora_rssi != null ? `${signal(st.lora_rssi, true)} ${st.lora_rssi} dBm` : 'Unknown'}</dd></div>
-        <div><dt>Route</dt><dd>${st?.hop_count ? `Relayed ${st.hop_count}×` : st ? 'Direct' : '–'}</dd></div>
-      </dl>
-    </div>
-    ${pumpKey === 'fault' ? `<div class="glass hero-alert" role="alert">${icon('alert')}<span><strong>Pump stopped by a safety check</strong> ${esc(when(pump.since))}. The tank wasn't filling as expected. Check the pump, pipes and water supply, then turn the pump controller off and on again to reset it.</span></div>` : ''}
-    ${sensor[0] === 'fault' ? `<div class="glass hero-alert" role="alert">${icon('alert')}<span><strong>Level sensor fault.</strong> This reading may be wrong, so the tank won't ask for water until the sensor reads normally. Check the probe and its cable.</span></div>` : ''}`;
-
-  document.getElementById('prev-tank')?.addEventListener('click', () => selectTank(site.tanks[idx - 1].id));
-  document.getElementById('next-tank')?.addEventListener('click', () => selectTank(site.tanks[idx + 1].id));
-
-  try {
-    const w = await weekData(t);
-    if (selected !== t.id) return;
-    const stats = cap && st ? usageStats(w.points, w.runs, cap, st.tank_volume_l) : null;
-    const d = document.getElementById('hero-days');
-    if (d) d.textContent = daysLeftText(stats);
-  } catch { /* leave placeholder */ }
-}
-
-// ---------------------------------------------------------------------------
-// Chart: level line + pump bands + water-use bars
+// Chart band: facts on the left, level line + pump bands + water-use bars
 // ---------------------------------------------------------------------------
 
 async function renderChart(quiet = false) {
@@ -666,44 +605,49 @@ async function renderChart(quiet = false) {
   if (selected !== t.id || key !== range) return;
   const r = RANGES[key];
   const pts = d.points;
+  const st = stateOf(t.id);
+  const cap = capacityOf(t);
   document.getElementById('lg-threshold').hidden = t.fill_start_percent == null;
 
+  const facts = document.getElementById('facts');
   if (!pts.length) {
-    document.getElementById('chart-stats').innerHTML = '';
+    facts.innerHTML = '';
     wrap.innerHTML = `<p class="chart-empty">No readings in the last ${r.long}.</p>`;
     return;
   }
 
-  const cap = capacityOf(t);
   const bins = cap ? useBins(pts, d.runs, cap, r.bin, d.since) : [];
-  const live = stateOf(t.id);
-  const first = pts[0].p, last = live && freshness(live.last_heard_at).key !== 'offline' ? live.tank_percent : pts.at(-1).p;
+  const first = pts[0].p;
+  const last = st && freshness(st.last_heard_at).key !== 'offline' ? st.tank_percent : pts.at(-1).p;
   const lo = Math.min(...pts.map((p) => p.p)), hi = Math.max(...pts.map((p) => p.p));
   const change = last - first;
   const totalUse = bins.reduce((s, b) => s + b.litres, 0);
   const runTime = d.runs.reduce((s, run) => s + ((run.end ?? Date.now()) - run.start), 0);
-  document.getElementById('chart-stats').innerHTML = `
-    <p class="cs-main">${nf1.format(last)}<small>%</small>
-      <span class="delta ${change >= 0 ? 'up' : 'down'}">${change >= 0 ? '▲' : '▼'} ${nf1.format(Math.abs(change))}%</span>
-      <span class="cs-over">over ${r.long}</span></p>
-    <dl class="cs-row">
-      <div><dt>Lowest</dt><dd>${nf1.format(lo)}%</dd></div>
-      <div><dt>Highest</dt><dd>${nf1.format(hi)}%</dd></div>
-      ${cap ? `<div><dt>Water used</dt><dd>${nf0.format(Math.round(totalUse / 10) * 10)} L</dd></div>` : ''}
-      <div><dt>Pump ran</dt><dd>${d.runs.length ? `${d.runs.length}× · ${duration(runTime)}` : 'Not at all'}</dd></div>
-    </dl>`;
+  facts.innerHTML = `
+    <div class="fact-main"><dt>Level now</dt><dd>${nf1.format(last)}<small>%</small>
+      <span class="delta ${change >= 0 ? 'up' : 'down'}">${change >= 0 ? '▲' : '▼'} ${nf1.format(Math.abs(change))}% <span>${r.long}</span></span></dd></div>
+    <div><dt>Water in tank</dt><dd>${st ? `${nf0.format(st.tank_volume_l)} L` : '–'}</dd></div>
+    <div><dt>Capacity</dt><dd>${cap ? `${nf0.format(cap)} L` : '–'}</dd></div>
+    <div><dt>Depth</dt><dd>${st ? `${nf2.format(st.water_height_m)} m` : '–'}</dd></div>
+    <div><dt>Lowest / highest</dt><dd>${nf0.format(lo)}% / ${nf0.format(hi)}%</dd></div>
+    ${cap ? `<div><dt>Water used</dt><dd>${nf0.format(Math.round(totalUse / 10) * 10)} L</dd></div>` : ''}
+    <div><dt>Pump ran</dt><dd>${d.runs.length ? `${d.runs.length}× · ${duration(runTime)}` : 'Not at all'}</dd></div>`;
 
   const now = Date.now(), since = d.since;
-  const W = Math.max(300, wrap.clientWidth), H = W < 600 ? 260 : 320;
-  const barH = cap ? (W < 600 ? 48 : 64) : 0;
-  const pad = { l: 44, r: 14, t: 14, b: 26 };
-  const lineBottom = H - pad.b - (barH ? barH + 14 : 0);
+  const W = Math.max(300, wrap.clientWidth);
+  const small = W < 640;
+  const H = small ? 300 : 430;
+  const barH = cap ? (small ? 56 : 92) : 0;
+  const pad = { l: 8, r: small ? 44 : 58, t: 16, b: 26 };
+  const lineBottom = H - pad.b - (barH ? barH + 10 : 0);
   const x = (ms) => pad.l + ((ms - since) / (now - since)) * (W - pad.l - pad.r);
   const y = (p) => pad.t + (1 - p / 100) * (lineBottom - pad.t);
 
   const gap = r.bucket * 1000 * 2.5;
   let line = '', area = '', prev = null;
-  for (const pt of pts) {
+  const drawn = [...pts];
+  if (st && freshness(st.last_heard_at).key !== 'offline') drawn.push({ t: now, p: st.tank_percent });
+  for (const pt of drawn) {
     const X = x(pt.t).toFixed(1), Y = y(pt.p).toFixed(1);
     if (!prev || pt.t - prev.t > gap) {
       if (prev) area += `L${x(prev.t).toFixed(1)},${lineBottom}Z`;
@@ -715,33 +659,39 @@ async function renderChart(quiet = false) {
 
   const bands = d.runs.map((run) => {
     const x1 = x(run.start), x2 = x(run.end ?? now);
-    return `<rect class="c-run" x="${x1.toFixed(1)}" y="${pad.t}" width="${Math.max(2, x2 - x1).toFixed(1)}" height="${(lineBottom - pad.t).toFixed(1)}" rx="3"/>`;
+    return `<rect class="c-run" x="${x1.toFixed(1)}" y="${pad.t}" width="${Math.max(2, x2 - x1).toFixed(1)}" height="${(lineBottom - pad.t).toFixed(1)}"/>`;
   }).join('');
 
   const grid = [0, 25, 50, 75, 100].map((p) =>
-    `<line class="c-grid" x1="${pad.l}" x2="${W - pad.r}" y1="${y(p)}" y2="${y(p)}"/><text class="c-axis" x="${pad.l - 10}" y="${y(p) + 4}" text-anchor="end">${p}%</text>`).join('');
+    `<line class="c-grid" x1="${pad.l}" x2="${W - pad.r}" y1="${y(p)}" y2="${y(p)}"/><text class="c-axis" x="${W - pad.r + 10}" y="${y(p) + 4}">${p}%</text>`).join('');
   const thresholds = t.fill_start_percent != null
     ? [t.fill_start_percent, t.fill_stop_percent].map((p) => `<line class="c-threshold" x1="${pad.l}" x2="${W - pad.r}" y1="${y(p)}" y2="${y(p)}"/>`).join('') : '';
 
-  // use bars
+  // current value tag on the right axis, like a price tag
+  const ly = y(last);
+  const nowTag = `<line class="c-now" x1="${pad.l}" x2="${W - pad.r}" y1="${ly}" y2="${ly}"/>
+    <rect class="c-tag" x="${W - pad.r + 2}" y="${ly - 10}" width="${pad.r - 4}" height="20" rx="5"/>
+    <text class="c-tag-text" x="${W - pad.r / 2}" y="${ly + 4}" text-anchor="middle">${nf1.format(last)}%</text>`;
+
   const maxUse = Math.max(1, ...bins.map((b) => b.litres));
-  const barW = Math.max(2, (x(Math.min(now, since + r.bin)) - x(since)) * 0.62);
-  const barsTop = lineBottom + 14;
+  const binPx = x(Math.min(now, since + r.bin)) - x(since);
+  const barW = Math.max(2, binPx * (binPx > 12 ? 0.6 : 0.8));
+  const barsTop = lineBottom + 10;
   const bars = bins.map((b) => {
     const mid = x(Math.max(since, b.t) + Math.min(r.bin, now - Math.max(since, b.t)) / 2);
     const h = (b.litres / maxUse) * barH;
-    return `<rect class="c-bar" x="${(mid - barW / 2).toFixed(1)}" y="${(barsTop + barH - h).toFixed(1)}" width="${barW.toFixed(1)}" height="${Math.max(h, b.litres > 0 ? 1.5 : 0).toFixed(1)}" rx="1.5"/>`;
+    return `<rect class="c-bar" x="${(mid - barW / 2).toFixed(1)}" y="${(barsTop + barH - h).toFixed(1)}" width="${barW.toFixed(1)}" height="${Math.max(h, b.litres > 0 ? 1.5 : 0).toFixed(1)}" rx="1"/>`;
   }).join('');
 
-  // time labels
   const ticks = [];
   if (r.ms <= 86400_000) {
+    const every = r.ms <= 6 * 3600_000 ? 1 : (small ? 6 : 3);
     const f0 = new Date(since); f0.setMinutes(0, 0, 0); f0.setHours(f0.getHours() + 1);
-    for (let tt = f0.getTime(); tt < now; tt += 3600_000) if (new Date(tt).getHours() % (W < 600 ? 6 : 3) === 0) ticks.push([tt, timeFmt.format(new Date(tt))]);
+    for (let tt = f0.getTime(); tt < now; tt += 3600_000) if (new Date(tt).getHours() % every === 0) ticks.push([tt, timeFmt.format(new Date(tt))]);
   } else {
-    const step = r.ms <= 7 * 86400_000 ? 1 : (W < 600 ? 7 : 4);
+    const step = r.ms <= 7 * 86400_000 ? (small ? 2 : 1) : (small ? 7 : 3);
     const f0 = new Date(since); f0.setHours(0, 0, 0, 0); f0.setDate(f0.getDate() + 1);
-    for (let tt = f0.getTime(), i = 0; tt < now; tt += 86400_000, i++) if (i % step === 0) ticks.push([tt, step === 1 ? weekday.format(new Date(tt)) : shortDay.format(new Date(tt))]);
+    for (let tt = f0.getTime(), i = 0; tt < now; tt += 86400_000, i++) if (i % step === 0) ticks.push([tt, r.ms <= 7 * 86400_000 ? weekday.format(new Date(tt)) : shortDay.format(new Date(tt))]);
   }
   const xTicks = ticks.map(([tt, label]) => `<text class="c-axis" x="${x(tt).toFixed(1)}" y="${H - 6}" text-anchor="middle">${esc(label)}</text>`).join('');
 
@@ -750,14 +700,15 @@ async function renderChart(quiet = false) {
          aria-label="${esc(t.name)} over the last ${r.long}: from ${nf0.format(first)}% to ${nf0.format(last)}%, lowest ${nf0.format(lo)}%, highest ${nf0.format(hi)}%.">
       <defs>
         <linearGradient id="g-area" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stop-color="var(--water)" stop-opacity=".38"/>
-          <stop offset="100%" stop-color="var(--water)" stop-opacity="0"/>
+          <stop offset="0%" stop-color="#8cc7f7" stop-opacity=".22"/>
+          <stop offset="100%" stop-color="#8cc7f7" stop-opacity="0"/>
         </linearGradient>
       </defs>
       ${grid}${bands}${thresholds}
       <path class="c-area" d="${area}" fill="url(#g-area)"/>
       <path class="c-line" d="${line}"/>
-      ${barH ? `<line class="c-grid" x1="${pad.l}" x2="${W - pad.r}" y1="${barsTop + barH}" y2="${barsTop + barH}"/><text class="c-axis" x="${pad.l - 10}" y="${barsTop + barH / 2 + 4}" text-anchor="end">Use</text>${bars}` : ''}
+      ${bars}
+      ${nowTag}
       <line class="c-cursor" id="c-cursor" x1="0" x2="0" y1="${pad.t}" y2="${barH ? barsTop + barH : lineBottom}" visibility="hidden"/>
       <circle class="c-dot" id="c-dot" r="5" cx="0" cy="0" visibility="hidden"/>
       ${xTicks}
@@ -780,7 +731,7 @@ async function renderChart(quiet = false) {
     const running = overlapsRun(d.runs, best.t, best.t);
     tip.innerHTML = `<p class="tip-when">${esc(when(new Date(best.t).toISOString()))}</p>
       <p><i class="lg-line"></i>Level <strong>${nf1.format(best.p)}%</strong>${cap ? ` · ${nf0.format((best.p / 100) * cap)} L` : ''}</p>
-      ${bin ? `<p><i class="lg-bar"></i>Used <strong>${nf0.format(bin.litres)} L</strong> ${r.bin < 86400_000 ? 'that hour' : 'that day'}</p>` : ''}
+      ${bin ? `<p><i class="lg-bar"></i>Used <strong>${nf0.format(bin.litres)} L</strong> ${r.bin >= 86400_000 ? 'that day' : r.bin >= 3600_000 ? 'that hour' : 'in 30 min'}</p>` : ''}
       ${running ? '<p><i class="lg-run"></i>Pump running</p>' : ''}`;
     tip.hidden = false;
     const left = (bx / W) * rect.width;
@@ -795,9 +746,7 @@ async function renderChart(quiet = false) {
 // Cards
 // ---------------------------------------------------------------------------
 
-function renderGauge() {
-  const t = tankById(selected);
-  const st = stateOf(t.id);
+function gaugeSvg(t, st) {
   const pct = st ? Math.max(0, Math.min(100, st.tank_percent)) : 0;
   const cx = 110, cy = 110, R = 84, start = 135, sweep = 270;
   const pt = (deg, rad = R) => [cx + rad * Math.cos((deg * Math.PI) / 180), cy + rad * Math.sin((deg * Math.PI) / 180)];
@@ -815,143 +764,221 @@ function renderGauge() {
     const [x1, y1] = pt(deg(p), R - 12), [x2, y2] = pt(deg(p), R + 10);
     return `<line class="g-mark" x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"/>`;
   }).join('') : '';
-  const f = freshness(st?.last_heard_at);
-  document.getElementById('gauge').innerHTML = `
-    <div class="gauge">
-      <svg viewBox="-22 -26 264 236" role="img" aria-label="${st ? `${nf1.format(pct)}% full` : 'No reading yet'}">
-        <path class="g-track" d="${arc(start, start + sweep)}"/>
-        ${pct > 0 ? `<path class="g-fill ${f.key === 'offline' ? 'is-stale' : ''}" d="${arc(start, deg(pct))}"/>` : ''}
-        ${ticks}${labels}${marks}
-        <text class="g-value" x="${cx}" y="${cy + 6}" text-anchor="middle">${st ? nf1.format(pct) : '–'}<tspan class="g-unit">%</tspan></text>
-        <text class="g-cap" x="${cx}" y="${cy + 30}" text-anchor="middle">${st ? `${nf0.format(st.tank_volume_l)} L` : ''}</text>
-      </svg>
-    </div>
-    ${t.fill_start_percent != null ? `<p class="card-foot-note"><i class="g-mark-key"></i>Pump fills below ${nf0.format(t.fill_start_percent)}% and stops at ${nf0.format(t.fill_stop_percent)}%</p>` : ''}`;
+  const stale = freshness(st?.last_heard_at).key === 'offline';
+  return `<svg viewBox="-22 -26 264 236" role="img" aria-label="${st ? `${nf1.format(pct)}% full` : 'No reading yet'}">
+      <path class="g-track" d="${arc(start, start + sweep)}"/>
+      ${pct > 0 ? `<path class="g-fill ${stale ? 'is-stale' : ''}" d="${arc(start, deg(pct))}"/>` : ''}
+      ${ticks}${labels}${marks}
+      <text class="g-value" x="${cx}" y="${cy + 6}" text-anchor="middle">${st ? nf1.format(pct) : '–'}<tspan class="g-unit">%</tspan></text>
+      <text class="g-cap" x="${cx}" y="${cy + 30}" text-anchor="middle">${st ? `${nf0.format(st.tank_volume_l)} L` : ''}</text>
+    </svg>`;
 }
 
-async function renderUseCard() {
+const tile = (label, value, extra = '', cls = '') =>
+  `<div class="tile ${cls}"><p class="tile-v">${value}</p><p class="tile-l">${label}</p>${extra}</div>`;
+
+async function renderLevel() {
   const t = tankById(selected);
-  const el = document.getElementById('use');
-  const cap = capacityOf(t);
   const st = stateOf(t.id);
-  if (!cap) { el.innerHTML = '<p class="muted">Set the tank size in Settings to see water use.</p>'; return; }
-  el.innerHTML = '<p class="muted">Working it out…</p>';
+  const cap = capacityOf(t);
+  document.getElementById('level-when').innerHTML = st ? `<span data-age="${esc(st.last_heard_at)}">${esc(ago(st.last_heard_at))}</span>` : '';
+  document.getElementById('gauge').innerHTML = `<div class="gauge">${gaugeSvg(t, st)}</div>
+    ${t.fill_start_percent != null ? `<p class="gauge-note"><i class="g-mark-key"></i>Pump fills below ${nf0.format(t.fill_start_percent)}%, stops at ${nf0.format(t.fill_stop_percent)}%</p>` : ''}`;
+  const sensor = st?.sensor_status === 'fault' ? ['Fault', 'bad'] : st?.sensor_status === 'ok' ? ['OK', 'good'] : ['Not reported', ''];
+  const tilesEl = document.getElementById('level-tiles');
+  const draw = (days) => {
+    tilesEl.innerHTML =
+      tile('Water lasts about', esc(days)) +
+      tile('Depth', st ? `${nf2.format(st.water_height_m)} m` : '–', t.height_m ? `<p class="tile-s">of ${nf2.format(t.height_m)} m</p>` : '') +
+      tile('Level sensor', sensor[0], '', sensor[1]) +
+      tile('Radio signal', st?.lora_rssi != null ? `${signal(st.lora_rssi)} <span class="tile-unit">${st.lora_rssi} dBm</span>` : '–', st ? `<p class="tile-s">${st.hop_count ? `Relayed ${st.hop_count}×` : 'Direct to receiver'}</p>` : '');
+  };
+  draw('…');
   try {
     const w = await weekData(t);
     if (selected !== t.id) return;
-    const stats = usageStats(w.points, w.runs, cap, st?.tank_volume_l);
-    const midnight = new Date(); midnight.setHours(0, 0, 0, 0);
-    const today = useBins(w.points, w.runs, cap, 3600_000, midnight.getTime());
-    const todayTotal = today.reduce((s, b) => s + b.litres, 0);
-    const maxH = Math.max(1, ...today.map((b) => b.litres));
-    const hours = Array.from({ length: 24 }, (_, h) => today[h]?.litres ?? null);
-    const nowH = new Date().getHours();
-    el.innerHTML = `
-      <div class="kv-big">
-        <div><p class="kv-label">Today so far</p><p class="kv-value">${nf0.format(Math.round(todayTotal / 10) * 10)}<small> L</small></p></div>
-        <div><p class="kv-label">Daily average</p><p class="kv-value">${stats?.enough ? nf0.format(Math.round(stats.perDay / 10) * 10) : '–'}<small> L</small></p></div>
-      </div>
-      <div class="hour-bars" role="img" aria-label="Water used each hour today">
-        ${hours.map((v, h) => `<i class="${h === nowH ? 'now' : ''} ${v == null ? 'future' : ''}" style="height:${v == null ? 4 : Math.max(4, (v / maxH) * 100)}%" title="${hourFmt.format(new Date(midnight.getTime() + h * 3600_000))}: ${v == null ? 'still to come' : `${nf0.format(v)} L`}"></i>`).join('')}
-      </div>
-      <div class="hour-axis"><span>12am</span><span>6am</span><span>12pm</span><span>6pm</span><span>12am</span></div>
-      <p class="card-foot-note">${stats?.enough ? `At that rate the water lasts ${daysLeftText(stats).toLowerCase()} with no refill or rain.` : 'Daily average appears after a full day of readings.'}</p>`;
-  } catch {
-    el.innerHTML = '<p class="muted">Water use is unavailable right now.</p>';
-  }
+    draw(daysLeftText(cap && st ? usageStats(w.points, w.runs, cap, st.tank_volume_l) : null));
+  } catch { draw('–'); }
 }
 
-async function renderPumpCard() {
+async function renderPump() {
   const t = tankById(selected);
   const pump = pumpOf(t.id);
   const el = document.getElementById('pump');
   const state = pump?.state ?? 'unknown';
-  const label = { running: 'Running', stopped: 'Off', fault: 'Safety stop', unknown: 'Unknown' }[state];
+  const label = { running: 'Running', stopped: 'Off', fault: 'Safety stop', unknown: 'Not reported' }[state];
   let runs = [];
   try { runs = (await weekData(t)).runs; } catch { /* show what we have */ }
   if (selected !== t.id) return;
+
+  // 24 one-hour cells: how much of each hour the pump ran
+  const now = Date.now();
+  const hourStart = binStart(now, 3600_000) - 23 * 3600_000;
+  const cells = Array.from({ length: 24 }, (_, i) => {
+    const a = hourStart + i * 3600_000, b = a + 3600_000;
+    const ran = runs.reduce((s, r) => s + Math.max(0, Math.min(b, r.end ?? now) - Math.max(a, r.start)), 0);
+    return { a, ran };
+  });
+  const ran24 = cells.reduce((s, c) => s + c.ran, 0);
   const midnight = new Date(); midnight.setHours(0, 0, 0, 0);
   const todayMs = runs.reduce((s, r) => {
-    const a = Math.max(r.start, midnight.getTime()), b = r.end ?? Date.now();
+    const a = Math.max(r.start, midnight.getTime()), b = r.end ?? now;
     return b > a ? s + (b - a) : s;
   }, 0);
   const lastDone = runs.filter((r) => r.end).at(-1);
+
   el.innerHTML = `
-    <div class="pump-state pump-${state}">
-      <span class="pump-orb">${icon('pump')}</span>
-      <div>
-        <p class="pump-label">${label}</p>
-        <p class="muted">${pump ? (state === 'running' ? `Since ${esc(timeFmt.format(new Date(pump.since)))}, ${esc(duration(Date.now() - Date.parse(pump.since)))}` : esc(when(pump.since))) : 'No report from the controller yet'}</p>
+    <div class="pump-grid">
+      <div class="pump-left">
+        <div class="pump-state pump-${state}">
+          <span class="pump-orb">${icon('pump')}</span>
+          <div>
+            <p class="pump-label">${label}</p>
+            <p class="muted">${pump ? (state === 'running' ? `Since ${esc(timeFmt.format(new Date(pump.since)))} · ${esc(duration(now - Date.parse(pump.since)))}` : state === 'fault' ? `Since ${esc(when(pump.since))}` : `Since ${esc(when(pump.since))}`) : 'No report yet'}</p>
+          </div>
+        </div>
+        <div class="runbar" role="img" aria-label="Pump ran ${esc(duration(ran24))} in the last 24 hours">
+          ${cells.map((c) => `<i class="${c.ran > 0 ? 'on' : ''}" style="--f:${Math.min(1, c.ran / 3600_000).toFixed(2)}" title="${esc(hourFmt.format(new Date(c.a)))}: ${c.ran ? esc(duration(c.ran)) : 'off'}"></i>`).join('')}
+        </div>
+        <p class="runbar-key"><span>Last 24 hours</span><span>Ran ${esc(duration(ran24))}</span></p>
       </div>
+      <dl class="pump-list">
+        <div><dt><i class="k k-run"></i>Run time today</dt><dd>${esc(duration(todayMs))}</dd></div>
+        <div><dt><i class="k k-fill"></i>Fills in 7 days</dt><dd>${runs.length}</dd></div>
+        <div><dt><i class="k k-last"></i>Last fill</dt><dd>${lastDone ? esc(when(new Date(lastDone.end).toISOString())) : '–'}</dd></div>
+        <div><dt><i class="k k-ctl"></i>Controller</dt><dd>${t.controller_node ? `Node ${t.controller_node}` : '–'}</dd></div>
+      </dl>
     </div>
-    <dl class="kv-list">
-      <div><dt>Run time today</dt><dd>${esc(duration(todayMs))}</dd></div>
-      <div><dt>Fills in 7 days</dt><dd>${runs.length}</dd></div>
-      <div><dt>Last fill ended</dt><dd>${lastDone ? esc(when(new Date(lastDone.end).toISOString())) : '–'}</dd></div>
-      <div><dt>Controller</dt><dd>${t.controller_node ? `Node ${t.controller_node}` : '–'}</dd></div>
-    </dl>`;
+    ${state === 'fault' ? `<p class="alert">${icon('alert')}<span><strong>Stopped by a safety check.</strong> The tank wasn't filling as expected. Check the pump, pipes and water supply, then turn the pump controller off and on again to reset it.</span></p>` : ''}
+    ${sensorFault(t) ? `<p class="alert">${icon('alert')}<span><strong>Level sensor fault.</strong> The tank won't ask for water until the sensor reads normally. Check the probe and its cable.</span></p>` : ''}`;
 }
 
-function renderSystemCard() {
+const sensorFault = (t) => stateOf(t.id)?.sensor_status === 'fault';
+
+async function renderUseTiles() {
+  const t = tankById(selected);
+  const el = document.getElementById('use-tiles');
+  const cap = capacityOf(t);
+  const st = stateOf(t.id);
   const gw = site.gateways[0];
   const rs = receiverStatus();
-  const reporting = site.tanks.filter((t) => freshness(stateOf(t.id)?.last_heard_at).key !== 'offline' && stateOf(t.id)).length;
-  const up = gw?.uptime_s;
-  const upText = up == null ? '–' : up >= 86400 ? `${Math.floor(up / 86400)} days ${Math.floor((up % 86400) / 3600)} h` : `${Math.floor(up / 3600)} h ${Math.floor((up % 3600) / 60)} min`;
-  const wifi = gw?.wifi_rssi;
-  document.getElementById('system').innerHTML = `
-    <div class="pump-state sys-${rs.key}">
-      <span class="pump-orb">${icon('wifi')}</span>
-      <div><p class="pump-label">${esc(rs.short)}</p><p class="muted">${gw?.last_seen_at ? `Last contact <span data-age="${esc(gw.last_seen_at)}">${esc(ago(gw.last_seen_at))}</span>` : 'Waiting for first contact'}</p></div>
+  const reporting = site.tanks.filter((x) => stateOf(x.id) && freshness(stateOf(x.id).last_heard_at).key !== 'offline').length;
+  const receiverTile = `<div class="card tile-card">
+      <p class="tile-l">Receiver</p>
+      <p class="tile-big ${rs.key === 'online' ? 'good' : 'bad'}">${esc(rs.short)}</p>
+      <p class="tile-s">${reporting} of ${site.tanks.length} tanks reporting${gw?.wifi_rssi != null ? ` · Wi-Fi ${gw.wifi_rssi} dBm` : ''}</p>
+    </div>`;
+  const lastTile = `<div class="card tile-card">
+      <p class="tile-l">Last reading</p>
+      <p class="tile-big">${st ? esc(timeFmt.format(new Date(st.last_heard_at))) : '–'}</p>
+      <p class="tile-s">${st ? `${esc(when(st.last_heard_at).split(' ')[0])}${st.heard_at_approx ? ' · time approx.' : ''}` : 'Waiting for the tank unit'}</p>
+    </div>`;
+  if (!cap) {
+    el.innerHTML = `<div class="card tile-card"><p class="tile-l">Water used today</p><p class="tile-s">Set the tank size in Tank settings to see water use.</p></div>
+      <div class="card tile-card"><p class="tile-l">Daily average</p><p class="tile-big">–</p></div>${receiverTile}${lastTile}`;
+    return;
+  }
+  let today = null, stats = null;
+  try {
+    const w = await weekData(t);
+    if (selected !== t.id) return;
+    stats = usageStats(w.points, w.runs, cap, st?.tank_volume_l);
+    const midnight = new Date(); midnight.setHours(0, 0, 0, 0);
+    today = useBins(w.points, w.runs, cap, 86400_000, midnight.getTime()).reduce((s, b) => s + b.litres, 0);
+  } catch { /* leave blanks */ }
+  const r10 = (v) => nf0.format(Math.round(v / 10) * 10);
+  // Compare with the share of an average day that has passed so far.
+  const dayFrac = (Date.now() - new Date().setHours(0, 0, 0, 0)) / 86400_000;
+  const expected = stats?.enough ? stats.perDay * dayFrac : null;
+  const vs = today != null && expected > 50 ? Math.round(((today - expected) / expected) * 100) : null;
+  el.innerHTML = `
+    <div class="card tile-card">
+      <p class="tile-l">Water used today</p>
+      <p class="tile-big">${today != null ? r10(today) : '–'}<small> L</small>${vs != null ? `<span class="delta ${vs <= 0 ? 'up' : 'down'}">${vs > 0 ? '▲' : '▼'} ${Math.abs(vs)}%</span>` : ''}</p>
+      <p class="tile-s">${vs != null ? 'vs a usual day by this time' : 'Since midnight, not counting pump fills'}</p>
     </div>
-    <dl class="kv-list">
-      <div><dt>Tanks reporting</dt><dd>${reporting} of ${site.tanks.length}</dd></div>
-      <div><dt>Wi-Fi signal</dt><dd>${wifi != null ? `${signal(wifi > -55 ? -70 : wifi > -67 ? -90 : wifi > -75 ? -105 : -115)} ${wifi} dBm` : '–'}</dd></div>
-      <div><dt>Running for</dt><dd>${esc(upText)}</dd></div>
-      <div><dt>Firmware</dt><dd>${esc(gw?.firmware ?? '–')}</dd></div>
-    </dl>`;
+    <div class="card tile-card">
+      <p class="tile-l">Daily average</p>
+      <p class="tile-big">${stats?.enough ? r10(stats.perDay) : '–'}<small> L</small></p>
+      <p class="tile-s">${stats?.enough ? 'Over the last 7 days' : 'Needs a full day of readings'}</p>
+    </div>
+    ${receiverTile}${lastTile}`;
 }
+
+let tankFilter = 'all';
 
 async function renderTankList() {
   const list = document.getElementById('tank-list');
   if (!list) return;
   document.getElementById('tanks-count').textContent = `${site.tanks.length} tank${site.tanks.length === 1 ? '' : 's'}`;
-  list.innerHTML = site.tanks.map((t) => {
+  const shown = site.tanks.filter((t) => tankFilter === 'all' || needsAttention(t));
+  if (!shown.length) { list.innerHTML = '<li class="list-empty">Nothing needs attention. All tanks are reporting normally.</li>'; return; }
+  list.innerHTML = shown.map((t) => {
     const st = stateOf(t.id);
     const f = freshness(st?.last_heard_at);
     const pump = pumpOf(t.id);
     const pct = st ? Math.max(0, Math.min(100, st.tank_percent)) : 0;
+    let sub = f.label;
+    if (pump?.state === 'running') sub = 'Filling';
+    if (pump?.state === 'fault') sub = 'Pump safety stop';
+    if (st?.sensor_status === 'fault') sub = 'Sensor fault';
     return `<li>
       <button type="button" class="tank-row ${t.id === selected ? 'is-selected' : ''} row-${f.key}" data-tank="${esc(t.id)}" aria-pressed="${t.id === selected}">
         <span class="mini-tank" aria-hidden="true"><i style="height:${pct}%"></i></span>
         <span class="row-main">
-          <span class="row-name">${esc(t.name)}${pump?.state === 'running' ? `<span class="row-tag">${icon('pump')}Filling</span>` : ''}${pump?.state === 'fault' ? '<span class="row-tag row-tag-fault">Safety stop</span>' : ''}</span>
-          <span class="row-sub"><span class="dot dot-${f.key}" aria-hidden="true"></span>${f.label}${st ? ` · ${nf0.format(st.tank_volume_l)} L` : ''}</span>
+          <span class="row-name">${esc(t.name)}</span>
+          <span class="row-sub"><span class="dot dot-${needsAttention(t) ? 'offline' : f.key}" aria-hidden="true"></span>${esc(sub)}</span>
         </span>
-        <svg class="spark" id="spark-${esc(t.id)}" viewBox="0 0 120 36" aria-hidden="true"></svg>
-        <span class="row-pct">${st ? `${nf0.format(st.tank_percent)}%` : '–'}</span>
+        <svg class="spark" id="spark-${esc(t.id)}" viewBox="0 0 80 30" aria-hidden="true"></svg>
+        <span class="row-nums"><span class="row-pct">${st ? `${nf0.format(st.tank_percent)}%` : '–'}</span><span class="row-l">${st ? `${nf0.format(st.tank_volume_l)} L` : 'No reading'}</span></span>
       </button>
     </li>`;
   }).join('');
   list.querySelectorAll('[data-tank]').forEach((b) => b.addEventListener('click', () => {
     selectTank(b.dataset.tank);
-    document.getElementById('top').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' });
+    document.querySelector('.band').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' });
   }));
-  for (const t of site.tanks) {
+  for (const t of shown) {
     try {
       const pts = await sparkData(t);
       const svg = document.getElementById(`spark-${t.id}`);
       if (!svg || pts.length < 2) continue;
       const t0 = pts[0].t, t1 = pts.at(-1).t;
-      const d = pts.map((p, i) => `${i ? 'L' : 'M'}${(((p.t - t0) / Math.max(1, t1 - t0)) * 116 + 2).toFixed(1)},${(34 - (p.p / 100) * 32).toFixed(1)}`).join('');
+      const d = pts.map((p, i) => `${i ? 'L' : 'M'}${(((p.t - t0) / Math.max(1, t1 - t0)) * 78 + 1).toFixed(1)},${(29 - (p.p / 100) * 28).toFixed(1)}`).join('');
       svg.innerHTML = `<path d="${d}"/>`;
     } catch { /* sparkline is optional */ }
   }
 }
 
-async function renderActivity() {
-  const el = document.getElementById('activity-list');
-  if (!el) return;
+// ---------------------------------------------------------------------------
+// Drawer: activity or tank settings
+// ---------------------------------------------------------------------------
+
+let drawerOpener = null;
+
+async function openDrawer(kind, opener) {
+  drawerOpener = opener;
+  const body = document.getElementById('drawer-body');
+  document.getElementById('drawer-title').textContent = kind === 'settings' ? 'Tank settings' : 'Activity';
+  document.getElementById('drawer').hidden = false;
+  document.getElementById('drawer-scrim').hidden = false;
+  if (kind === 'settings') renderSettings(body);
+  else {
+    body.innerHTML = '<p class="muted">Loading…</p>';
+    body.innerHTML = await activityHtml();
+  }
+  document.getElementById('drawer-close').focus();
+}
+
+function closeDrawer() {
+  const d = document.getElementById('drawer');
+  if (!d || d.hidden) return;
+  d.hidden = true;
+  document.getElementById('drawer-scrim').hidden = true;
+  drawerOpener?.focus();
+}
+
+async function activityHtml() {
   const items = [];
   for (const t of site.tanks) {
     let w;
@@ -965,28 +992,20 @@ async function renderActivity() {
     if (st?.sensor_status === 'fault') items.push({ at: Date.parse(st.last_heard_at), tank: t, kind: 'fault', text: 'Level sensor fault', detail: 'check the probe and cable' });
     if (st && freshness(st.last_heard_at).key === 'offline') items.push({ at: Date.parse(st.last_heard_at), tank: t, kind: 'offline', text: 'Tank unit stopped reporting', detail: 'last reading shown' });
   }
-  const shown = items
-    .filter((i) => activityFilter === 'all' || i.kind === 'fault' || i.kind === 'offline')
-    .sort((a, b) => b.at - a.at)
-    .slice(0, 8);
-  el.innerHTML = shown.length ? shown.map((i) => `
+  items.sort((a, b) => b.at - a.at);
+  if (!items.length) return '<p class="muted">Nothing in the last 7 days.</p>';
+  return `<p class="muted drawer-sub">Last 7 days, all tanks</p><ul class="activity">${items.slice(0, 30).map((i) => `
     <li class="act act-${i.kind}">
       <span class="act-icon">${icon(i.kind === 'fault' || i.kind === 'offline' ? 'alert' : 'pump')}</span>
       <span class="act-main"><strong>${esc(i.tank.name)}</strong> ${esc(i.text)}<span class="muted">${esc(i.detail)}</span></span>
       <span class="act-when">${esc(when(new Date(i.at).toISOString()))}</span>
-    </li>`).join('')
-    : `<li class="act-empty">${activityFilter === 'faults' ? 'No faults in the last 7 days.' : 'Nothing in the last 7 days.'}</li>`;
+    </li>`).join('')}</ul>`;
 }
 
-// ---------------------------------------------------------------------------
-// Settings drawer
-// ---------------------------------------------------------------------------
-
-function openDrawer() {
+function renderSettings(body) {
   const t = tankById(selected);
-  if (!t) return;
-  const form = document.getElementById('tank-form');
-  form.innerHTML = `
+  if (!t) { body.innerHTML = '<p class="muted">No tanks yet.</p>'; return; }
+  body.innerHTML = `<form id="tank-form" class="tank-form" novalidate>
     <p class="muted">Settings for <strong>${esc(t.name)}</strong> (tank unit node ${t.tank_node}).</p>
     <label for="f-name">Name</label>
     <input id="f-name" name="name" maxlength="40" value="${esc(t.name)}" required>
@@ -996,8 +1015,10 @@ function openDrawer() {
     <input id="f-h" name="height_m" type="number" min="0.1" step="0.01" inputmode="decimal" value="${t.height_m ?? ''}" placeholder="e.g. 3.0">
     <p class="form-hint">For display only. The tank unit uses the size set in its own settings.</p>
     <p class="form-msg" id="tank-form-msg" role="status"></p>
-    <button class="btn btn-primary" type="submit">Save</button>`;
-  form.onsubmit = async (e) => {
+    <button class="btn btn-primary" type="submit">Save</button>
+  </form>`;
+  const form = document.getElementById('tank-form');
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const msg = document.getElementById('tank-form-msg');
     const name = form.name.value.trim();
@@ -1017,18 +1038,7 @@ function openDrawer() {
     } catch (err) {
       msg.textContent = `Not saved: ${err.message}`;
     }
-  };
-  document.getElementById('drawer').hidden = false;
-  document.getElementById('drawer-scrim').hidden = false;
-  document.getElementById('f-name').focus();
-}
-
-function closeDrawer() {
-  const d = document.getElementById('drawer');
-  if (!d || d.hidden) return;
-  d.hidden = true;
-  document.getElementById('drawer-scrim').hidden = true;
-  document.getElementById('open-settings')?.focus();
+  });
 }
 
 start();
