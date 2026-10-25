@@ -73,6 +73,7 @@ before(async () => {
   db = new PGlite();
   await db.exec(SUPABASE_STUBS);
   await db.exec(readFileSync(MIGRATION, 'utf8'));
+  await db.exec(readFileSync(new URL('../supabase/migrations/0002_history.sql', import.meta.url), 'utf8'));
 
   await db.query('insert into auth.users (id) values ($1), ($2)', [USER_A, USER_B]);
   instA = (await one(`insert into installations (owner_id, name, lora_system_id)
@@ -349,4 +350,32 @@ test('a batch produced by the receiver simulator is accepted in full', async () 
   const r = await ingest(tokenA, body);
   assert.equal(r.rejected, 0, JSON.stringify(r.results));
   assert.equal(r.accepted, body.messages.length);
+});
+
+// ---------------------------------------------------------------------------
+// Chart history (0002_history.sql)
+// ---------------------------------------------------------------------------
+
+test('tank history is averaged into buckets, and only for the owner', async () => {
+  const tank = await one(`select id from tanks where installation_id = $1 and tank_node = 5`, [instA])
+    ?? (await ingest(tokenA, payload([telemetry({ tank_node: 5, source_node: 5, packet_id: 1, heard_at: iso(3 * 60_000), tank_percent: 60 })])),
+        await one(`select id from tanks where installation_id = $1 and tank_node = 5`, [instA]));
+  await ingest(tokenA, payload([
+    telemetry({ tank_node: 5, source_node: 5, packet_id: 2, heard_at: iso(2 * 60_000), tank_percent: 62 }),
+    telemetry({ tank_node: 5, source_node: 5, packet_id: 3, heard_at: iso(1 * 60_000), tank_percent: 64 }),
+  ]));
+  const since = iso(60 * 60_000);
+
+  const mine = await as('authenticated', USER_A, () =>
+    db.query('select * from tank_history($1, $2, 3600)', [tank.id, since]));
+  const total = mine.rows.reduce((n, r) => n + r.readings, 0);
+  assert.ok(total >= 2);
+  for (const r of mine.rows) assert.ok(r.min_percent <= r.avg_percent && r.avg_percent <= r.max_percent);
+
+  const theirs = await as('authenticated', USER_B, () =>
+    db.query('select * from tank_history($1, $2, 3600)', [tank.id, since]));
+  assert.equal(theirs.rows.length, 0);
+
+  await as('anon', null, () =>
+    assert.rejects(db.query('select * from tank_history($1, $2)', [tank.id, since]), /permission denied/));
 });
