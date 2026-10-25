@@ -249,3 +249,11 @@ p { margin: 0; }
   .big-pct { font-size: 44px; }
   .form-row { grid-template-columns: 1fr; }
 }
+
+/* Average use and water left */
+.card-usage, .detail-usage { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.card-usage div, .detail-usage div { background: var(--surface-2); border-radius: 10px; padding: 9px 12px; }
+.card-usage dt, .detail-usage dt { font-size: 12px; color: var(--ink-3); }
+.card-usage dd, .detail-usage dd { margin: 2px 0 0; font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums; }
+.detail-usage dd { font-size: 18px; }
+.usage-note { font-size: 13px; color: var(--ink-3); margin-top: -8px; }

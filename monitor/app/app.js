@@ -74,6 +74,89 @@ function signalBars(rssi) {
 const byTank = (rows) => new Map(rows.map((r) => [r.tank_id, r]));
 
 // ---------------------------------------------------------------------------
+// Water use and days left
+// ---------------------------------------------------------------------------
+// From the last 7 days of hourly averages: add up every fall in water level,
+// skipping any hour the pump was running (filling hides use), and divide by
+// the time covered. Needs at least a day of usable data.
+
+const USAGE_DAYS = 7;
+const usageCache = new Map();   // tankId -> { at, stats }
+
+function capacityOf(t, st) {
+  if (t.capacity_l) return t.capacity_l;
+  if (st && st.tank_percent > 1) return st.tank_volume_l / (st.tank_percent / 100);
+  return null;
+}
+
+function computeUsage(t, hist, runs) {
+  const st = site.stateByTank.get(t.id);
+  const cap = capacityOf(t, st);
+  if (!cap || hist.length < 2) return null;
+  const pts = hist.map((r) => ({ t: Date.parse(r.bucket) + 1800_000, p: r.avg_percent }));
+  const pumping = (a, b) => runs.some((r) => r.start < b + 1800_000 && (r.end ?? Date.now()) > a - 1800_000);
+  let used = 0, ms = 0;
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1], b = pts[i];
+    if (b.t - a.t > 1.5 * 3600_000 || pumping(a.t, b.t)) continue;
+    const dl = ((b.p - a.p) / 100) * cap;
+    if (dl < 0) used -= dl;
+    ms += b.t - a.t;
+  }
+  if (ms < 86400_000) return { enough: false };
+  const perDay = used / (ms / 86400_000);
+  const daysLeft = perDay > 1 && st ? st.tank_volume_l / perDay : null;
+  return { enough: true, perDay, daysLeft };
+}
+
+async function usageFor(t) {
+  const hit = usageCache.get(t.id);
+  if (hit && Date.now() - hit.at < 10 * 60_000) return hit.stats;
+  const since = new Date(Date.now() - USAGE_DAYS * 86400_000).toISOString();
+  const [hist, events] = await Promise.all([source.history(t.id, since, 3600), source.pumpEvents(t.id, since)]);
+  const stats = computeUsage(t, hist, pumpRuns(events, Date.parse(since)));
+  usageCache.set(t.id, { at: Date.now(), stats });
+  return stats;
+}
+
+function usageText(stats) {
+  if (!stats) return { use: '–', left: '–' };
+  if (!stats.enough) return { use: 'Not enough data yet', left: 'Not enough data yet' };
+  const use = `${nf0.format(Math.round(stats.perDay / 10) * 10)} L a day`;
+  let left = '–';
+  if (stats.daysLeft != null) {
+    left = stats.daysLeft > 60 ? 'More than 60 days'
+      : stats.daysLeft < 1 ? 'Less than a day'
+      : `About ${nf0.format(Math.floor(stats.daysLeft))} day${Math.floor(stats.daysLeft) === 1 ? '' : 's'}`;
+  }
+  return { use, left };
+}
+
+function fillUsage() {
+  document.querySelectorAll('[data-usage]').forEach(async (el) => {
+    const t = site.tanks.find((x) => x.id === el.dataset.usage);
+    if (!t) return;
+    try {
+      const u = usageText(await usageFor(t));
+      el.querySelector('[data-use]').textContent = u.use;
+      el.querySelector('[data-left]').textContent = u.left;
+    } catch {
+      el.querySelector('[data-use]').textContent = 'Unavailable';
+      el.querySelector('[data-left]').textContent = 'Unavailable';
+    }
+  });
+}
+
+function usageBlock(t, cls) {
+  const cached = usageCache.get(t.id);
+  const u = cached ? usageText(cached.stats) : { use: '…', left: '…' };
+  return `<dl class="${cls}" data-usage="${esc(t.id)}">
+    <div><dt>Average use</dt><dd data-use>${esc(u.use)}</dd></div>
+    <div><dt>Water left</dt><dd data-left>${esc(u.left)}</dd></div>
+  </dl>`;
+}
+
+// ---------------------------------------------------------------------------
 // Start
 // ---------------------------------------------------------------------------
 
@@ -361,6 +444,7 @@ function renderOverview(isUpdate = false) {
           ${st ? `<p class="height">${nf2.format(st.water_height_m)} m deep</p>` : ''}
         </div>
       </div>
+      ${st ? usageBlock(t, 'card-usage') : ''}
       <div class="card-foot">
         ${pumpLine(t, pump, st)}
         ${signal(st?.lora_rssi)}
@@ -381,10 +465,12 @@ function renderOverview(isUpdate = false) {
     document.getElementById('main').innerHTML = html;
     document.getElementById('receiver-banner').innerHTML = receiverBanner();
     updateReceiverPill();
+    fillUsage();
     return;
   }
   app.innerHTML = shell(html);
   bindShell();
+  fillUsage();
 }
 
 function updateReceiverPill() {
@@ -440,6 +526,7 @@ function tankHeader(t) {
           <div><dt>Last reading</dt><dd class="fig-small">${st ? esc(when(st.last_heard_at)) : 'None yet'}</dd>${st?.heard_at_approx ? '<p>Time approximate</p>' : ''}</div>
         </dl>
       </div>
+      ${st ? `${usageBlock(t, 'detail-usage')}<p class="usage-note">Average use is worked out from the last ${USAGE_DAYS} days, leaving out times the pump was filling. Water left assumes that rate, with no refill or rain.</p>` : ''}
       ${pumpLine(t, site.pumpByTank.get(t.id), st)}
     </div>`;
 }
@@ -520,7 +607,9 @@ function renderTank(id) {
       await source.renameTank(t.id, { name, capacity_l: cap, height_m: h });
       Object.assign(t, { name, capacity_l: cap, height_m: h });
       msg.textContent = 'Saved.';
+      usageCache.delete(t.id);   // capacity may have changed
       document.getElementById('tank-live').innerHTML = tankHeader(t);
+      fillUsage();
       document.title = `${t.name} | Kinetiq Tank Monitor`;
     } catch (err) {
       msg.textContent = `Not saved: ${err.message}`;
@@ -528,6 +617,7 @@ function renderTank(id) {
   });
 
   loadChart(t);
+  fillUsage();
   chartTimer = setInterval(() => loadChart(t, true), 60_000);
 }
 
@@ -535,7 +625,7 @@ function updateTankLive(id, table) {
   const t = site.tanks.find((x) => x.id === id);
   if (!t) return;
   const live = document.getElementById('tank-live');
-  if (live) live.innerHTML = tankHeader(t);
+  if (live) { live.innerHTML = tankHeader(t); fillUsage(); }
   document.getElementById('receiver-banner').innerHTML = receiverBanner();
   updateReceiverPill();
   if (table === 'pump_state') loadChart(t, true);
