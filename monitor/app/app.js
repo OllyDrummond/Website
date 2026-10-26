@@ -379,9 +379,11 @@ let openKind = null;   // which box is enlarged, if any
 let openFrom = null;   // the element it grew from; focus returns there
 
 const $ = (id) => document.getElementById(id);
-const clockFmt = new Intl.DateTimeFormat('en-NZ', { hour: '2-digit', minute: '2-digit', hour12: false });
-const headDate = new Intl.DateTimeFormat('en-NZ', { day: '2-digit', month: 'short', year: 'numeric' });
+const clockFmt = new Intl.DateTimeFormat('en-NZ', { hour: 'numeric', minute: '2-digit' });
+const headDate = new Intl.DateTimeFormat('en-NZ', { weekday: 'short', day: 'numeric', month: 'short' });
 const clampPct = (p) => Math.max(0, Math.min(100, p));
+const pad2 = (n) => String(n).padStart(2, '0');
+const rssiPct = (rssi) => rssi == null ? 0 : clampPct(((rssi + 120) / 60) * 100);
 
 function receiverStatus() {
   const gw = site.gateways[0];
@@ -392,29 +394,25 @@ function receiverStatus() {
     : { key: 'offline', text: `Receiver offline since ${when(gw.last_seen_at)}`, short: 'Offline' };
 }
 
-// Segmented bar meter: |||||||||......
-function tbar(pct, n = 28, label = '') {
-  const on = Math.round((clampPct(pct) / 100) * n);
-  return `<span class="tbar" role="img" aria-label="${esc(label || `${Math.round(pct)}%`)}">${Array.from({ length: n }, (_, i) => `<i${i < on ? ' class="on"' : ''}></i>`).join('')}</span>`;
-}
+// Slim progress bar (used in lists and tables).
+const tbar = (pct, _n, label = '') =>
+  `<span class="bar" role="img" aria-label="${esc(label || `${Math.round(pct)}%`)}"><i style="width:${clampPct(pct).toFixed(1)}%"></i></span>`;
 
-// Time since a reading as 00:00:20
+// Time since a reading, counting up every second.
 function hms(iso) {
   const s = Math.max(0, Math.round(ageSeconds(iso)));
-  if (s >= 86400) return `${Math.floor(s / 86400)}D ${String(Math.floor((s % 86400) / 3600)).padStart(2, '0')}H`;
-  return [Math.floor(s / 3600), Math.floor((s % 3600) / 60), s % 60].map((v) => String(v).padStart(2, '0')).join(':');
+  if (s < 60) return `${s} s ago`;
+  if (s < 3600) return `${Math.floor(s / 60)} min ${pad2(s % 60)} s ago`;
+  return ago(iso);
 }
-
-const rssiPct = (rssi) => rssi == null ? 0 : clampPct(((rssi + 120) / 60) * 100);
-const pad2 = (n) => String(n).padStart(2, '0');
 
 const BOXES = {
   tank: { title: '', open: 'level' },
-  trend: { title: 'Level trend', open: 'chart' },
-  tanks: { title: 'Tanks', open: 'tanks' },
-  pump: { title: 'Pump status', open: 'pump' },
-  status: { title: 'System status', open: 'receiver' },
+  trend: { title: 'Level history', open: 'chart' },
+  tanks: { title: 'All tanks', open: 'tanks' },
+  pump: { title: 'Pump', open: 'pump' },
   use: { title: 'Water use', open: 'use' },
+  status: { title: 'System', open: 'receiver' },
 };
 
 const box = (kind, extraHead = '') => `
@@ -433,44 +431,37 @@ function renderShell() {
   app.innerHTML = `
   <div class="dash">
     <header class="topbar">
-      <a class="brand" href="../../products/water-monitor.html" aria-label="Kinetiq Tank Monitor, back to the website"><u>Kinetiq</u> Tank Monitor</a>
-      <span class="rule" aria-hidden="true"></span>
-      <span class="site-name">${esc(site.installation.name)}</span>
-      ${source.demo ? '<span class="demo-tag" title="Sample data. Tank 1 is filling and updates every few seconds; Tank 3 shows what an offline tank looks like.">Demo</span>' : ''}
-      <span class="top-date" id="top-date"></span>
-      <span class="top-clock" id="top-clock"></span>
+      <a class="brand" href="../../products/water-monitor.html" aria-label="Kinetiq Tank Monitor, back to the website">
+        <img src="../../assets/img/brand/kinetiq-full-white.webp?v=4" alt="Kinetiq" width="1178" height="400">
+        <span>Tank Monitor</span>
+      </a>
+      <nav class="tank-tabs" id="tank-tabs" aria-label="Tanks"></nav>
+      <div class="top-right">
+        ${source.demo ? '<span class="demo-tag" title="Sample data. Tank 1 is filling and updates every few seconds; Tank 3 shows what an offline tank looks like.">Demo</span>' : ''}
+        <span class="top-time"><span id="top-date"></span><span id="top-clock"></span></span>
+        <span class="pill" id="receiver-pill"></span>
+        <button type="button" class="round-btn" data-open="activity" aria-label="Activity" title="Activity">${icon('bell')}<span class="badge" id="fault-badge" hidden></span></button>
+        <button type="button" class="round-btn" data-open="settings" aria-label="Tank settings" title="Tank settings">${icon('cog')}</button>
+        <button type="button" class="round-btn" id="signout" aria-label="${source.demo ? 'Exit demo' : 'Sign out'}" title="${source.demo ? 'Exit demo' : 'Sign out'}">${icon('out')}</button>
+      </div>
     </header>
 
     <div class="alerts" id="alerts" aria-live="polite"><div id="receiver-banner"></div><div id="tank-alerts"></div></div>
 
     <main class="board" id="board">
-      ${box('tank', '<div class="tank-nav" id="tank-nav"></div>')}
+      ${box('tank')}
       ${box('trend', `<div class="seg" role="group" aria-label="Time range">${ranges}</div>`)}
       ${box('tanks')}
       ${box('pump')}
-      ${box('status')}
       ${box('use')}
+      ${box('status')}
     </main>
-
-    <footer class="footbar">
-      <nav class="foot-nav" aria-label="Details">
-        <span class="foot-home" aria-current="page">Home</span>
-        <button type="button" data-open="level">[Tank]</button>
-        <button type="button" data-open="pump">[Pump]</button>
-        <button type="button" data-open="chart">[History]</button>
-        <button type="button" data-open="receiver">[Comms]</button>
-        <button type="button" data-open="activity">[Log]</button>
-        <button type="button" data-open="settings">[Settings]</button>
-      </nav>
-      <p class="sys-line" id="sys-line" role="status"></p>
-      <button type="button" class="exit-btn" id="signout">${source.demo ? '[Exit demo]' : '[Sign out]'}</button>
-    </footer>
   </div>
 
   <dialog class="big" id="big" aria-labelledby="big-title">
     <div class="big-head">
       <h2 id="big-title"></h2>
-      <button type="button" class="big-close" id="big-close" aria-label="Close">[ Close ]</button>
+      <button type="button" class="round-btn" id="big-close" aria-label="Close">${icon('close')}</button>
     </div>
     <div class="big-body" id="big-body"></div>
   </dialog>`;
@@ -487,11 +478,14 @@ function renderShell() {
       renderTrendBox();
       return;
     }
-    if (e.target.closest('.tank-nav')) return;
     const tankBtn = e.target.closest('[data-tank]');
     if (tankBtn) { selectTank(tankBtn.dataset.tank); return; }
     const b = e.target.closest('.box');
     if (b) openBox(BOXES[b.dataset.box].open, b);
+  });
+  $('tank-tabs').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-tank]');
+    if (b) selectTank(b.dataset.tank);
   });
 
   const dlg = $('big');
@@ -510,7 +504,7 @@ function renderShell() {
     lastSize = size;
     clearTimeout(resizeT);
     resizeT = setTimeout(() => renderTrendBox(true), 150);
-  }).observe($('trend-chart') ?? $('box-trend'));
+  }).observe($('box-trend'));
 
   updateTop();
   renderAll();
@@ -525,8 +519,8 @@ function renderAll() {
   renderTrendBox();
   renderTanksBox();
   renderPumpBox();
-  renderStatusBox();
   renderUseBox();
+  renderStatusBox();
   renderAlerts();
   clearInterval(chartTimer);
   chartTimer = setInterval(() => {
@@ -544,7 +538,7 @@ function refreshBoxes(table, row) {
     if (['level', 'tanks', 'receiver'].includes(openKind) && (mine || openKind !== 'level')) renderBig();
   }
   if (table === 'pump_state') {
-    if (mine) { renderPumpBox(); renderUseBox(); renderTrendBox(true); renderAlerts(); }
+    if (mine) { renderPumpBox(); renderUseBox(); renderTrendBox(true); renderTankBox(); renderAlerts(); }
     renderTanksBox();
     if (['pump', 'use', 'tanks', 'activity'].includes(openKind)) renderBig();
     if (openKind === 'chart' && mine) renderBig(true);
@@ -562,17 +556,12 @@ function selectTank(id, pushHash = true) {
   renderAll();
 }
 
-function systemSummary() {
-  const rs = receiverStatus();
-  const faults = site.tanks.filter((t) => pumpOf(t.id)?.state === 'fault' || stateOf(t.id)?.sensor_status === 'fault');
-  const silent = site.tanks.filter((t) => freshness(stateOf(t.id)?.last_heard_at).key === 'offline');
-  if (faults.length) return { key: 'fault', text: `Fault: ${faults.map((t) => t.name).join(', ')}` };
-  if (rs.key === 'offline') return { key: 'fault', text: 'Receiver offline' };
-  if (silent.length) return { key: 'warn', text: `${silent.length} tank${silent.length === 1 ? '' : 's'} not reporting` };
-  return { key: 'ok', text: 'All systems operational' };
+function needsAttention(t) {
+  const st = stateOf(t.id);
+  return !st || freshness(st.last_heard_at).key === 'offline' || st.sensor_status === 'fault' || pumpOf(t.id)?.state === 'fault';
 }
 
-// Every second: header clock and the "last update" counters.
+// Every second: clock and the "last reading" counters.
 function updateClock() {
   const now = new Date();
   if ($('top-date')) $('top-date').textContent = headDate.format(now);
@@ -582,32 +571,26 @@ function updateClock() {
 
 function updateTop() {
   updateClock();
-
-  const t = selected && tankById(selected);
-  const navEl = $('tank-nav');
-  if (navEl && t) {
-    const idx = site.tanks.indexOf(t);
-    navEl.innerHTML = site.tanks.length > 1 ? `
-      <button type="button" class="nav-btn" id="prev-tank" aria-label="Previous tank" ${idx <= 0 ? 'disabled' : ''}>&lt;</button>
-      <span>[${idx + 1}/${site.tanks.length}]</span>
-      <button type="button" class="nav-btn" id="next-tank" aria-label="Next tank" ${idx >= site.tanks.length - 1 ? 'disabled' : ''}>&gt;</button>` : '';
-    $('prev-tank')?.addEventListener('click', () => selectTank(site.tanks[idx - 1].id));
-    $('next-tank')?.addEventListener('click', () => selectTank(site.tanks[idx + 1].id));
-    const title = $('bt-tank');
-    if (title) title.textContent = t.name;
+  const tabs = $('tank-tabs');
+  if (tabs) {
+    tabs.innerHTML = site.tanks.map((t) => {
+      const st = stateOf(t.id);
+      const f = freshness(st?.last_heard_at);
+      return `<button type="button" class="tank-tab ${t.id === selected ? 'is-on' : ''}" data-tank="${esc(t.id)}" aria-pressed="${t.id === selected}">
+        <span class="dot dot-${needsAttention(t) && st ? (f.key === 'offline' ? 'offline' : 'fault') : f.key}" aria-hidden="true"></span>${esc(t.name)}
+        <span class="tab-pct">${st ? `${nf0.format(st.tank_percent)}%` : '–'}</span></button>`;
+    }).join('');
   }
-
-  const line = $('sys-line');
-  if (line) {
-    const s = systemSummary();
-    line.className = `sys-line sys-${s.key}`;
-    line.innerHTML = `${esc(s.text)}<span class="dot" aria-hidden="true"></span>`;
-  }
-
-  const banner = $('receiver-banner');
-  if (!banner) return;
+  const pill = $('receiver-pill');
+  if (!pill) return;
   const rs = receiverStatus();
-  banner.innerHTML = rs.key === 'offline'
+  pill.className = `pill pill-${rs.key}`;
+  pill.innerHTML = `<span class="dot" aria-hidden="true"></span><span class="pill-text">${esc(rs.text)}</span>`;
+  const faults = site.tanks.filter(needsAttention).length;
+  const badge = $('fault-badge');
+  badge.hidden = !faults;
+  badge.textContent = faults;
+  $('receiver-banner').innerHTML = rs.key === 'offline'
     ? `<div class="banner" role="status">${icon('wifi')}<span><strong>${esc(rs.text)}.</strong> Readings can't reach the website until it reconnects. Your tanks and pump keep working as normal, and the receiver sends what it has stored when it's back online.</span></div>`
     : '';
 }
@@ -633,44 +616,48 @@ function tankHeight(t, st) {
   return null;
 }
 
-// Line drawing of a poly tank with a depth scale and dotted water.
-function tankSvg(t, st) {
+// A 3D tank: translucent shell, shaded water with a lit surface, and the
+// pump start/stop levels marked on the side.
+let tankSvgId = 0;
+function tankSvg(t, st, { labels = true } = {}) {
+  const id = `tk${++tankSvgId}`;
   const pct = st ? clampPct(st.tank_percent) : 0;
-  const H = tankHeight(t, st);
-  const top = 30, bot = 238, left = 78, right = 208;
+  const cx = 100, rx = 72, ry = 17, top = 34, bot = 214;
+  const L = cx - rx, R = cx + rx;
   const y = (p) => bot - (p / 100) * (bot - top);
+  const yw = y(pct);
   const stale = freshness(st?.last_heard_at).key === 'offline';
-  let scale = '';
-  if (H) {
-    const step = H > 4 ? 1 : 0.5;
-    for (let m = 0; m <= H + 1e-6; m += step) {
-      const yy = y((m / H) * 100).toFixed(1);
-      scale += `<line class="t-tick" x1="46" x2="56" y1="${yy}" y2="${yy}"/><text class="t-lab" x="40" y="${+yy + 4}" text-anchor="end">${m.toFixed(1)}</text>`;
-    }
-    scale += `<line class="t-axis" x1="51" x2="51" y1="${top}" y2="${bot}"/><text class="t-lab" x="22" y="${bot + 18}">m</text>`;
-  }
-  const ribs = Array.from({ length: 9 }, (_, i) => {
-    const yy = (top + ((i + 1) * (bot - top)) / 10).toFixed(1);
-    return `<line class="t-rib" x1="${left}" x2="${left + 7}" y1="${yy}" y2="${yy}"/><line class="t-rib" x1="${right - 7}" x2="${right}" y1="${yy}" y2="${yy}"/>`;
-  }).join('');
-  const body = `M${left},${top + 12} Q${left},${top} ${left + 12},${top} H${right - 12} Q${right},${top} ${right},${top + 12} V${bot - 8} Q${right},${bot} ${right - 8},${bot} H${left + 8} Q${left},${bot} ${left},${bot - 8} Z`;
-  const marks = t.fill_start_percent != null ? [t.fill_start_percent, t.fill_stop_percent].map((p) =>
-    `<line class="t-mark" x1="${left}" x2="${right}" y1="${y(p)}" y2="${y(p)}"/>`).join('') : '';
-  const wy = y(pct);
-  return `<svg class="tank-svg ${stale ? 'is-stale' : ''}" viewBox="0 0 220 262" role="img" aria-label="${st ? `${nf1.format(pct)}% full` : 'No reading yet'}">
+  const marks = labels && t.fill_start_percent != null ? [[t.fill_start_percent, 'Start'], [t.fill_stop_percent, 'Stop']].map(([p, label]) => `
+      <line class="tk-mark" x1="${R + 6}" x2="${R + 16}" y1="${y(p)}" y2="${y(p)}"/>
+      <text class="tk-mark-t" x="${R + 22}" y="${y(p) + 4}">${label} ${nf0.format(p)}%</text>`).join('') : '';
+  return `<svg class="tank3d ${stale ? 'is-stale' : ''}" viewBox="0 0 ${labels ? 270 : 200} 250" role="img" aria-label="${st ? `${nf1.format(pct)}% full` : 'No reading yet'}">
     <defs>
-      <pattern id="dots" width="4" height="4" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.05" class="t-dot"/></pattern>
-      <clipPath id="tank-clip"><path d="${body}"/></clipPath>
+      <linearGradient id="${id}-shell" x1="0" x2="1">
+        <stop offset="0" stop-color="#fff" stop-opacity=".05"/><stop offset=".25" stop-color="#fff" stop-opacity=".13"/>
+        <stop offset=".6" stop-color="#fff" stop-opacity=".04"/><stop offset="1" stop-color="#fff" stop-opacity=".09"/>
+      </linearGradient>
+      <linearGradient id="${id}-water" x1="0" x2="1">
+        <stop offset="0" class="w0"/><stop offset=".3" class="w1"/><stop offset=".7" class="w2"/><stop offset="1" class="w3"/>
+      </linearGradient>
+      <radialGradient id="${id}-surf" cx=".4" cy=".4" r=".8">
+        <stop offset="0" class="s0"/><stop offset="1" class="s1"/>
+      </radialGradient>
+      <linearGradient id="${id}-shine" x1="0" x2="1">
+        <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".18"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+      </linearGradient>
     </defs>
-    ${scale}
-    <rect class="t-lid" x="120" y="16" width="46" height="14" rx="2"/>
-    <g clip-path="url(#tank-clip)">
-      <rect class="t-water" x="${left}" y="${wy}" width="${right - left}" height="${bot - wy}" fill="url(#dots)"/>
-      <line class="t-surface" x1="${left}" x2="${right}" y1="${wy}" y2="${wy}"/>
-    </g>
+    <ellipse class="tk-shadow" cx="${cx}" cy="${bot + 14}" rx="${rx + 10}" ry="${ry - 4}"/>
+    <path class="tk-back" d="M${L},${top} V${bot} A${rx},${ry} 0 0 0 ${R},${bot} V${top} Z" fill="url(#${id}-shell)"/>
+    <ellipse class="tk-rim-back" cx="${cx}" cy="${top}" rx="${rx}" ry="${ry}"/>
+    ${pct > 0 ? `
+    <path class="tk-water" d="M${L},${yw} V${bot} A${rx},${ry} 0 0 0 ${R},${bot} V${yw} Z" fill="url(#${id}-water)"/>
+    <ellipse class="tk-surface" cx="${cx}" cy="${yw}" rx="${rx}" ry="${ry}" fill="url(#${id}-surf)"/>
+    <ellipse class="tk-surface-edge" cx="${cx}" cy="${yw}" rx="${rx}" ry="${ry}"/>` : ''}
+    <rect x="${L + 14}" y="${top + 6}" width="16" height="${bot - top}" fill="url(#${id}-shine)"/>
+    <path class="tk-outline" d="M${L},${top} V${bot} A${rx},${ry} 0 0 0 ${R},${bot} V${top}"/>
+    <ellipse class="tk-rim" cx="${cx}" cy="${top}" rx="${rx}" ry="${ry}"/>
+    <ellipse class="tk-lid" cx="${cx}" cy="${top - 2}" rx="22" ry="5"/>
     ${marks}
-    <path class="t-body" d="${body}"/>
-    ${ribs}
   </svg>`;
 }
 
@@ -678,22 +665,33 @@ function renderTankBox() {
   const t = tankById(selected);
   const st = stateOf(t.id);
   const cap = capacityOf(t);
-  const H = tankHeight(t, st);
+  const f = freshness(st?.last_heard_at);
+  const pump = pumpOf(t.id);
+  $('bt-tank').textContent = t.name;
   $('box-tank').innerHTML = `
-    <div class="tank-art">${tankSvg(t, st)}</div>
-    <p class="dot-num">${st ? nf0.format(st.tank_percent) : '--'}<small>%</small></p>
-    ${rows([
-      ['Water level', st ? `${nf2.format(st.water_height_m)} m` : '–'],
-      ['Volume', st ? `${nf0.format(st.tank_volume_l)} L` : '–'],
-      ['Capacity', cap ? `${nf0.format(cap)} L` : '–'],
-      H && ['Tank height', `${nf2.format(H)} m`],
-    ])}`;
+    <div class="tank-hero">
+      <div class="tank-art">${tankSvg(t, st)}</div>
+      <div class="tank-read">
+        <p class="eyebrow">Level</p>
+        <p class="hero-num">${st ? nf1.format(st.tank_percent) : '–'}<small>%</small></p>
+        <p class="hero-sub">${st ? `<strong>${nf0.format(st.tank_volume_l)} L</strong>${cap ? ` of ${nf0.format(cap)} L` : ''}` : 'No reading yet'}</p>
+        <div class="chips">
+          <span class="chip chip-${f.key}"><span class="dot dot-${f.key}" aria-hidden="true"></span>${f.label}</span>
+          ${pump?.state === 'running' ? '<span class="chip chip-fill"><span class="dot dot-fill" aria-hidden="true"></span>Filling</span>' : ''}
+          ${pump?.state === 'fault' ? '<span class="chip chip-fault"><span class="dot dot-offline" aria-hidden="true"></span>Pump stopped</span>' : ''}
+        </div>
+        ${rows([
+          ['Depth', st ? `${nf2.format(st.water_height_m)} m` : '–'],
+          ['Last reading', st ? `<span data-hms="${esc(st.last_heard_at)}">${hms(st.last_heard_at)}</span>` : '–'],
+        ])}
+      </div>
+    </div>`;
 }
 
 async function renderTrendBox(quiet = false) {
   if (!selected) return;
   const el = $('box-trend');
-  if (!$('trend-chart')) el.innerHTML = '<div class="chart-wrap" id="trend-chart"></div><dl class="trend-stats" id="trend-stats"></dl>';
+  if (!$('trend-chart')) el.innerHTML = '<div class="trend-stats" id="trend-stats"></div><div class="chart-wrap" id="trend-chart"></div>';
   const t = tankById(selected);
   const res = await drawChart($('trend-chart'), t, range, false, quiet);
   const stats = $('trend-stats');
@@ -701,10 +699,10 @@ async function renderTrendBox(quiet = false) {
   const runTime = res.runs.reduce((s, r) => s + ((r.end ?? Date.now()) - r.start), 0);
   const change = res.last - res.first;
   stats.innerHTML = `
-    <div><dt>Change</dt><dd class="${change >= 0 ? 'up' : 'down'}">${change >= 0 ? '+' : '−'}${nf1.format(Math.abs(change))}%</dd></div>
-    <div><dt>Min</dt><dd>${nf1.format(res.lo)}%</dd></div>
-    <div><dt>Max</dt><dd>${nf1.format(res.hi)}%</dd></div>
-    <div><dt>Pump ran</dt><dd>${res.runs.length ? `${res.runs.length}× · ${duration(runTime)}` : 'No'}</dd></div>`;
+    <div class="stat-main"><span class="stat-v">${nf1.format(res.last)}%</span><span class="delta ${change >= 0 ? 'up' : 'down'}">${change >= 0 ? '▲' : '▼'} ${nf1.format(Math.abs(change))}%</span></div>
+    <div><span class="stat-l">Low</span><span class="stat-s">${nf1.format(res.lo)}%</span></div>
+    <div><span class="stat-l">High</span><span class="stat-s">${nf1.format(res.hi)}%</span></div>
+    <div><span class="stat-l">Pump ran</span><span class="stat-s">${res.runs.length ? `${res.runs.length}× · ${duration(runTime)}` : 'Not at all'}</span></div>`;
 }
 
 function renderTanksBox() {
@@ -714,13 +712,18 @@ function renderTanksBox() {
     const st = stateOf(t.id);
     const f = freshness(st?.last_heard_at);
     const pump = pumpOf(t.id);
-    const flag = pump?.state === 'fault' || st?.sensor_status === 'fault' ? 'fault' : f.key === 'offline' ? 'off' : pump?.state === 'running' ? 'fill' : '';
-    return `<li><button type="button" class="tank-row ${t.id === selected ? 'is-selected' : ''} row-${f.key}" data-tank="${esc(t.id)}" aria-pressed="${t.id === selected}" aria-label="${esc(t.name)}, ${st ? `${nf0.format(st.tank_percent)}%` : 'no reading'}, ${f.label}">
-      <span class="row-id">${pad2(t.tank_node)}</span>
-      ${tbar(st?.tank_percent ?? 0, 18)}
-      <span class="row-pct">${st ? `${nf0.format(st.tank_percent)}%` : '--'}</span>
-      <span class="row-flag flag-${flag}">${{ fault: 'FLT', off: 'OFF', fill: 'FILL', '': '' }[flag]}</span>
-      <span class="row-go" aria-hidden="true">&gt;</span>
+    let sub = f.key === 'live' ? 'Live' : f.label;
+    if (pump?.state === 'running') sub = 'Filling';
+    if (pump?.state === 'fault') sub = 'Pump stopped';
+    if (st?.sensor_status === 'fault') sub = 'Sensor fault';
+    const bad = needsAttention(t);
+    return `<li><button type="button" class="tank-row ${t.id === selected ? 'is-selected' : ''} ${bad ? 'is-bad' : ''}" data-tank="${esc(t.id)}" aria-pressed="${t.id === selected}">
+      <span class="mini-tank" aria-hidden="true"><i style="height:${st ? clampPct(st.tank_percent) : 0}%"></i></span>
+      <span class="row-main">
+        <span class="row-top"><span class="row-name">${esc(t.name)}</span><span class="row-pct">${st ? `${nf0.format(st.tank_percent)}%` : '–'}</span></span>
+        ${tbar(st?.tank_percent ?? 0)}
+        <span class="row-sub"><span class="dot dot-${bad ? 'offline' : pump?.state === 'running' ? 'fill' : f.key}" aria-hidden="true"></span>${esc(sub)}${st ? ` · ${nf0.format(st.tank_volume_l)} L` : ''}</span>
+      </span>
     </button></li>`;
   }).join('')}</ul>`;
 }
@@ -734,22 +737,15 @@ function pumpSummary(pump) {
   return { state, label, sub };
 }
 
-// Line drawing of an electric pump; the impeller turns while it runs.
-const pumpSvg = (state) => `<svg class="pump-svg pump-${state}" viewBox="0 0 170 92" aria-hidden="true">
-  <rect x="6" y="34" width="14" height="26" rx="2"/>
-  <rect x="20" y="22" width="72" height="50" rx="5"/>
-  ${[30, 38, 46, 54, 62, 70, 78].map((x) => `<line x1="${x}" x2="${x}" y1="28" y2="66"/>`).join('')}
-  <rect x="42" y="10" width="28" height="12" rx="2"/>
-  <rect x="92" y="38" width="12" height="18"/>
-  <circle cx="130" cy="47" r="24"/>
-  <g class="imp"><circle cx="130" cy="47" r="4"/><path d="M130 47 L130 29 M130 47 L145.6 56 M130 47 L114.4 56"/></g>
-  <rect x="124" y="6" width="12" height="17"/>
-  <rect x="154" y="42" width="12" height="10"/>
-  <path d="M14 84 H160 M30 72 V84 M84 72 V84 M118 71 V84 M142 71 V84"/>
-</svg>`;
+// Round pump badge; the impeller turns while the pump runs.
+const pumpSvg = (state) => `<span class="pump-badge pump-${state}" aria-hidden="true">
+  <svg viewBox="0 0 48 48"><circle class="pb-ring" cx="24" cy="24" r="21"/>
+  <g class="pb-imp"><path d="M24 24c0-7 3-11 7-11-1 5-3 8-7 11zM24 24c6 3.5 8 8 6 11.5-3.6-3.4-5-6.8-6-11.5zM24 24c-6 3.5-10.6 3-12.6-.5 4.8-1.4 8.4-1 12.6.5z"/><circle cx="24" cy="24" r="3"/></g></svg>
+</span>`;
 
 async function renderPumpBox() {
   const t = tankById(selected);
+  const st = stateOf(t.id);
   const pump = pumpOf(t.id);
   const p = pumpSummary(pump);
   let runs = [];
@@ -760,43 +756,20 @@ async function renderPumpBox() {
     const a = Math.max(r.start, midnight.getTime()), b = r.end ?? Date.now();
     return b > a ? s + (b - a) : s;
   }, 0);
+  const hasBand = t.fill_start_percent != null;
   $('box-pump').innerHTML = `
     <div class="pump-top">
       ${pumpSvg(p.state)}
-      <div class="pump-read">
-        <p class="pump-id">Pump ${t.controller_node ? pad2(t.controller_node - 100) : '--'}</p>
-        <p class="pump-state-t st-${p.state}">${p.label}</p>
-        <p class="pump-sub">${esc(p.sub)}</p>
-      </div>
+      <div><p class="pump-state-t st-${p.state}">${p.label}</p><p class="pump-sub">${esc(p.sub)}</p></div>
     </div>
-    ${rows([
-      t.fill_start_percent != null && ['Start fill', `${nf0.format(t.fill_start_percent)}%`],
-      t.fill_stop_percent != null && ['Stop fill', `${nf0.format(t.fill_stop_percent)}%`],
-      ['Run today', esc(duration(todayMs))],
-      ['Fills (7 days)', String(runs.length)],
-    ])}`;
-}
-
-function renderStatusBox() {
-  const t = tankById(selected);
-  const st = stateOf(t.id);
-  const f = freshness(st?.last_heard_at);
-  const rs = receiverStatus();
-  const pump = pumpOf(t.id);
-  const dotRow = (label, key, text) => `<div><dt>${label}</dt><dd><span class="dot dot-${key}" aria-hidden="true"></span>${text}</dd></div>`;
-  const linkKey = !st ? 'none' : f.key === 'offline' ? 'offline' : f.key === 'delayed' ? 'delayed' : 'live';
-  $('box-status').innerHTML = `
-    <dl class="rows rows-dots">
-      ${dotRow('LoRa link', linkKey, !st ? 'No signal yet' : f.key === 'offline' ? 'Lost' : 'Connected')}
-      ${dotRow('Tank unit', f.key === 'none' ? 'none' : f.key, f.key === 'live' ? 'Online' : f.key === 'delayed' ? 'Delayed' : f.key === 'offline' ? 'Offline' : 'No reading')}
-      ${dotRow('Level sensor', st?.sensor_status === 'fault' ? 'offline' : st?.sensor_status === 'ok' ? 'live' : 'none', st?.sensor_status === 'fault' ? 'Fault' : st?.sensor_status === 'ok' ? 'OK' : 'Not reported')}
-      ${dotRow('Pump controller', pump?.state === 'fault' ? 'offline' : pump ? 'live' : 'none', pump?.state === 'fault' ? 'Safety stop' : pump ? 'Reporting' : 'No report')}
-      ${dotRow('Receiver', rs.key === 'online' ? 'live' : 'offline', rs.short)}
-    </dl>
-    <dl class="rows rows-meter">
-      <div><dt>Signal</dt><dd>${tbar(rssiPct(st?.lora_rssi), 20, st?.lora_rssi != null ? `${st.lora_rssi} dBm` : 'unknown')}<span class="meter-v">${st?.lora_rssi != null ? `${st.lora_rssi} dBm` : '--'}</span></dd></div>
-      <div><dt>Last update</dt><dd>${st ? `<span data-hms="${esc(st.last_heard_at)}">${hms(st.last_heard_at)}</span>&nbsp;ago` : '--'}</dd></div>
-    </dl>`;
+    ${hasBand ? `<div class="band" role="img" aria-label="Automatic filling starts at ${t.fill_start_percent}% and stops at ${t.fill_stop_percent}%; level now ${st ? nf0.format(st.tank_percent) : 'unknown'}%">
+      <div class="band-track"><i class="band-zone" style="left:${t.fill_start_percent}%;width:${t.fill_stop_percent - t.fill_start_percent}%"></i>${st ? `<b class="band-now" style="left:${clampPct(st.tank_percent)}%"></b>` : ''}</div>
+      <div class="band-labels"><span>Auto fill</span><span>${nf0.format(t.fill_start_percent)}% → ${nf0.format(t.fill_stop_percent)}%</span></div>
+    </div>` : ''}
+    <div class="mini-stats">
+      <div><span class="stat-l">Run today</span><span class="stat-s">${esc(duration(todayMs))}</span></div>
+      <div><span class="stat-l">Fills · 7 days</span><span class="stat-s">${runs.length}</span></div>
+    </div>`;
 }
 
 function useSummary(t, w, cap) {
@@ -813,7 +786,7 @@ async function renderUseBox() {
   const t = tankById(selected);
   const el = $('box-use');
   const cap = capacityOf(t);
-  if (!cap) { el.innerHTML = '<p class="muted">Set the tank size in [Settings] to see water use.</p>'; return; }
+  if (!cap) { el.innerHTML = '<p class="muted">Set the tank size in settings to see water use.</p>'; return; }
   try {
     const w = await weekData(t);
     if (selected !== t.id) return;
@@ -823,20 +796,45 @@ async function renderUseBox() {
     const nowH = new Date().getHours();
     const maxH = Math.max(1, ...u.hours.map((b) => b.litres));
     el.innerHTML = `
-      <p class="use-today"><span class="dot-num dot-num-sm">${r10(u.today)}</span><small> L today</small></p>
-      <div class="spark-bars" role="img" aria-label="Water used each hour today">
+      <p class="eyebrow">Today</p>
+      <p class="mid-num">${r10(u.today)}<small> L</small></p>
+      <div class="hour-mini" role="img" aria-label="Water used each hour today">
         ${Array.from({ length: 24 }, (_, h) => {
           const v = u.hours[h]?.litres;
-          return `<i class="${h === nowH ? 'now' : ''}${v == null ? ' future' : ''}" style="height:${v == null ? 6 : Math.max(6, (v / maxH) * 100)}%"></i>`;
+          return `<i class="${h === nowH ? 'now' : ''}${v == null ? ' future' : ''}" style="height:${v == null ? 8 : Math.max(8, (v / maxH) * 100)}%"></i>`;
         }).join('')}
       </div>
-      ${rows([
-        ['Avg / day', u.stats.enough ? `${r10(u.stats.perDay)} L` : '--'],
-        ['Lasts about', esc(daysLeftText(st ? usageStats(w.points, w.runs, cap, st.tank_volume_l) : null))],
-      ])}`;
+      <div class="mini-stats">
+        <div><span class="stat-l">Daily average</span><span class="stat-s">${u.stats.enough ? `${r10(u.stats.perDay)} L` : '–'}</span></div>
+        <div><span class="stat-l">Lasts about</span><span class="stat-s">${esc(daysLeftText(st ? usageStats(w.points, w.runs, cap, st.tank_volume_l) : null))}</span></div>
+      </div>`;
   } catch {
     el.innerHTML = '<p class="muted">Water use is unavailable right now.</p>';
   }
+}
+
+function renderStatusBox() {
+  const t = tankById(selected);
+  const st = stateOf(t.id);
+  const f = freshness(st?.last_heard_at);
+  const rs = receiverStatus();
+  const pump = pumpOf(t.id);
+  const gw = site.gateways[0];
+  const tile = (ic, label, key, text) => `<div class="dev dev-${key}"><span class="dev-ic">${icon(ic)}</span><span class="dev-l">${label}</span><span class="dev-s">${text}</span></div>`;
+  const ok = (good, bad) => (good ? 'ok' : bad ? 'bad' : 'idle');
+  $('box-status').innerHTML = `
+    <div class="devs">
+      ${tile('tanks', 'Tank unit', f.key === 'live' ? 'ok' : f.key === 'delayed' ? 'warn' : f.key === 'offline' ? 'bad' : 'idle', f.key === 'live' ? 'Online' : f.label)}
+      ${tile('drop', 'Level sensor', ok(st?.sensor_status === 'ok', st?.sensor_status === 'fault'), st?.sensor_status === 'fault' ? 'Fault' : st?.sensor_status === 'ok' ? 'OK' : 'Not reported')}
+      ${tile('pump', 'Controller', ok(pump && pump.state !== 'fault', pump?.state === 'fault'), pump?.state === 'fault' ? 'Safety stop' : pump ? 'Reporting' : 'No report')}
+      ${tile('receiver', 'Receiver', ok(rs.key === 'online', rs.key === 'offline'), rs.short)}
+    </div>
+    <div class="sig">
+      <div class="sig-row"><span class="stat-l">Radio signal</span><span class="stat-s">${st?.lora_rssi != null ? `${st.lora_rssi} dBm` : '–'}</span></div>
+      ${tbar(rssiPct(st?.lora_rssi), 0, st?.lora_rssi != null ? `${st.lora_rssi} dBm` : 'unknown')}
+      <div class="sig-row"><span class="stat-l">Wi-Fi</span><span class="stat-s">${gw?.wifi_rssi != null ? `${gw.wifi_rssi} dBm` : '–'}</span></div>
+      ${tbar(gw?.wifi_rssi != null ? clampPct(((gw.wifi_rssi + 90) / 50) * 100) : 0, 0, gw?.wifi_rssi != null ? `${gw.wifi_rssi} dBm` : 'unknown')}
+    </div>`;
 }
 
 async function activityItems() {
@@ -859,8 +857,22 @@ async function activityItems() {
 const actIcon = (kind) => `<span class="act-icon">${icon(kind === 'fault' || kind === 'offline' ? 'alert' : 'pump')}</span>`;
 
 // ---------------------------------------------------------------------------
-// Chart (in the trend box, and full size when enlarged)
+// Chart (in the history box, and full size when enlarged)
 // ---------------------------------------------------------------------------
+
+// Smooth curve through points (Catmull-Rom as cubic Béziers), kept inside lo..hi.
+function smoothPath(p, lo, hi) {
+  if (p.length < 3) return p.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`).join('');
+  const c = (v) => Math.max(lo, Math.min(hi, v));
+  let d = `M${p[0][0].toFixed(1)},${p[0][1].toFixed(1)}`;
+  for (let i = 0; i < p.length - 1; i++) {
+    const p0 = p[i - 1] ?? p[i], p1 = p[i], p2 = p[i + 1], p3 = p[i + 2] ?? p2;
+    const c1 = [p1[0] + (p2[0] - p0[0]) / 6, c(p1[1] + (p2[1] - p0[1]) / 6)];
+    const c2 = [p2[0] - (p3[0] - p1[0]) / 6, c(p2[1] - (p3[1] - p1[1]) / 6)];
+    d += `C${c1[0].toFixed(1)},${c1[1].toFixed(1)} ${c2[0].toFixed(1)},${c2[1].toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+  }
+  return d;
+}
 
 async function drawChart(wrap, t, key, full, quiet = false) {
   if (!wrap) return null;
@@ -898,16 +910,20 @@ async function drawChart(wrap, t, key, full, quiet = false) {
 
   const gap = r.bucket * 1000 * 2.5;
   const drawn = live ? [...pts, { t: now, p: st.tank_percent }] : pts;
-  let line = '', area = '', prev = null;
+  // split into runs of readings with no long gaps, then draw each smoothly
+  const segs = [];
+  let prev = null;
   for (const pt of drawn) {
-    const X = x(pt.t).toFixed(1), Y = y(pt.p).toFixed(1);
-    if (!prev || pt.t - prev.t > gap) {
-      if (prev) area += `L${x(prev.t).toFixed(1)},${lineBottom}Z`;
-      line += `M${X},${Y}`; area += `M${X},${lineBottom}L${X},${Y}`;
-    } else { line += `L${X},${Y}`; area += `L${X},${Y}`; }
+    if (!prev || pt.t - prev.t > gap) segs.push([]);
+    segs.at(-1).push([x(pt.t), y(pt.p)]);
     prev = pt;
   }
-  if (prev) area += `L${x(prev.t).toFixed(1)},${lineBottom}Z`;
+  let line = '', area = '';
+  for (const seg of segs) {
+    const path = smoothPath(seg, pad.t, lineBottom);
+    line += path;
+    area += `${path}L${seg.at(-1)[0].toFixed(1)},${lineBottom}L${seg[0][0].toFixed(1)},${lineBottom}Z`;
+  }
 
   const bands = d.runs.map((run) => {
     const x1 = x(run.start), x2 = x(run.end ?? now);
@@ -988,26 +1004,31 @@ async function drawChart(wrap, t, key, full, quiet = false) {
   return result;
 }
 
-// Ring of ticks, lit up to the level, with the pump start/stop marks.
+// Slim arc gauge with a glowing end point and the pump start/stop marks.
 function gaugeSvg(t, st) {
   const pct = st ? clampPct(st.tank_percent) : 0;
-  const cx = 110, cy = 110, n = 60, start = 135, sweep = 270;
+  const cx = 110, cy = 110, R = 88, start = 150, sweep = 240;
+  const pt = (deg, r = R) => [cx + r * Math.cos((deg * Math.PI) / 180), cy + r * Math.sin((deg * Math.PI) / 180)];
+  const arc = (from, to) => {
+    const [x1, y1] = pt(from), [x2, y2] = pt(to);
+    return `M${x1.toFixed(2)},${y1.toFixed(2)} A${R},${R} 0 ${to - from > 180 ? 1 : 0} 1 ${x2.toFixed(2)},${y2.toFixed(2)}`;
+  };
   const at = (p) => start + (sweep * p) / 100;
-  const pt = (deg, r) => [cx + r * Math.cos((deg * Math.PI) / 180), cy + r * Math.sin((deg * Math.PI) / 180)];
   const stale = freshness(st?.last_heard_at).key === 'offline';
-  const ticks = Array.from({ length: n + 1 }, (_, i) => {
-    const p = (i / n) * 100;
-    const [x1, y1] = pt(at(p), 70), [x2, y2] = pt(at(p), i % 6 === 0 ? 96 : 90);
-    return `<line class="g-tick${p <= pct ? ' on' : ''}" x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"/>`;
-  }).join('');
+  const [ex, ey] = pt(at(pct));
   const marks = t.fill_start_percent != null ? [t.fill_start_percent, t.fill_stop_percent].map((p) => {
-    const [x1, y1] = pt(at(p), 62), [x2, y2] = pt(at(p), 102);
+    const [x1, y1] = pt(at(p), R - 14), [x2, y2] = pt(at(p), R + 14);
     return `<line class="g-mark" x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"/>`;
   }).join('') : '';
-  const labels = [0, 50, 100].map((p) => { const [lx, ly] = pt(at(p), 112); return `<text class="g-label" x="${lx.toFixed(1)}" y="${(ly + 4).toFixed(1)}" text-anchor="middle">${p}</text>`; }).join('');
-  return `<svg class="gauge ${stale ? 'is-stale' : ''}" viewBox="-14 -14 248 236" role="img" aria-label="${st ? `${nf1.format(pct)}% full` : 'No reading yet'}">
-      ${ticks}${marks}${labels}
-      <text class="g-value" x="${cx}" y="${cy + 12}" text-anchor="middle">${st ? nf1.format(pct) : '--'}<tspan class="g-unit">%</tspan></text>
+  const labels = [0, 100].map((p) => { const [lx, ly] = pt(at(p), R + 4); return `<text class="g-label" x="${lx.toFixed(1)}" y="${(ly + 22).toFixed(1)}" text-anchor="middle">${p}%</text>`; }).join('');
+  return `<svg class="gauge ${stale ? 'is-stale' : ''}" viewBox="0 0 220 210" role="img" aria-label="${st ? `${nf1.format(pct)}% full` : 'No reading yet'}">
+      <defs><linearGradient id="g-grad" x1="0" x2="1" y1="1" y2="0"><stop offset="0" class="gg0"/><stop offset="1" class="gg1"/></linearGradient></defs>
+      <path class="g-track" d="${arc(start, start + sweep)}"/>
+      ${pct > 0 ? `<path class="g-fill" d="${arc(start, at(pct))}" stroke="url(#g-grad)"/>` : ''}
+      ${marks}
+      ${pct > 0 ? `<circle class="g-end" cx="${ex.toFixed(1)}" cy="${ey.toFixed(1)}" r="7"/>` : ''}
+      ${labels}
+      <text class="g-value" x="${cx}" y="${cy + 10}" text-anchor="middle">${st ? nf1.format(pct) : '–'}<tspan class="g-unit" dx="2">%</tspan></text>
       <text class="g-cap" x="${cx}" y="${cy + 36}" text-anchor="middle">${st ? `${nf0.format(st.tank_volume_l)} L` : ''}</text>
     </svg>`;
 }
