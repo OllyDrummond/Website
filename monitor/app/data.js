@@ -63,8 +63,14 @@ export async function createSupabaseSource() {
       return { installation, installations: installs, gateways, tanks, tankState, pumpState };
     },
 
+    // The API returns at most 1000 rows per request, so long ranges come in pages.
     async history(tankId, sinceIso, bucketSeconds) {
-      return must(await sb.rpc('tank_history', { p_tank_id: tankId, p_since: sinceIso, p_bucket_seconds: bucketSeconds }));
+      const out = [];
+      for (let from = 0; ; from += 1000) {
+        const rows = must(await sb.rpc('tank_history', { p_tank_id: tankId, p_since: sinceIso, p_bucket_seconds: bucketSeconds }).range(from, from + 999));
+        out.push(...rows);
+        if (rows.length < 1000) return out;
+      }
     },
 
     async pumpEvents(tankId, sinceIso) {
@@ -100,7 +106,7 @@ export async function createSupabaseSource() {
 // ---------------------------------------------------------------------------
 
 const STEP_S = 300;                   // history resolution: 5 minutes
-const DAYS = 31;
+const DAYS = 366;                     // a year, so the long charts have data
 const LIVE_TICK_MS = 4000;            // demo moves faster than real time
 
 // A small deterministic random generator so the demo looks the same each load.
@@ -119,11 +125,19 @@ function useLph(date, base) {
   return base * (0.25 + 1.6 * morning + 1.3 * evening);
 }
 
+// Farms use more water in summer: about +35% in mid-January, -35% in mid-July.
+const seasonFactor = (t) => {
+  const d = new Date(t);
+  const day = (d - new Date(d.getFullYear(), 0, 0)) / 86400_000;
+  return 1 + 0.35 * Math.cos((2 * Math.PI * (day - 15)) / 365);
+};
+
 function simulateTank(spec, now) {
   const rand = rng(spec.seed);
   const start = now - DAYS * 86400_000;
   let litres = spec.capacity * spec.startPercent / 100;
   let pumping = false;
+  let rainLeft = 0;                   // rainwater tanks: litres still to run in
   const points = [];
   const events = [];
   let packet = 1;
@@ -131,12 +145,20 @@ function simulateTank(spec, now) {
   for (let t = start; t <= now; t += STEP_S * 1000) {
     const d = new Date(t);
     const dayFactor = 0.8 + 0.4 * Math.sin((t / 86400_000) * 0.9 + spec.seed);
-    litres -= useLph(d, spec.baseUse * dayFactor) * (STEP_S / 3600) * (0.8 + rand() * 0.4);
+    litres -= useLph(d, spec.baseUse * dayFactor * seasonFactor(t)) * (STEP_S / 3600) * (0.8 + rand() * 0.4);
     if (pumping) litres += spec.pumpLpm * (STEP_S / 60);
+    if (spec.rain) {
+      // a shower some nights (more often in winter), running in over a few hours
+      if (d.getHours() === 2 && d.getMinutes() < 5 && rand() < 0.42 - 0.18 * (seasonFactor(t) - 1) / 0.35) rainLeft += 900 + rand() * 1800;
+      const inflow = Math.min(rainLeft, 450 * (STEP_S / 3600));
+      litres += inflow;
+      rainLeft -= inflow;
+    }
     litres = Math.max(0, Math.min(spec.capacity, litres));
     const pct = (litres / spec.capacity) * 100;
 
-    if (!pumping && pct < spec.start) { pumping = true;  events.push({ state: 'running', heard_at: new Date(t).toISOString(), controller_node: 100 + spec.node }); }
+    if (spec.rain) { /* no pump */ }
+    else if (!pumping && pct < spec.start) { pumping = true;  events.push({ state: 'running', heard_at: new Date(t).toISOString(), controller_node: 100 + spec.node }); }
     else if (pumping && pct >= spec.stop) { pumping = false; events.push({ state: 'stopped', heard_at: new Date(t).toISOString(), controller_node: 100 + spec.node }); }
 
     points.push({ t, pct });
@@ -153,6 +175,8 @@ export function createDemoSource() {
     { id: 't1', node: 1, capacity: 30000, height: 3.0, start: 70, stop: 90, startPercent: 74, baseUse: 260, pumpLpm: 45, seed: 11 },
     { id: 't2', node: 2, capacity: 22000, height: 2.4, start: 70, stop: 90, startPercent: 86, baseUse: 150, pumpLpm: 38, seed: 23 },
     { id: 't3', node: 3, capacity: 25000, height: 2.7, start: 70, stop: 90, startPercent: 80, baseUse: 120, pumpLpm: 40, seed: 37 },
+    // A rainwater tank off the shed roof: no pump, filled by rain.
+    { id: 't4', node: 4, capacity: 10000, height: 2.2, start: null, stop: null, startPercent: 60, baseUse: 22, rain: true, seed: 53 },
   ];
 
   const sims = new Map();
@@ -168,7 +192,8 @@ export function createDemoSource() {
 
     tanks.push({
       id: s.id, installation_id: 'demo', tank_node: s.node, name: `Tank ${s.node}`,
-      height_m: s.height, capacity_l: s.capacity, fill_start_percent: s.start, fill_stop_percent: s.stop, controller_node: 100 + s.node, low_alert_percent: 25,
+      height_m: s.height, capacity_l: s.capacity, fill_start_percent: s.start, fill_stop_percent: s.stop,
+      controller_node: s.rain ? null : 100 + s.node, low_alert_percent: 25,
     });
     const last = sim.points.at(-1);
     tankState.push(stateRow(s, last.pct, new Date(last.t).toISOString(), s.id === 't3' ? -97 : -78 - s.node * 3));
@@ -219,7 +244,7 @@ export function createDemoSource() {
 
   function liveTick() {
     const t = Date.now();
-    for (const id of ['t1', 't2']) {
+    for (const id of ['t1', 't2', 't4']) {
       const sim = sims.get(id);
       const s = sim.spec;
       const lastPct = sim.points.at(-1).pct;
@@ -235,6 +260,7 @@ export function createDemoSource() {
       listeners.forEach((fn) => fn({ table: 'tank_state', row }));
 
       let change = null;
+      if (s.rain) continue;
       if (!sim.pumping && pct < s.start) change = 'running';
       if (sim.pumping && pct >= s.stop) change = 'stopped';
       if (change) {
@@ -269,8 +295,11 @@ export function createDemoSource() {
       const since = Date.parse(sinceIso);
       const size = bucketSeconds * 1000;
       const buckets = new Map();
-      for (const p of sims.get(tankId).points) {
-        if (p.t < since) continue;
+      const pts = sims.get(tankId).points;
+      let lo = 0, hi = pts.length;
+      while (lo < hi) { const mid = (lo + hi) >> 1; if (pts[mid].t < since) lo = mid + 1; else hi = mid; }
+      for (let i = lo; i < pts.length; i++) {
+        const p = pts[i];
         const key = Math.floor(p.t / size) * size;
         const b = buckets.get(key) ?? { sum: 0, n: 0, min: 101, max: -1 };
         b.sum += p.pct; b.n++; b.min = Math.min(b.min, p.pct); b.max = Math.max(b.max, p.pct);

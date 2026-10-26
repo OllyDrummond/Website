@@ -8,7 +8,7 @@
 // Data comes from data.js (Supabase or the in-browser demo). Read-only except
 // tank names, sizes and low-level alerts.
 
-import { supabaseConfigured, createSupabaseSource, createDemoSource } from './data.js?v=13';
+import { supabaseConfigured, createSupabaseSource, createDemoSource } from './data.js?v=17';
 import { LIVE_SECONDS, OFFLINE_SECONDS, RECEIVER_OFFLINE_SECONDS } from './config.js';
 
 const app = document.getElementById('app');
@@ -377,7 +377,7 @@ const FIT = matchMedia('(min-width: 1100px) and (min-height: 640px)');
 let view = 'home';     // 'home' or 'tank'
 let openKind = null;   // which box is enlarged, if any
 let openFrom = null;   // the element it grew from; focus returns there
-let useRange = '7d';   // range of the home water-use chart
+let useRange = '1w';   // period of the home water-use chart
 
 const $ = (id) => document.getElementById(id);
 const clockFmt = new Intl.DateTimeFormat('en-NZ', { hour: 'numeric', minute: '2-digit' });
@@ -417,6 +417,7 @@ const BOXES = {
   alerts: { title: 'Alerts', open: 'alerts' },
   htanks: { title: 'Tanks', open: 'tanks' },
   pumps: { title: 'Pumps', open: 'pumps' },
+  storage: { title: 'Water in storage', open: 'tanks' },
   settings: { title: 'Settings', open: 'settings' },
   tank: { title: '', open: 'level' },
   trend: { title: 'Level history', open: 'chart' },
@@ -554,16 +555,18 @@ function renderAll() {
     document.title = 'Tank Monitor | Kinetiq';
     v.className = 'home';
     v.innerHTML = `
-      ${box('usage', rangeButtons('data-urange', useRange))}
+      ${box('usage', useRangeButtons('data-urange'))}
+      ${box('settings')}
       ${box('alerts', '<span class="count" id="alert-count"></span>')}
-      ${box('htanks', `<span class="muted small">${site.tanks.length} in system</span>`)}
+      ${box('htanks', `<span class="car-count" id="car-count"></span><span class="car-nav"><button type="button" class="nav-btn" id="car-prev" aria-label="Previous tanks">${icon('left')}</button><button type="button" class="nav-btn" id="car-next" aria-label="More tanks">${icon('right')}</button></span>`)}
       ${box('pumps')}
-      ${box('settings')}`;
+      ${box('storage')}`;
     renderUsageBox();
+    renderSettingsBox();
     renderAlertsBox();
     renderHomeTanks();
     renderPumpsBox();
-    renderSettingsBox();
+    renderStorageBox();
     chartTimer = setInterval(() => renderUsageBox(true), 60_000);
   } else {
     const t = tankById(selected);
@@ -597,7 +600,7 @@ function refreshBoxes(table, row) {
   if (!site.tanks.length) return;
   const mine = view === 'tank' && row.tank_id === selected;
   if (view === 'home') {
-    if (table === 'tank_state') { renderHomeTanks(); renderAlertsBox(); }
+    if (table === 'tank_state') { renderHomeTanks(); renderAlertsBox(); renderStorageBox(); }
     if (table === 'pump_state') { renderPumpsBox(); renderAlertsBox(); renderHomeTanks(); renderUsageBox(true); }
     if (table === 'gateways') renderAlertsBox();
   } else {
@@ -701,63 +704,96 @@ async function renderAlertsBox() {
 }
 
 // ---------------------------------------------------------------------------
-// Home: water use of all tanks
+// Home: water use of all tanks (line chart)
 // ---------------------------------------------------------------------------
 
-// Water used per time bin by every tank, plus storage and averages.
+// Periods for the home chart. Short periods show litres per hour or per day;
+// long ones show the average litres per day for each week.
+const USE_RANGES = {
+  '1d': { label: '1D', long: 'day', ms: 86400_000, bucket: 300, bin: 'hour' },
+  '1w': { label: '1W', long: 'week', ms: 7 * 86400_000, bucket: 1800, bin: 'day' },
+  '1m': { label: '1M', long: 'month', ms: 30 * 86400_000, bucket: 3600, bin: 'day' },
+  '3m': { label: '3M', long: '3 months', ms: 91 * 86400_000, bucket: 3600, bin: 'day' },
+  '6m': { label: '6M', long: '6 months', ms: 182 * 86400_000, bucket: 3600, bin: 'week' },
+  '1y': { label: '1Y', long: 'year', ms: 365 * 86400_000, bucket: 3600, bin: 'week' },
+};
+const UNIT = { hour: 'L per hour', day: 'L per day', week: 'L per day, weekly average' };
+
+const useRangeButtons = (attr) => `<div class="seg" role="group" aria-label="Period">${Object.entries(USE_RANGES).map(([k, r]) =>
+  `<button type="button" ${attr}="${k}" aria-pressed="${k === useRange}" title="Last ${r.long}">${r.label}</button>`).join('')}</div>`;
+
+// Bin edges for a period, oldest first: whole hours, whole days or 7-day weeks ending today.
+function useBinsFor(r) {
+  const now = Date.now();
+  const bins = [];
+  if (r.bin === 'hour') {
+    for (let t = Math.floor((now - r.ms) / 3600_000 + 1) * 3600_000; t <= now; t += 3600_000) bins.push({ start: t, end: t + 3600_000 });
+  } else {
+    const days = r.bin === 'day' ? 1 : 7;
+    const end = new Date(); end.setHours(24, 0, 0, 0);
+    for (let e = end.getTime(); e - days * 86400_000 >= now - r.ms - 86400_000; e -= days * 86400_000) {
+      bins.unshift({ start: e - days * 86400_000, end: e });
+    }
+  }
+  return bins;
+}
+
+// Water used by one tank in each bin: every fall in level, skipping pump fills.
+async function tankUse(t, key) {
+  const r = USE_RANGES[key];
+  return cached(`use:${t.id}:${key}`, 5 * 60_000, async () => {
+    const since = Date.now() - r.ms - 7 * 86400_000;
+    const iso = new Date(since).toISOString();
+    const [hist, events] = await Promise.all([source.history(t.id, iso, r.bucket), source.pumpEvents(t.id, iso)]);
+    return { points: toPoints(hist, r.bucket), runs: pumpRuns(events, since) };
+  });
+}
+
 async function siteUsage(key) {
-  const r = RANGES[key];
+  const r = USE_RANGES[key];
+  const bins = useBinsFor(r).map((b) => ({ ...b, byTank: [] }));
   const parts = [];
   for (const t of site.tanks) {
     const cap = capacityOf(t);
     if (!cap) continue;
-    try {
-      const d = await rangeData(t, key);
-      const w = await weekData(t);
-      parts.push({ t, bins: useBins(d.points, d.runs, cap, r.bin, d.since), stats: usageStats(w.points, w.runs, cap, stateOf(t.id)?.tank_volume_l) });
-    } catch { /* leave this tank out */ }
+    let d;
+    try { d = await tankUse(t, key); } catch { continue; }
+    const litres = new Array(bins.length).fill(0);
+    const pts = d.points;
+    let bi = 0;
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i - 1], b = pts[i];
+      if (b.t < bins[0].start) continue;
+      if (b.t - a.t > 3 * 3600_000 || overlapsRun(d.runs, a.t, b.t, 600_000)) continue;
+      const dl = ((b.p - a.p) / 100) * cap;
+      if (dl >= 0) continue;
+      while (bi < bins.length - 1 && b.t >= bins[bi].end) bi++;
+      if (b.t >= bins[bi].start && b.t < bins[bi].end) litres[bi] -= dl;
+    }
+    parts.push({ t, cap });
+    bins.forEach((bin, i) => bin.byTank.push({ t, litres: litres[i] }));
   }
-  const since = Date.now() - r.ms;
-  const bins = [];
-  for (let b = binStart(since, r.bin); b <= Date.now(); b += r.bin) {
-    bins.push({ t: b, byTank: parts.map((p) => ({ t: p.t, litres: p.bins.find((x) => x.t === b)?.litres ?? 0 })) });
+  const perBin = r.bin === 'week' ? 7 : 1;
+  for (const b of bins) {
+    const span = Math.min(b.end, Date.now()) - b.start;
+    const daysCovered = r.bin === 'week' ? Math.max(1, span / 86400_000) : perBin;
+    b.total = b.byTank.reduce((s, x) => s + x.litres, 0);
+    b.value = r.bin === 'week' ? b.total / daysCovered : b.total;
+    b.values = b.byTank.map((x) => (r.bin === 'week' ? x.litres / daysCovered : x.litres));
   }
-  bins.forEach((b) => { b.total = b.byTank.reduce((s, x) => s + x.litres, 0); });
-  const stored = site.tanks.reduce((s, t) => s + (stateOf(t.id)?.tank_volume_l ?? 0), 0);
-  const capacity = site.tanks.reduce((s, t) => s + (capacityOf(t) ?? 0), 0);
-  const perDay = parts.every((p) => p.stats.enough) && parts.length ? parts.reduce((s, p) => s + p.stats.perDay, 0) : null;
-  return { r, since, bins, parts, total: bins.reduce((s, b) => s + b.total, 0), stored, capacity, perDay };
+  const inRange = bins.filter((b) => b.end > Date.now() - r.ms);
+  const total = inRange.reduce((s, b) => s + b.total, 0);
+  const days = r.ms / 86400_000;
+  const peak = inRange.reduce((m, b) => (b.value > (m?.value ?? -1) ? b : m), null);
+  return { key, r, bins: inRange, parts, total, perDay: total / days, peak };
 }
 
-// Stacked bars: one colour per tank.
-function usageChartSvg(u, W, H, full) {
-  const small = W < 600;
-  const pad = { l: 46, r: 8, t: 10, b: 24 };
-  const max = Math.max(1, ...u.bins.map((b) => b.total));
-  const step = niceStep(max / 4);
-  const top = Math.ceil(max / step) * step;
-  const n = u.bins.length;
-  const slot = (W - pad.l - pad.r) / n;
-  const bw = Math.max(2, Math.min(28, slot * 0.62));
-  const y = (v) => pad.t + (1 - v / top) * (H - pad.t - pad.b);
-  const grid = Array.from({ length: Math.round(top / step) + 1 }, (_, i) => i * step).map((v) =>
-    `<line class="c-grid" x1="${pad.l}" x2="${W - pad.r}" y1="${y(v)}" y2="${y(v)}"/><text class="c-axis" x="${pad.l - 8}" y="${y(v) + 4}" text-anchor="end">${v >= 1000 ? `${nf1.format(v / 1000).replace(/\.0$/, '')}k` : nf0.format(v)}</text>`).join('');
-  const bars = u.bins.map((b, i) => {
-    const x = pad.l + slot * i + (slot - bw) / 2;
-    let acc = 0;
-    const segs = b.byTank.map((p) => {
-      if (!p.litres) return '';
-      const y1 = y(acc + p.litres), y0 = y(acc);
-      acc += p.litres;
-      return `<rect x="${x.toFixed(1)}" y="${y1.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(0.5, y0 - y1).toFixed(1)}" fill="${tankColour(p.t)}"/>`;
-    }).join('');
-    return `<g class="u-bar" data-i="${i}"><rect class="u-hit" x="${(pad.l + slot * i).toFixed(1)}" y="${pad.t}" width="${slot.toFixed(1)}" height="${H - pad.t - pad.b}"/>${segs}</g>`;
-  }).join('');
-  const every = Math.ceil(n / (small ? 6 : full ? 14 : 10));
-  const labels = u.bins.map((b, i) => (i % every ? '' : `<text class="c-axis" x="${(pad.l + slot * i + slot / 2).toFixed(1)}" y="${H - 6}" text-anchor="middle">${esc(u.r.bin < 86400_000 ? hourFmt.format(new Date(b.t)) : u.r.ms <= 7 * 86400_000 ? weekday.format(new Date(b.t)) : shortDay.format(new Date(b.t)))}</text>`)).join('');
-  return `<svg class="chart usage-chart" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Water used by all tanks over the last ${u.r.long}: ${r10(u.total)} litres">
-    ${grid}${bars}${labels}</svg>`;
-}
+const binLabel = (r, b, long = false) => {
+  const d = new Date(b.start);
+  if (r.bin === 'hour') return long ? when(d.toISOString()) : hourFmt.format(d);
+  if (r.bin === 'day') return long ? dayFmt.format(d) : r.ms <= 7 * 86400_000 ? weekday.format(d) : shortDay.format(d);
+  return long ? `Week of ${shortDay.format(d)}` : shortDay.format(d);
+};
 
 function niceStep(raw) {
   const p = 10 ** Math.floor(Math.log10(Math.max(raw, 1)));
@@ -765,25 +801,77 @@ function niceStep(raw) {
   return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p;
 }
 
-function usageTooltip(wrap, u) {
+const kLitres = (v) => (v >= 1000 ? `${nf1.format(v / 1000).replace(/\.0$/, '')}k` : nf0.format(v));
+
+// Smooth line of total use with a soft area, plus a thin line per tank.
+function drawUsage(wrap, u, H, full) {
+  const W = Math.max(260, wrap.clientWidth);
+  const pad = { l: 44, r: 12, t: 12, b: 24 };
+  const n = u.bins.length;
+  const max = Math.max(1, ...u.bins.map((b) => b.value));
+  const step = niceStep(max / 4);
+  const top = Math.ceil((max * 1.08) / step) * step;
+  const x = (i) => pad.l + (n === 1 ? (W - pad.l - pad.r) / 2 : (i / (n - 1)) * (W - pad.l - pad.r));
+  const y = (v) => pad.t + (1 - v / top) * (H - pad.t - pad.b);
+  const bottom = H - pad.b;
+  const grid = Array.from({ length: Math.round(top / step) + 1 }, (_, i) => i * step).map((v) =>
+    `<line class="c-grid" x1="${pad.l}" x2="${W - pad.r}" y1="${y(v)}" y2="${y(v)}"/><text class="c-axis" x="${pad.l - 8}" y="${y(v) + 4}" text-anchor="end">${kLitres(v)}</text>`).join('');
+  const totalPts = u.bins.map((b, i) => [x(i), y(b.value)]);
+  const totalPath = smoothPath(totalPts, pad.t, bottom);
+  const area = `${totalPath}L${x(n - 1).toFixed(1)},${bottom}L${x(0).toFixed(1)},${bottom}Z`;
+  const tankLines = u.parts.length > 1 ? u.parts.map((p, k) =>
+    `<path class="u-tank" stroke="${tankColour(p.t)}" d="${smoothPath(u.bins.map((b, i) => [x(i), y(b.values[k])]), pad.t, bottom)}"/>`).join('') : '';
+  const every = Math.max(1, Math.ceil(n / (W < 600 ? 5 : full ? 12 : 8)));
+  const labels = u.bins.map((b, i) => (i % every || x(i) > W - pad.r - 20 ? '' : `<text class="c-axis" x="${x(i).toFixed(1)}" y="${H - 6}" text-anchor="middle">${esc(binLabel(u.r, b))}</text>`)).join('');
+  wrap.innerHTML = `
+    <svg class="chart usage-chart" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Water used by all tanks over the last ${u.r.long}: ${r10(u.total)} litres in total">
+      <defs><linearGradient id="u-area-${full ? 'f' : 's'}" x1="0" x2="0" y1="0" y2="1">
+        <stop offset="0" stop-color="var(--water)" stop-opacity=".35"/><stop offset="1" stop-color="var(--water)" stop-opacity="0"/>
+      </linearGradient></defs>
+      ${grid}
+      <path d="${area}" fill="url(#u-area-${full ? 'f' : 's'})"/>
+      ${tankLines}
+      <path class="c-line" d="${totalPath}"/>
+      <line class="c-cursor" x1="0" x2="0" y1="${pad.t}" y2="${bottom}" visibility="hidden"/>
+      <g class="u-dots" visibility="hidden">${u.parts.length > 1 ? u.parts.map((p) => `<circle r="3.5" fill="${tankColour(p.t)}"/>`).join('') : ''}<circle class="c-dot" r="5"/></g>
+      ${labels}
+    </svg>
+    <div class="c-tip" hidden></div>`;
+
+  const svg = wrap.querySelector('svg');
   const tip = wrap.querySelector('.c-tip');
-  wrap.querySelectorAll('.u-bar').forEach((g) => {
-    const show = () => {
-      const b = u.bins[+g.dataset.i];
-      const label = u.r.bin < 86400_000 ? when(new Date(b.t).toISOString()) : dayFmt.format(new Date(b.t));
-      tip.innerHTML = `<p class="tip-when">${esc(label)}</p><p><strong>${r10(b.total)} L</strong>&nbsp;used</p>
-        ${b.byTank.filter((p) => p.litres > 0).map((p) => `<p><i class="sw" style="background:${tankColour(p.t)}"></i>${esc(p.t.name)} ${r10(p.litres)} L</p>`).join('')}`;
-      tip.hidden = false;
-      const wr = wrap.getBoundingClientRect(), gr = g.getBoundingClientRect();
-      const left = gr.left - wr.left;
-      tip.style.left = `${left > wr.width / 2 ? left - tip.offsetWidth - 8 : left + gr.width + 8}px`;
-      g.classList.add('is-hover');
-    };
-    g.addEventListener('pointerenter', show);
-    g.addEventListener('pointerdown', show);
-    g.addEventListener('pointerleave', () => { tip.hidden = true; g.classList.remove('is-hover'); });
-  });
+  const cursor = wrap.querySelector('.c-cursor');
+  const dots = wrap.querySelector('.u-dots');
+  const show = (clientX) => {
+    const rect = svg.getBoundingClientRect();
+    const px = ((clientX - rect.left) / rect.width) * W;
+    const i = Math.max(0, Math.min(n - 1, Math.round(((px - pad.l) / (W - pad.l - pad.r)) * (n - 1))));
+    const b = u.bins[i];
+    const bx = x(i);
+    cursor.setAttribute('x1', bx); cursor.setAttribute('x2', bx); cursor.setAttribute('visibility', 'visible');
+    const circles = dots.querySelectorAll('circle');
+    u.parts.length > 1 && u.parts.forEach((p, k) => { circles[k].setAttribute('cx', bx); circles[k].setAttribute('cy', y(b.values[k])); });
+    const last = circles[circles.length - 1];
+    last.setAttribute('cx', bx); last.setAttribute('cy', y(b.value));
+    dots.setAttribute('visibility', 'visible');
+    tip.innerHTML = `<p class="tip-when">${esc(binLabel(u.r, b, true))}</p>
+      <p><strong>${r10(b.value)} L</strong>&nbsp;${u.r.bin === 'week' ? 'a day on average' : u.r.bin === 'hour' ? 'that hour' : 'that day'}</p>
+      ${u.parts.length > 1 ? b.byTank.map((p, k) => `<p><i class="sw" style="background:${tankColour(p.t)}"></i>${esc(p.t.name)} ${r10(b.values[k])} L</p>`).join('') : ''}`;
+    tip.hidden = false;
+    const left = (bx / W) * rect.width;
+    tip.style.left = `${left > rect.width / 2 ? left - tip.offsetWidth - 14 : left + 14}px`;
+  };
+  svg.addEventListener('pointermove', (e) => show(e.clientX));
+  svg.addEventListener('pointerdown', (e) => show(e.clientX));
+  svg.addEventListener('pointerleave', () => { tip.hidden = true; cursor.setAttribute('visibility', 'hidden'); dots.setAttribute('visibility', 'hidden'); });
 }
+
+const usageStatsHtml = (u) => `
+  <div class="stat-main"><span class="stat-v">${r10(u.total)}<small> L</small></span><span class="stat-l">used in the last ${u.r.long}</span></div>
+  <div><span class="stat-l">Average</span><span class="stat-s">${r10(u.perDay)} L a day</span></div>
+  ${u.peak ? `<div><span class="stat-l">Busiest ${u.r.bin}</span><span class="stat-s">${r10(u.peak.value)} L <span class="muted">· ${esc(binLabel(u.r, u.peak, false))}</span></span></div>` : ''}`;
+
+const usageLegendHtml = (u) => `${u.parts.length > 1 ? `<span><i class="sw sw-line"></i>All tanks</span>${u.parts.map((p) => `<span><i class="sw sw-thin" style="background:${tankColour(p.t)}"></i>${esc(p.t.name)}</span>`).join('')}` : ''}<span class="muted">${UNIT[u.r.bin]} · pump fills not counted</span>`;
 
 async function renderUsageBox(quiet = false) {
   const el = $('box-usage');
@@ -794,44 +882,110 @@ async function renderUsageBox(quiet = false) {
   const key = useRange;
   const u = await siteUsage(key);
   if (key !== useRange || !wrap.isConnected) return;
-  const lasts = u.perDay > 1 ? u.stored / u.perDay : null;
-  $('usage-stats').innerHTML = `
-    <div class="stat-main"><span class="stat-v">${r10(u.total)}<small> L</small></span><span class="stat-l">used in the last ${u.r.long}</span></div>
-    <div><span class="stat-l">Daily average</span><span class="stat-s">${u.perDay != null ? `${r10(u.perDay)} L` : '–'}</span></div>
-    <div><span class="stat-l">In storage</span><span class="stat-s">${r10(u.stored)} L${u.capacity ? ` <span class="muted">of ${r10(u.capacity)} L</span>` : ''}</span></div>
-    <div><span class="stat-l">Lasts about</span><span class="stat-s">${lasts == null ? '–' : lasts > 60 ? '60+ days' : `${Math.floor(lasts)} days`}</span></div>`;
-  $('usage-legend').innerHTML = u.parts.map((p) => `<span><i class="sw" style="background:${tankColour(p.t)}"></i>${esc(p.t.name)}</span>`).join('') + '<span class="muted">Pump fills are not counted as use</span>';
   if (!u.parts.length) { wrap.innerHTML = '<p class="chart-empty">Set each tank\'s size in Settings to see water use.</p>'; return; }
-  const W = Math.max(260, wrap.clientWidth);
-  const H = FIT.matches ? Math.max(140, wrap.clientHeight) : 240;
-  wrap.innerHTML = usageChartSvg(u, W, H, false) + '<div class="c-tip" hidden></div>';
-  usageTooltip(wrap, u);
+  $('usage-stats').innerHTML = usageStatsHtml(u);
+  $('usage-legend').innerHTML = usageLegendHtml(u);
+  drawUsage(wrap, u, FIT.matches ? Math.max(140, wrap.clientHeight) : 240, false);
 }
 
 // ---------------------------------------------------------------------------
-// Home: tanks, pumps, settings
+// Home: tanks (swipeable), pumps, storage, settings
 // ---------------------------------------------------------------------------
+
+function tankCardInner(t) {
+  const st = stateOf(t.id);
+  const cap = capacityOf(t);
+  const light = tankLight(t);
+  const pump = pumpOf(t.id);
+  const label = { fault: 'Fault', offline: 'Offline', delayed: freshness(st?.last_heard_at).key === 'delayed' ? 'Delayed' : 'Low', fill: 'Filling', live: 'Live', none: 'No reading' }[light];
+  const pumpLine = t.controller_node
+    ? `${pumpName(t)} · ${pumpSummary(pump).label}`
+    : 'No pump';
+  return `
+    <span class="tcard-top"><span class="tcard-name">${esc(t.name)}</span><span class="tag tag-${light}"><span class="dot dot-${light}" aria-hidden="true"></span>${label}</span></span>
+    <span class="tcard-art">${tankSvg(t, st, { labels: false })}</span>
+    <span class="tcard-pct">${st ? nf0.format(st.tank_percent) : '–'}<small>%</small></span>
+    <span class="tcard-l">${st ? `${nf0.format(st.tank_volume_l)} L` : 'No reading yet'}${cap ? ` <span class="muted">of ${nf0.format(cap)} L</span>` : ''}</span>
+    <span class="tcard-foot"><span>${esc(pumpLine)}</span><span class="tcard-go">${icon('right')}</span></span>`;
+}
 
 function renderHomeTanks() {
   const el = $('box-htanks');
   if (!el) return;
-  el.innerHTML = `<div class="tank-cards">${site.tanks.map((t) => {
-    const st = stateOf(t.id);
-    const f = freshness(st?.last_heard_at);
-    const pump = pumpOf(t.id);
-    const light = tankLight(t);
-    const label = { fault: 'Fault', offline: 'Offline', delayed: f.key === 'delayed' ? 'Delayed' : 'Low', fill: 'Filling', live: 'Live', none: 'No reading' }[light];
-    return `<button type="button" class="tank-card" data-go="${esc(t.id)}" aria-label="${esc(t.name)}: ${st ? `${nf0.format(st.tank_percent)}%` : 'no reading'}, ${label}. Open tank page">
-      <span class="tc-art">${tankSvg(t, st, { labels: false })}</span>
-      <span class="tc-main">
-        <span class="tc-name">${esc(t.name)}</span>
-        <span class="tc-pct">${st ? nf0.format(st.tank_percent) : '–'}<small>%</small></span>
-        <span class="tc-l">${st ? `${nf0.format(st.tank_volume_l)} L` : 'No reading yet'}</span>
-        <span class="tc-status"><span class="dot dot-${light}" aria-hidden="true"></span>${label}${pump?.state === 'running' && light !== 'fill' ? ' · filling' : ''}</span>
-      </span>
-      <span class="tc-go" aria-hidden="true">${icon('right')}</span>
-    </button>`;
-  }).join('')}</div>`;
+  const track = el.querySelector('.carousel');
+  if (track && track.children.length === site.tanks.length) {
+    // update in place so a swipe in progress isn't lost
+    site.tanks.forEach((t, i) => { track.children[i].innerHTML = tankCardInner(t); });
+    return;
+  }
+  el.innerHTML = `
+    <div class="carousel-wrap">
+      <div class="carousel" id="carousel" tabindex="0" aria-label="Tanks, swipe for more">${site.tanks.map((t) =>
+        `<button type="button" class="tcard" data-go="${esc(t.id)}" aria-label="${esc(t.name)}. Open tank page">${tankCardInner(t)}</button>`).join('')}</div>
+    </div>
+    <div class="dots" id="car-dots" aria-hidden="true">${site.tanks.map(() => '<i></i>').join('')}</div>`;
+  setupCarousel();
+}
+
+// Arrows, page counter and dots for the tank carousel; mouse users can drag it too.
+function setupCarousel() {
+  const track = $('carousel');
+  const wrap = track.closest('.carousel-wrap');
+  const prev = $('car-prev'), next = $('car-next'), count = $('car-count');
+  const cards = [...track.children];
+  const visible = () => Math.max(1, Math.round(track.clientWidth / (cards[0].offsetWidth + 12)));
+  const first = () => Math.round(track.scrollLeft / (cards[0].offsetWidth + 12));
+  const update = () => {
+    const v = visible(), f = first(), n = cards.length;
+    const more = n > v;
+    track.closest('.box').classList.toggle('has-more', more);
+    if (count) count.textContent = more ? `${f + 1}–${Math.min(n, f + v)} of ${n}` : `${n} tank${n === 1 ? '' : 's'}`;
+    if (prev) prev.disabled = f <= 0;
+    if (next) next.disabled = f + v >= n;
+    wrap.classList.toggle('fade-r', more && f + v < n);
+    wrap.classList.toggle('fade-l', more && f > 0);
+    [...$('car-dots').children].forEach((d, i) => d.classList.toggle('on', i >= f && i < f + v));
+  };
+  const page = (dir) => track.scrollBy({ left: dir * (cards[0].offsetWidth + 12), behavior: reduceMotion ? 'auto' : 'smooth' });
+  prev.onclick = (e) => { e.stopPropagation(); page(-1); };
+  next.onclick = (e) => { e.stopPropagation(); page(1); };
+  track.addEventListener('scroll', () => requestAnimationFrame(update), { passive: true });
+  new ResizeObserver(update).observe(track);
+
+  // drag to swipe with a mouse (touch screens swipe natively)
+  let drag = null;
+  track.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'mouse' || e.button !== 0) return;
+    drag = { x: e.clientX, left: track.scrollLeft, moved: false };
+  });
+  addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    const dx = e.clientX - drag.x;
+    if (Math.abs(dx) > 5 && !drag.moved) { drag.moved = true; track.classList.add('dragging'); }
+    if (drag.moved) track.scrollLeft = drag.left - dx;
+  });
+  addEventListener('pointerup', () => {
+    if (!drag) return;
+    const moved = drag.moved;
+    drag = null;
+    track.classList.remove('dragging');
+    if (moved) {
+      // a drag is not a click on the card under the pointer
+      track.addEventListener('click', (ev) => { ev.stopPropagation(); ev.preventDefault(); }, { capture: true, once: true });
+      page(0);
+    }
+  });
+  update();
+}
+
+// When each pump ran over the last 24 hours, as a strip.
+function runStrip(runs) {
+  const now = Date.now(), from = now - 86400_000;
+  const segs = runs.filter((r) => (r.end ?? now) > from).map((r) => {
+    const a = Math.max(r.start, from), b = r.end ?? now;
+    return `<i class="${r.end == null ? 'live' : r.endState === 'fault' ? 'fault' : ''}" style="left:${(((a - from) / 86400_000) * 100).toFixed(2)}%;width:${Math.max(0.6, ((b - a) / 86400_000) * 100).toFixed(2)}%"></i>`;
+  }).join('');
+  return `<span class="strip" role="img" aria-label="Pump run times over the last 24 hours">${segs}</span>`;
 }
 
 async function renderPumpsBox() {
@@ -839,30 +993,101 @@ async function renderPumpsBox() {
   if (!el) return;
   const withPump = site.tanks.filter((t) => t.controller_node || pumpOf(t.id));
   if (!withPump.length) { el.innerHTML = '<p class="muted">No pump controllers linked.</p>'; return; }
-  el.innerHTML = `<ul class="pump-list">${withPump.map((t) => {
-    const p = pumpSummary(pumpOf(t.id));
-    return `<li><button type="button" class="pump-row" data-go="${esc(t.id)}">
-      ${pumpSvg(p.state)}
-      <span class="pr-main"><span class="pr-name">${pumpName(t)}<span class="muted"> · ${esc(t.name)}</span></span><span class="pr-sub">${esc(p.sub)}</span></span>
-      <span class="pr-state st-${p.state}">${p.label}</span>
-    </button></li>`;
-  }).join('')}</ul>`;
+  const midnight = new Date(); midnight.setHours(0, 0, 0, 0);
+  const info = [];
+  for (const t of withPump) {
+    let runs = [];
+    try { runs = (await weekData(t)).runs; } catch { /* show what we have */ }
+    const today = runs.reduce((s, r) => {
+      const a = Math.max(r.start, midnight.getTime()), b = r.end ?? Date.now();
+      return b > a ? s + (b - a) : s;
+    }, 0);
+    info.push({ t, runs, today, p: pumpSummary(pumpOf(t.id)) });
+  }
+  if (!$('box-pumps')) return;
+  const running = info.filter((x) => x.p.state === 'running').length;
+  const faults = info.filter((x) => x.p.state === 'fault').length;
+  el.innerHTML = `
+    <div class="pump-sum">
+      <span><strong class="${running ? 'st-running' : ''}">${running} of ${info.length}</strong> running</span>
+      <span><strong>${esc(duration(info.reduce((s, x) => s + x.today, 0)))}</strong> today</span>
+      ${faults ? `<span><strong class="st-fault">${faults}</strong> safety stop${faults === 1 ? '' : 's'}</span>` : `<span><strong>${info.reduce((s, x) => s + x.runs.length, 0)}</strong> fills · 7 days</span>`}
+    </div>
+    <ul class="pump-list">${info.map(({ t, runs, today, p }) => `
+      <li><button type="button" class="pump-row pump-row-${p.state}" data-go="${esc(t.id)}">
+        <span class="pr-top">
+          ${pumpSvg(p.state)}
+          <span class="pr-main"><span class="pr-name">${pumpName(t)}<span class="muted"> · ${esc(t.name)}</span></span><span class="pr-sub">${esc(p.sub)}${today >= 60_000 && p.state !== 'running' ? ` · ran ${esc(duration(today))} today` : ''}</span></span>
+          <span class="pr-state st-${p.state}">${p.label}</span>
+        </span>
+        ${runStrip(runs)}
+      </button></li>`).join('')}</ul>
+    <p class="strip-note">Bars show when each pump ran in the last 24 hours</p>`;
+}
+
+// Arc gauge of all the water stored on the farm.
+function storageRing(pct) {
+  const cx = 70, cy = 70, R = 58, start = 135, sweep = 270;
+  const pt = (deg) => [cx + R * Math.cos((deg * Math.PI) / 180), cy + R * Math.sin((deg * Math.PI) / 180)];
+  const arc = (from, to) => {
+    const [x1, y1] = pt(from), [x2, y2] = pt(to);
+    return `M${x1.toFixed(2)},${y1.toFixed(2)} A${R},${R} 0 ${to - from > 180 ? 1 : 0} 1 ${x2.toFixed(2)},${y2.toFixed(2)}`;
+  };
+  const end = start + (sweep * clampPct(pct)) / 100;
+  const [ex, ey] = pt(end);
+  return `<svg class="ring" viewBox="0 0 140 130" role="img" aria-label="${nf0.format(pct)}% of all storage full">
+    <defs><linearGradient id="ring-g" x1="0" x2="1" y1="1" y2="0"><stop offset="0" class="gg0"/><stop offset="1" class="gg1"/></linearGradient></defs>
+    <path class="g-track" d="${arc(start, start + sweep)}"/>
+    ${pct > 0 ? `<path class="g-fill" d="${arc(start, end)}" stroke="url(#ring-g)"/><circle class="g-end" cx="${ex.toFixed(1)}" cy="${ey.toFixed(1)}" r="5"/>` : ''}
+    <text class="ring-v" x="${cx}" y="${cy + 6}" text-anchor="middle">${nf0.format(pct)}<tspan class="ring-u" dx="1">%</tspan></text>
+    <text class="ring-l" x="${cx}" y="${cy + 26}" text-anchor="middle">full</text>
+  </svg>`;
+}
+
+async function renderStorageBox() {
+  const el = $('box-storage');
+  if (!el) return;
+  const stored = site.tanks.reduce((s, t) => s + (stateOf(t.id)?.tank_volume_l ?? 0), 0);
+  const capacity = site.tanks.reduce((s, t) => s + (capacityOf(t) ?? 0), 0);
+  let perDay = 0, enough = true;
+  for (const t of site.tanks) {
+    const cap = capacityOf(t);
+    if (!cap) continue;
+    try {
+      const w = await weekData(t);
+      const s = usageStats(w.points, w.runs, cap, stateOf(t.id)?.tank_volume_l);
+      if (s.enough) perDay += s.perDay; else enough = false;
+    } catch { enough = false; }
+  }
+  if (!$('box-storage')) return;
+  const lasts = enough && perDay > 1 ? stored / perDay : null;
+  el.innerHTML = `
+    <div class="store">
+      ${storageRing(capacity ? (stored / capacity) * 100 : 0)}
+      <div class="store-read">
+        <p class="mid-num">${r10(stored)}<small> L</small></p>
+        <p class="muted small">of ${r10(capacity)} L across ${site.tanks.length} tanks</p>
+        <p class="store-days"><span class="stat-l">Lasts about</span><span class="stat-s">${lasts == null ? '–' : lasts > 60 ? '60+ days' : `${Math.floor(lasts)} days`}</span></p>
+      </div>
+    </div>
+    <div class="store-bar" role="img" aria-label="Water in each tank">${site.tanks.map((t) => {
+      const v = stateOf(t.id)?.tank_volume_l ?? 0;
+      return capacity ? `<i style="width:${((v / capacity) * 100).toFixed(2)}%;background:${tankColour(t)}" title="${esc(t.name)}: ${nf0.format(v)} L"></i>` : '';
+    }).join('')}</div>
+    <div class="legend">${site.tanks.map((t) => `<span><i class="sw" style="background:${tankColour(t)}"></i>${esc(t.name)}</span>`).join('')}</div>`;
 }
 
 function renderSettingsBox() {
   const el = $('box-settings');
   if (!el) return;
   const lows = [...new Set(site.tanks.map((t) => t.low_alert_percent))];
-  const fills = [...new Set(site.tanks.filter((t) => t.fill_start_percent != null).map((t) => `${nf0.format(t.fill_start_percent)}% → ${nf0.format(t.fill_stop_percent)}%`))];
-  const gw = site.gateways[0];
+  const fills = [...new Set(site.tanks.filter((t) => t.fill_start_percent != null).map((t) => `${nf0.format(t.fill_start_percent)}→${nf0.format(t.fill_stop_percent)}%`))];
   el.innerHTML = `
-    ${rows([
-      ['Low-level alert', lows.length === 1 ? (lows[0] == null ? 'Off' : `Below ${nf0.format(lows[0])}%`) : 'Set per tank'],
-      ['Pump auto-fill', fills.length === 1 ? fills[0] : fills.length ? 'Set per pump' : '–'],
-      ['Tanks', `${site.tanks.length}`],
-      ['Receiver', esc(gw?.name ?? '–')],
-    ])}
-    <button type="button" class="btn btn-small" data-open="settings">${icon('cog')}Open settings</button>`;
+    <div class="set-chips">
+      <span class="set-chip"><span class="stat-l">Low alert</span><span class="stat-s">${lows.length === 1 ? (lows[0] == null ? 'Off' : `${nf0.format(lows[0])}%`) : 'Per tank'}</span></span>
+      <span class="set-chip"><span class="stat-l">Auto-fill</span><span class="stat-s">${fills.length === 1 ? fills[0] : fills.length ? 'Per pump' : '–'}</span></span>
+      <span class="set-chip"><span class="stat-l">Tanks</span><span class="stat-s">${site.tanks.length}</span></span>
+    </div>`;
 }
 
 // ---------------------------------------------------------------------------
@@ -1019,6 +1244,11 @@ async function renderPumpBox() {
     return b > a ? s + (b - a) : s;
   }, 0);
   const hasBand = t.fill_start_percent != null;
+  if (!t.controller_node && !pumpOf(t.id)) {
+    $('bt-pump').textContent = 'Pump';
+    $('box-pump').innerHTML = `<div class="pump-top">${pumpSvg('unknown')}<div><p class="pump-state-t">No pump</p><p class="pump-sub">This tank isn't filled by a Kinetiq pump controller.</p></div></div>`;
+    return;
+  }
   $('bt-pump').textContent = pumpName(t);
   $('box-pump').innerHTML = `
     <div class="pump-top">
@@ -1090,7 +1320,7 @@ function renderStatusBox() {
     <div class="devs">
       ${tile('tanks', 'Tank unit', f.key === 'live' ? 'ok' : f.key === 'delayed' ? 'warn' : f.key === 'offline' ? 'bad' : 'idle', f.key === 'live' ? 'Online' : f.label)}
       ${tile('drop', 'Level sensor', ok(st?.sensor_status === 'ok', st?.sensor_status === 'fault'), st?.sensor_status === 'fault' ? 'Fault' : st?.sensor_status === 'ok' ? 'OK' : 'Not reported')}
-      ${tile('pump', 'Controller', ok(pump && pump.state !== 'fault', pump?.state === 'fault'), pump?.state === 'fault' ? 'Safety stop' : pump ? 'Reporting' : 'No report')}
+      ${tile('pump', 'Controller', ok(pump && pump.state !== 'fault', pump?.state === 'fault'), pump?.state === 'fault' ? 'Safety stop' : pump ? 'Reporting' : t.controller_node ? 'No report' : 'None')}
       ${tile('receiver', 'Receiver', ok(rs.key === 'online', rs.key === 'offline'), rs.short)}
     </div>
     <div class="sig">
@@ -1558,33 +1788,32 @@ async function renderBig(quiet = false) {
     title.textContent = 'Water use · all tanks';
     if (!quiet || !$('big-usage')) {
       body.innerHTML = `
-        <div class="chart-top"><div class="usage-stats" id="big-usage-stats"></div>${rangeButtons('data-brange', useRange)}</div>
+        <div class="chart-top"><div class="usage-stats" id="big-usage-stats"></div>${useRangeButtons('data-brange')}</div>
         <div class="chart-wrap" id="big-usage"></div>
         <div class="legend" id="big-usage-legend"></div>
-        <h3 class="big-sub">By tank, last ${RANGES[useRange].long}</h3>
+        <h3 class="big-sub" id="big-usage-sub"></h3>
         <div id="big-usage-table"></div>`;
       body.querySelectorAll('[data-brange]').forEach((b) => b.addEventListener('click', () => {
         useRange = b.dataset.brange;
         body.querySelectorAll('[data-brange]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
         document.querySelectorAll('.box-usage [data-urange]').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.urange === useRange)));
         renderUsageBox();
-        renderBig();
+        renderBig(true);
       }));
     }
     const key = useRange;
     const u = await siteUsage(key);
     const wrap = $('big-usage');
     if (openKind !== kind || key !== useRange || !wrap) return;
-    $('big-usage-stats').innerHTML = `<div class="stat-main"><span class="stat-v">${r10(u.total)}<small> L</small></span><span class="stat-l">used in the last ${u.r.long}</span></div>`;
-    $('big-usage-legend').innerHTML = u.parts.map((p) => `<span><i class="sw" style="background:${tankColour(p.t)}"></i>${esc(p.t.name)}</span>`).join('') + '<span class="muted">Worked out from the drop in level; pump fills are not counted as use</span>';
-    const W = Math.max(260, wrap.clientWidth);
-    wrap.innerHTML = usageChartSvg(u, W, W < 600 ? 240 : 340, true) + '<div class="c-tip" hidden></div>';
-    usageTooltip(wrap, u);
-    $('big-usage-table').innerHTML = `<table class="radio-table"><thead><tr><th>Tank</th><th>Used</th><th>Daily average</th><th>In tank now</th><th>Lasts about</th></tr></thead><tbody>
-      ${u.parts.map((p) => {
-        const used = u.bins.reduce((s, b) => s + (b.byTank.find((x) => x.t === p.t)?.litres ?? 0), 0);
+    $('big-usage-stats').innerHTML = usageStatsHtml(u);
+    $('big-usage-legend').innerHTML = usageLegendHtml(u);
+    drawUsage(wrap, u, wrap.clientWidth < 600 ? 240 : 340, true);
+    $('big-usage-sub').textContent = `By tank, last ${u.r.long}`;
+    $('big-usage-table').innerHTML = `<table class="radio-table"><thead><tr><th>Tank</th><th>Used</th><th>Average a day</th><th>Share</th><th>In tank now</th></tr></thead><tbody>
+      ${u.parts.map((p, k) => {
+        const used = u.bins.reduce((s, b) => s + b.byTank[k].litres, 0);
         const s = stateOf(p.t.id);
-        return `<tr><td><i class="sw" style="background:${tankColour(p.t)}"></i> ${esc(p.t.name)}</td><td>${r10(used)} L</td><td>${p.stats.enough ? `${r10(p.stats.perDay)} L` : '–'}</td><td>${s ? `${r10(s.tank_volume_l)} L` : '–'}</td><td>${esc(daysLeftText(p.stats))}</td></tr>`;
+        return `<tr><td><i class="sw" style="background:${tankColour(p.t)}"></i> ${esc(p.t.name)}</td><td>${r10(used)} L</td><td>${r10(used / (u.r.ms / 86400_000))} L</td><td>${u.total ? `${nf0.format((used / u.total) * 100)}%` : '–'}</td><td>${s ? `${r10(s.tank_volume_l)} L` : '–'}</td></tr>`;
       }).join('')}</tbody></table>`;
   }
 
