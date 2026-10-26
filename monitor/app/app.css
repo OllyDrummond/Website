@@ -519,3 +519,113 @@ a { color: var(--water-2); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* =====================================================================
+   Design options. A "Graphite" is the base above; B, C and D restyle it.
+   Picked with ?design=b|c|d, or the switcher shown with ?compare.
+   ===================================================================== */
+
+.design-switch {
+  position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 50;
+  display: flex; align-items: center; gap: 4px; padding: 5px; border-radius: 14px;
+  background: rgba(20, 24, 30, .88); border: 1px solid rgba(255, 255, 255, .14);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 16px 40px rgba(0, 0, 0, .55);
+  font-size: 12.5px; max-width: calc(100vw - 20px); overflow-x: auto;
+}
+body:has(.design-switch) .dash { padding-bottom: 66px; }
+.design-switch span { padding: 0 8px 0 6px; color: #8b96a3; }
+.design-switch button { border: 0; background: none; color: #c6ced6; padding: 7px 12px; border-radius: 9px; cursor: pointer; white-space: nowrap; font-weight: 500; }
+.design-switch button[aria-pressed="true"] { background: #fff; color: #0b0e12; }
+
+/* ----- B · Glass: deep navy, frosted panels, tall tank on the left ----- */
+:root[data-design="b"] {
+  --bg: #050a14; --panel: rgba(255, 255, 255, .025); --panel-2: rgba(255, 255, 255, .06); --raise: rgba(255, 255, 255, .12);
+  --line: rgba(255, 255, 255, .08); --line-2: rgba(255, 255, 255, .15);
+  --water: #2fb3ff; --water-2: #8ad9ff; --water-deep: #0b5fa8; --water-soft: rgba(47, 179, 255, .14);
+  --muted: #8fa0b8; --r: 28px;
+}
+:root[data-design="b"] body {
+  background: radial-gradient(900px 600px at 0% 0%, rgba(47, 120, 255, .22), transparent 60%),
+              radial-gradient(800px 600px at 100% 100%, rgba(120, 70, 255, .16), transparent 60%),
+              radial-gradient(600px 400px at 60% 40%, rgba(47, 179, 255, .07), transparent 70%), var(--bg);
+  background-attachment: fixed;
+}
+:root[data-design="b"] .box {
+  background: linear-gradient(160deg, rgba(255, 255, 255, .075), rgba(255, 255, 255, .02));
+  backdrop-filter: blur(22px) saturate(1.4); -webkit-backdrop-filter: blur(22px) saturate(1.4);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .08) inset, 0 30px 60px -30px rgba(0, 0, 0, .8);
+}
+:root[data-design="b"] .tank-tabs { background: rgba(255, 255, 255, .05); }
+:root[data-design="b"] .hero-num { font-weight: 200; }
+:root[data-design="b"] .w0 { stop-color: #06386b; } :root[data-design="b"] .w1 { stop-color: #1aa0f5; }
+:root[data-design="b"] .w2 { stop-color: #0f7fd0; } :root[data-design="b"] .w3 { stop-color: #052c56; }
+:root[data-design="b"] .s0 { stop-color: #b8ecff; } :root[data-design="b"] .s1 { stop-color: #33b5ff; }
+
+/* ----- C · Minimal: pure black, flat hairline panels, tank list as a sidebar ----- */
+:root[data-design="c"] {
+  --bg: #000; --panel: #070707; --panel-2: #070707; --raise: #1c1c1c;
+  --line: rgba(255, 255, 255, .09); --line-2: rgba(255, 255, 255, .16);
+  --text: #fafafa; --muted: #8a8a8a; --faint: #555;
+  --water: #4aa8ff; --water-2: #a9d6ff; --water-deep: #1d5fa0; --r: 16px;
+}
+:root[data-design="c"] body { background: #000; }
+:root[data-design="c"] .box { background: var(--panel); box-shadow: none; }
+:root[data-design="c"] .box:hover { border-color: rgba(255, 255, 255, .28); box-shadow: none; }
+:root[data-design="c"] .box-title { text-transform: uppercase; letter-spacing: .12em; font-size: 11px; }
+:root[data-design="c"] .box-tank .box-title { text-transform: none; letter-spacing: -.01em; font-size: 18px; }
+:root[data-design="c"] .hero-num { font-weight: 200; font-size: 72px; }
+:root[data-design="c"] .tank-hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+:root[data-design="c"] .stat-v, :root[data-design="c"] .mid-num { font-weight: 200; }
+:root[data-design="c"] .chip, :root[data-design="c"] .mini-stats > div, :root[data-design="c"] .tank-row { background: transparent; }
+:root[data-design="c"] .dev { background: transparent; }
+:root[data-design="c"] .c-line { filter: none; stroke: #fff; stroke-width: 1.6; }
+:root[data-design="c"] .tk-water, :root[data-design="c"] .g-fill { filter: none; }
+:root[data-design="c"] .seg button[aria-pressed="true"] { background: #fff; color: #000; }
+
+/* ----- D · Ember: warm charcoal with Kinetiq maroon accents, wide chart on top ----- */
+:root[data-design="d"] {
+  --bg: #0c0909; --panel: #131010; --panel-2: #1a1515; --raise: #2b1c1f;
+  --line: rgba(255, 236, 230, .07); --line-2: rgba(255, 236, 230, .13);
+  --text: #f7f0ee; --muted: #a8968f; --faint: #6d5f5a;
+}
+:root[data-design="d"] body {
+  background: radial-gradient(1000px 500px at 80% -10%, rgba(196, 56, 78, .16), transparent 60%),
+              radial-gradient(800px 500px at 0% 100%, rgba(61, 156, 240, .06), transparent 60%), var(--bg);
+  background-attachment: fixed;
+}
+:root[data-design="d"] .tank-tab.is-on, :root[data-design="d"] .seg button[aria-pressed="true"] {
+  background: linear-gradient(180deg, #b02a3f, var(--maroon)); color: #fff; box-shadow: 0 6px 16px -8px rgba(196, 56, 78, .8);
+}
+:root[data-design="d"] .tank-tab.is-on .tab-pct { color: rgba(255, 255, 255, .8); }
+:root[data-design="d"] .box-tank { background: radial-gradient(500px 300px at 30% 40%, rgba(61, 156, 240, .1), transparent 70%), linear-gradient(180deg, var(--panel-2), var(--panel)); }
+:root[data-design="d"] .box:hover { border-color: rgba(196, 56, 78, .35); }
+:root[data-design="d"] .tank-row.is-selected { border-color: rgba(196, 56, 78, .55); background: linear-gradient(90deg, rgba(196, 56, 78, .14), rgba(255, 255, 255, .02)); }
+:root[data-design="d"] .box-title { color: #c9b5ae; }
+
+/* ----- layouts for the options (computer screens) ----- */
+@media (min-width: 1100px) {
+  :root[data-design="b"] .board {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas: "tank trend trend tanks" "tank pump use status";
+  }
+  :root[data-design="b"] .tank-hero { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto; gap: 10px; }
+  :root[data-design="b"] .tank-read { text-align: left; }
+
+  :root[data-design="c"] .tank-tabs { display: none; }
+  :root[data-design="c"] .board {
+    grid-template-columns: minmax(240px, .8fr) minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas: "tanks tank trend trend" "tanks pump use status";
+  }
+  :root[data-design="c"] .box-tanks .tank-row .row-sub { display: flex; }
+
+  :root[data-design="d"] .board {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.3fr);
+    grid-template-areas: "trend trend trend tank" "pump use status tanks";
+  }
+  :root[data-design="d"] .tank-hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+  :root[data-design="d"] .hero-num { font-size: 58px; }
+}
+@media (min-width: 1100px) and (min-height: 640px) {
+  :root[data-design="b"] .tank3d { max-height: 340px; }
+  :root[data-design="b"] .board { grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); }
+}

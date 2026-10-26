@@ -1330,4 +1330,35 @@ async function renderBig(quiet = false) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Design options (for choosing a look): ?compare shows a switcher,
+// ?design=b|c|d picks one. Only colours and layout change; data is the same.
+// ---------------------------------------------------------------------------
+
+const DESIGNS = { a: 'Graphite', b: 'Glass', c: 'Minimal', d: 'Ember' };
+
+function applyDesign() {
+  const params = new URLSearchParams(location.search);
+  const pick = params.get('design');
+  const design = DESIGNS[pick] ? pick : 'a';
+  document.documentElement.dataset.design = design;
+  if (!params.has('compare')) return;
+  const bar = document.createElement('nav');
+  bar.className = 'design-switch';
+  bar.setAttribute('aria-label', 'Design options');
+  bar.innerHTML = `<span>Design</span>${Object.entries(DESIGNS).map(([k, name]) =>
+    `<button type="button" data-design="${k}" aria-pressed="${k === design}">${k.toUpperCase()} · ${name}</button>`).join('')}`;
+  bar.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-design]');
+    if (!b) return;
+    document.documentElement.dataset.design = b.dataset.design;
+    bar.querySelectorAll('[data-design]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    const url = new URL(location.href);
+    url.searchParams.set('design', b.dataset.design);
+    history.replaceState(null, '', url);
+  });
+  document.body.append(bar);
+}
+
+applyDesign();
 start();
