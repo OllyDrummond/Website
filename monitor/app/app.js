@@ -1,13 +1,14 @@
-// Kinetiq Tank Monitor dashboard (v2, "control room").
+// Kinetiq Tank Monitor web app.
 //
-// A calm overview for the selected tank: a few boxes with one or two figures
-// each (level, water used today, pump, a 24-hour chart, all tanks, receiver,
-// latest activity). Clicking a box enlarges it to show the full detail.
-// On a computer it all fits the window; phones stack the boxes and scroll.
+// Two kinds of page (see route()):
+//   Home       water use of all tanks, alerts, tanks, pumps and settings
+//   Tank page  one tank in depth: 3D level, history, details, pump, use, system
+// Clicking a box enlarges it to show more. On a computer each page fits the
+// window; phones stack the boxes and scroll.
 // Data comes from data.js (Supabase or the in-browser demo). Read-only except
-// renaming tanks and setting their size.
+// tank names, sizes and low-level alerts.
 
-import { supabaseConfigured, createSupabaseSource, createDemoSource } from './data.js';
+import { supabaseConfigured, createSupabaseSource, createDemoSource } from './data.js?v=13';
 import { LIVE_SECONDS, OFFLINE_SECONDS, RECEIVER_OFFLINE_SECONDS } from './config.js';
 
 const app = document.getElementById('app');
@@ -275,16 +276,12 @@ async function openSite() {
   site.stateByTank = new Map(site.tankState.map((r) => [r.tank_id, r]));
   site.pumpByTank = new Map(site.pumpState.map((r) => [r.tank_id, r]));
 
-  const fromHash = decodeURIComponent((location.hash.match(/^#\/tank\/(.+)$/) || [])[1] || '');
-  selected = tankById(fromHash)?.id ?? site.tanks[0]?.id ?? null;
+  selected = site.tanks[0]?.id ?? null;
 
   renderShell();
   unsubscribe?.();
   unsubscribe = source.subscribe(onLiveChange);
-  addEventListener('hashchange', () => {
-    const id = decodeURIComponent((location.hash.match(/^#\/tank\/(.+)$/) || [])[1] || '');
-    if (tankById(id) && id !== selected) selectTank(id, false);
-  });
+  addEventListener('hashchange', route);
   setInterval(tick, 1000);
 }
 
@@ -370,13 +367,17 @@ async function signOut() {
 }
 
 // ---------------------------------------------------------------------------
-// Frame
+// Frame and pages
+//   #/            home: water use of all tanks, alerts, tanks, pumps, settings
+//   #/tank/<id>   one tank in depth
 // ---------------------------------------------------------------------------
 
 // Keep in step with the "one screen" media query in app.css.
 const FIT = matchMedia('(min-width: 1100px) and (min-height: 640px)');
+let view = 'home';     // 'home' or 'tank'
 let openKind = null;   // which box is enlarged, if any
 let openFrom = null;   // the element it grew from; focus returns there
+let useRange = '7d';   // range of the home water-use chart
 
 const $ = (id) => document.getElementById(id);
 const clockFmt = new Intl.DateTimeFormat('en-NZ', { hour: 'numeric', minute: '2-digit' });
@@ -384,6 +385,10 @@ const headDate = new Intl.DateTimeFormat('en-NZ', { weekday: 'short', day: 'nume
 const clampPct = (p) => Math.max(0, Math.min(100, p));
 const pad2 = (n) => String(n).padStart(2, '0');
 const rssiPct = (rssi) => rssi == null ? 0 : clampPct(((rssi + 120) / 60) * 100);
+const r10 = (v) => nf0.format(Math.round(v / 10) * 10);
+const TANK_COLOURS = ['#7cc0f8', '#3d9cf0', '#1f6fbf', '#a5b4fc', '#5eead4', '#c4b5fd', '#93c5fd', '#38bdf8', '#818cf8', '#2dd4bf'];
+const tankColour = (t) => TANK_COLOURS[site.tanks.indexOf(t) % TANK_COLOURS.length];
+const pumpName = (t) => `Pump ${t.controller_node ? pad2(t.controller_node - 100) : '–'}`;
 
 function receiverStatus() {
   const gw = site.gateways[0];
@@ -406,10 +411,16 @@ function hms(iso) {
   return ago(iso);
 }
 
+// Which enlarged panel each box opens.
 const BOXES = {
+  usage: { title: 'Water use · all tanks', open: 'usage' },
+  alerts: { title: 'Alerts', open: 'alerts' },
+  htanks: { title: 'Tanks', open: 'tanks' },
+  pumps: { title: 'Pumps', open: 'pumps' },
+  settings: { title: 'Settings', open: 'settings' },
   tank: { title: '', open: 'level' },
   trend: { title: 'Level history', open: 'chart' },
-  tanks: { title: 'All tanks', open: 'tanks' },
+  info: { title: 'Details', open: 'level' },
   pump: { title: 'Pump', open: 'pump' },
   use: { title: 'Water use', open: 'use' },
   status: { title: 'System', open: 'receiver' },
@@ -425,37 +436,31 @@ const box = (kind, extraHead = '') => `
     <div class="box-body" id="box-${kind}"></div>
   </section>`;
 
+const rangeButtons = (attr, current) => `<div class="seg" role="group" aria-label="Time range">${Object.entries(RANGES).map(([k, r]) =>
+  `<button type="button" ${attr}="${k}" aria-pressed="${k === current}" title="Last ${r.long}">${r.label}</button>`).join('')}</div>`;
+
 function renderShell() {
   document.title = 'Tank Monitor | Kinetiq';
-  const ranges = Object.entries(RANGES).map(([k, r]) => `<button type="button" data-range="${k}" aria-pressed="${k === range}" title="Last ${r.long}">${r.label}</button>`).join('');
   app.innerHTML = `
   <div class="dash">
     <header class="topbar">
-      <a class="brand" href="../../products/water-monitor.html" aria-label="Kinetiq Tank Monitor, back to the website">
+      <a class="brand" href="#/" aria-label="Tank Monitor home">
         <img src="../../assets/img/brand/kinetiq-full-white.webp?v=4" alt="Kinetiq" width="1178" height="400">
         <span>Tank Monitor</span>
       </a>
-      <nav class="tank-tabs" id="tank-tabs" aria-label="Tanks"></nav>
+      <nav class="tank-tabs" id="tank-tabs" aria-label="Pages"></nav>
       <div class="top-right">
         ${source.demo ? '<span class="demo-tag" title="Sample data. Tank 1 is filling and updates every few seconds; Tank 3 shows what an offline tank looks like.">Demo</span>' : ''}
         <span class="top-time"><span id="top-date"></span><span id="top-clock"></span></span>
         <span class="pill" id="receiver-pill"></span>
-        <button type="button" class="round-btn" data-open="activity" aria-label="Activity" title="Activity">${icon('bell')}<span class="badge" id="fault-badge" hidden></span></button>
-        <button type="button" class="round-btn" data-open="settings" aria-label="Tank settings" title="Tank settings">${icon('cog')}</button>
+        <button type="button" class="round-btn" data-open="alerts" aria-label="Alerts" title="Alerts">${icon('bell')}<span class="badge" id="fault-badge" hidden></span></button>
+        <button type="button" class="round-btn" data-open="settings" aria-label="Settings" title="Settings">${icon('cog')}</button>
         <button type="button" class="round-btn" id="signout" aria-label="${source.demo ? 'Exit demo' : 'Sign out'}" title="${source.demo ? 'Exit demo' : 'Sign out'}">${icon('out')}</button>
       </div>
     </header>
 
-    <div class="alerts" id="alerts" aria-live="polite"><div id="receiver-banner"></div><div id="tank-alerts"></div></div>
-
-    <main class="board" id="board">
-      ${box('tank')}
-      ${box('trend', `<div class="seg" role="group" aria-label="Time range">${ranges}</div>`)}
-      ${box('tanks')}
-      ${box('pump')}
-      ${box('use')}
-      ${box('status')}
-    </main>
+    <div class="alerts-strip" id="alerts-strip" aria-live="polite"></div>
+    <main id="view"></main>
   </div>
 
   <dialog class="big" id="big" aria-labelledby="big-title">
@@ -467,25 +472,34 @@ function renderShell() {
   </dialog>`;
 
   $('signout').addEventListener('click', signOut);
-  document.querySelectorAll('[data-open]').forEach((b) => b.addEventListener('click', () => openBox(b.dataset.open, b)));
+  document.querySelectorAll('.top-right [data-open]').forEach((b) => b.addEventListener('click', () => openBox(b.dataset.open, b)));
+  $('tank-tabs').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-go]');
+    if (b) go(b.dataset.go);
+  });
 
-  // range buttons and tank rows act in place; anywhere else on a box enlarges it
-  $('board').addEventListener('click', (e) => {
-    const rangeBtn = e.target.closest('[data-range]');
-    if (rangeBtn) {
-      range = rangeBtn.dataset.range;
-      document.querySelectorAll('.box-trend [data-range]').forEach((x) => x.setAttribute('aria-pressed', String(x === rangeBtn)));
+  // inside a page: buttons act in place; anywhere else on a box enlarges it
+  $('view').addEventListener('click', (e) => {
+    const r = e.target.closest('[data-range]');
+    if (r) {
+      range = r.dataset.range;
+      document.querySelectorAll('.box-trend [data-range]').forEach((x) => x.setAttribute('aria-pressed', String(x === r)));
       renderTrendBox();
       return;
     }
-    const tankBtn = e.target.closest('[data-tank]');
-    if (tankBtn) { selectTank(tankBtn.dataset.tank); return; }
+    const ur = e.target.closest('[data-urange]');
+    if (ur) {
+      useRange = ur.dataset.urange;
+      document.querySelectorAll('.box-usage [data-urange]').forEach((x) => x.setAttribute('aria-pressed', String(x === ur)));
+      renderUsageBox();
+      return;
+    }
+    const nav = e.target.closest('[data-go]');
+    if (nav) { go(nav.dataset.go); return; }
+    const act = e.target.closest('[data-open]');
+    if (act) { openBox(act.dataset.open, act); return; }
     const b = e.target.closest('.box');
-    if (b) openBox(BOXES[b.dataset.box].open, b);
-  });
-  $('tank-tabs').addEventListener('click', (e) => {
-    const b = e.target.closest('[data-tank]');
-    if (b) selectTank(b.dataset.tank);
+    if (b && BOXES[b.dataset.box]) openBox(BOXES[b.dataset.box].open, b);
   });
 
   const dlg = $('big');
@@ -497,68 +511,105 @@ function renderShell() {
     back?.focus();
   });
 
+  // redraw charts when their boxes change size
   let resizeT, lastSize = '';
   new ResizeObserver(([entry]) => {
     const size = `${Math.round(entry.contentRect.width)}x${Math.round(entry.contentRect.height)}`;
     if (size === lastSize) return;
     lastSize = size;
     clearTimeout(resizeT);
-    resizeT = setTimeout(() => renderTrendBox(true), 150);
-  }).observe($('box-trend'));
+    resizeT = setTimeout(() => { if (view === 'home') renderUsageBox(true); else renderTrendBox(true); }, 150);
+  }).observe($('view'));
 
-  updateTop();
-  renderAll();
+  route();
 }
 
+// Go to a page: 'home' or a tank id.
+function go(where) {
+  const hash = where === 'home' ? '#/' : `#/tank/${encodeURIComponent(where)}`;
+  if (location.hash === hash) route();
+  else location.hash = hash;
+}
+
+function route() {
+  if (!site || !$('view')) return;
+  const id = decodeURIComponent((location.hash.match(/^#\/tank\/(.+)$/) || [])[1] || '');
+  if (tankById(id)) { selected = id; view = 'tank'; } else { view = 'home'; }
+  if ($('big')?.open) $('big').close();
+  updateTop();
+  renderAll();
+  scrollTo(0, 0);
+}
+
+function selectTank(id) { go(id); }
+
 function renderAll() {
-  if (!selected) {
-    $('board').innerHTML = `<div class="box box-empty"><h1>Waiting for the first reading</h1><p class="muted">Your receiver is linked. Tanks appear here automatically as soon as each tank unit sends its first reading (every 20 seconds).</p></div>`;
+  const v = $('view');
+  clearInterval(chartTimer);
+  if (!site.tanks.length) {
+    v.innerHTML = `<div class="box box-empty"><h1>Waiting for the first reading</h1><p class="muted">Your receiver is linked. Tanks appear here automatically as soon as each tank unit sends its first reading (every 20 seconds).</p></div>`;
     return;
   }
-  renderTankBox();
-  renderTrendBox();
-  renderTanksBox();
-  renderPumpBox();
-  renderUseBox();
-  renderStatusBox();
-  renderAlerts();
-  clearInterval(chartTimer);
-  chartTimer = setInterval(() => {
-    renderTrendBox(true);
-    if (openKind === 'chart') renderBig(true);
-  }, 60_000);
+  if (view === 'home') {
+    document.title = 'Tank Monitor | Kinetiq';
+    v.className = 'home';
+    v.innerHTML = `
+      ${box('usage', rangeButtons('data-urange', useRange))}
+      ${box('alerts', '<span class="count" id="alert-count"></span>')}
+      ${box('htanks', `<span class="muted small">${site.tanks.length} in system</span>`)}
+      ${box('pumps')}
+      ${box('settings')}`;
+    renderUsageBox();
+    renderAlertsBox();
+    renderHomeTanks();
+    renderPumpsBox();
+    renderSettingsBox();
+    chartTimer = setInterval(() => renderUsageBox(true), 60_000);
+  } else {
+    const t = tankById(selected);
+    document.title = `${t.name} | Tank Monitor`;
+    v.className = 'tank-page';
+    v.innerHTML = `
+      <div class="crumbs"><button type="button" class="back" data-go="home">${icon('left')}Home</button><span>/</span><span>${esc(t.name)}</span></div>
+      <div class="board">
+        ${box('tank')}
+        ${box('trend', rangeButtons('data-range', range))}
+        ${box('info')}
+        ${box('pump')}
+        ${box('use')}
+        ${box('status')}
+      </div>`;
+    renderTankBox();
+    renderTrendBox();
+    renderInfoBox();
+    renderPumpBox();
+    renderUseBox();
+    renderStatusBox();
+    chartTimer = setInterval(() => {
+      renderTrendBox(true);
+      if (openKind === 'chart') renderBig(true);
+    }, 60_000);
+  }
+  renderAlertsStrip();
 }
 
 function refreshBoxes(table, row) {
-  if (!selected) return;
-  const mine = row.tank_id === selected;
-  if (table === 'tank_state') {
-    if (mine) { renderTankBox(); renderStatusBox(); renderAlerts(); }
-    renderTanksBox();
-    if (['level', 'tanks', 'receiver'].includes(openKind) && (mine || openKind !== 'level')) renderBig();
+  if (!site.tanks.length) return;
+  const mine = view === 'tank' && row.tank_id === selected;
+  if (view === 'home') {
+    if (table === 'tank_state') { renderHomeTanks(); renderAlertsBox(); }
+    if (table === 'pump_state') { renderPumpsBox(); renderAlertsBox(); renderHomeTanks(); renderUsageBox(true); }
+    if (table === 'gateways') renderAlertsBox();
+  } else {
+    if (table === 'tank_state' && mine) { renderTankBox(); renderInfoBox(); renderStatusBox(); }
+    if (table === 'pump_state' && mine) { renderPumpBox(); renderUseBox(); renderTrendBox(true); renderTankBox(); }
+    if (table === 'gateways') renderStatusBox();
   }
-  if (table === 'pump_state') {
-    if (mine) { renderPumpBox(); renderUseBox(); renderTrendBox(true); renderTankBox(); renderAlerts(); }
-    renderTanksBox();
-    if (['pump', 'use', 'tanks', 'activity'].includes(openKind)) renderBig();
-    if (openKind === 'chart' && mine) renderBig(true);
-  }
-  if (table === 'gateways') {
-    renderStatusBox();
-    if (openKind === 'receiver') renderBig();
-  }
-}
-
-function selectTank(id, pushHash = true) {
-  selected = id;
-  if (pushHash) history.replaceState(null, '', `#/tank/${encodeURIComponent(id)}`);
-  updateTop();
-  renderAll();
-}
-
-function needsAttention(t) {
-  const st = stateOf(t.id);
-  return !st || freshness(st.last_heard_at).key === 'offline' || st.sensor_status === 'fault' || pumpOf(t.id)?.state === 'fault';
+  renderAlertsStrip();
+  if (table === 'tank_state' && ['level', 'tanks', 'receiver'].includes(openKind) && (row.tank_id === selected || openKind !== 'level')) renderBig();
+  if (table === 'pump_state' && ['pump', 'pumps', 'use', 'tanks', 'activity', 'alerts'].includes(openKind)) renderBig();
+  if (table === 'pump_state' && openKind === 'chart' && mine) renderBig(true);
+  if (table === 'gateways' && openKind === 'receiver') renderBig();
 }
 
 // Every second: clock and the "last reading" counters.
@@ -573,39 +624,249 @@ function updateTop() {
   updateClock();
   const tabs = $('tank-tabs');
   if (tabs) {
-    tabs.innerHTML = site.tanks.map((t) => {
-      const st = stateOf(t.id);
-      const f = freshness(st?.last_heard_at);
-      return `<button type="button" class="tank-tab ${t.id === selected ? 'is-on' : ''}" data-tank="${esc(t.id)}" aria-pressed="${t.id === selected}">
-        <span class="dot dot-${needsAttention(t) && st ? (f.key === 'offline' ? 'offline' : 'fault') : f.key}" aria-hidden="true"></span>${esc(t.name)}
-        <span class="tab-pct">${st ? `${nf0.format(st.tank_percent)}%` : '–'}</span></button>`;
-    }).join('');
+    tabs.innerHTML = `<button type="button" class="tank-tab ${view === 'home' ? 'is-on' : ''}" data-go="home" aria-current="${view === 'home' ? 'page' : 'false'}">${icon('grid')}Home</button>
+      ${site.tanks.map((t) => {
+        const st = stateOf(t.id);
+        const on = view === 'tank' && t.id === selected;
+        return `<button type="button" class="tank-tab ${on ? 'is-on' : ''}" data-go="${esc(t.id)}" aria-current="${on ? 'page' : 'false'}">
+          <span class="dot dot-${tankLight(t)}" aria-hidden="true"></span>${esc(t.name)}
+          <span class="tab-pct">${st ? `${nf0.format(st.tank_percent)}%` : '–'}</span></button>`;
+      }).join('')}`;
   }
   const pill = $('receiver-pill');
   if (!pill) return;
   const rs = receiverStatus();
   pill.className = `pill pill-${rs.key}`;
   pill.innerHTML = `<span class="dot" aria-hidden="true"></span><span class="pill-text">${esc(rs.text)}</span>`;
-  const faults = site.tanks.filter(needsAttention).length;
+  const n = currentAlerts().length;
   const badge = $('fault-badge');
-  badge.hidden = !faults;
-  badge.textContent = faults;
-  $('receiver-banner').innerHTML = rs.key === 'offline'
-    ? `<div class="banner" role="status">${icon('wifi')}<span><strong>${esc(rs.text)}.</strong> Readings can't reach the website until it reconnects. Your tanks and pump keep working as normal, and the receiver sends what it has stored when it's back online.</span></div>`
-    : '';
-}
-
-function renderAlerts() {
-  const t = tankById(selected);
-  const st = stateOf(t.id);
-  const pump = pumpOf(t.id);
-  $('tank-alerts').innerHTML = `
-    ${pump?.state === 'fault' ? `<div class="banner" role="alert">${icon('alert')}<span><strong>${esc(t.name)}: pump stopped by a safety check</strong> ${esc(when(pump.since))}. The tank wasn't filling as expected. Check the pump, pipes and water supply, then turn the pump controller off and on again to reset it.</span></div>` : ''}
-    ${st?.sensor_status === 'fault' ? `<div class="banner" role="alert">${icon('alert')}<span><strong>${esc(t.name)}: level sensor fault.</strong> This reading may be wrong, so the tank won't ask for water until the sensor reads normally. Check the probe and its cable.</span></div>` : ''}`;
+  badge.hidden = !n;
+  badge.textContent = n;
 }
 
 // ---------------------------------------------------------------------------
-// Boxes
+// Alerts: problems happening now, worked out from the latest data
+// ---------------------------------------------------------------------------
+
+function tankLight(t) {
+  const st = stateOf(t.id);
+  if (!st) return 'none';
+  if (st.sensor_status === 'fault' || pumpOf(t.id)?.state === 'fault') return 'fault';
+  const f = freshness(st.last_heard_at).key;
+  if (f !== 'live') return f;
+  if (t.low_alert_percent != null && st.tank_percent < t.low_alert_percent) return 'delayed';
+  if (pumpOf(t.id)?.state === 'running') return 'fill';
+  return 'live';
+}
+
+function currentAlerts() {
+  const list = [];
+  const rs = receiverStatus();
+  if (rs.key === 'offline') list.push({ level: 'bad', title: rs.text, detail: 'Readings can\'t reach the website until it reconnects. Tanks and pumps keep working as normal.' });
+  for (const t of site.tanks) {
+    const st = stateOf(t.id);
+    const pump = pumpOf(t.id);
+    if (pump?.state === 'fault') list.push({ level: 'bad', tank: t, title: `${t.name}: pump stopped by a safety check`, detail: `${when(pump.since)}. The tank wasn't filling as expected. Check the pump, pipes and water supply, then turn the pump controller off and on again to reset it.` });
+    if (st?.sensor_status === 'fault') list.push({ level: 'bad', tank: t, title: `${t.name}: level sensor fault`, detail: 'The reading may be wrong, so the tank won\'t ask for water until the sensor reads normally. Check the probe and its cable.' });
+    if (st && freshness(st.last_heard_at).key === 'offline') list.push({ level: 'warn', tank: t, title: `${t.name} has stopped reporting`, detail: `Last reading ${ago(st.last_heard_at)}. Check the tank unit.` });
+    else if (st && t.low_alert_percent != null && st.tank_percent < t.low_alert_percent) list.push({ level: 'warn', tank: t, title: `${t.name} is low: ${nf0.format(st.tank_percent)}%`, detail: `Below your alert level of ${nf0.format(t.low_alert_percent)}%.` });
+  }
+  return list.sort((a, b) => (a.level === b.level ? 0 : a.level === 'bad' ? -1 : 1));
+}
+
+// Serious problems also show as a strip across the top of every page.
+function renderAlertsStrip() {
+  const bad = currentAlerts().filter((a) => a.level === 'bad');
+  $('alerts-strip').innerHTML = bad.map((a) => `<div class="banner" role="alert">${icon('alert')}<span><strong>${esc(a.title)}.</strong> ${esc(a.detail)}</span></div>`).join('');
+}
+
+const alertRow = (a) => `<li class="alert alert-${a.level}" ${a.tank ? `data-go="${esc(a.tank.id)}"` : ''}>
+  <span class="alert-ic">${icon(a.level === 'bad' ? 'alert' : a.tank ? 'tanks' : 'wifi')}</span>
+  <span class="alert-main"><strong>${esc(a.title)}</strong><span>${esc(a.detail)}</span></span>
+</li>`;
+
+async function renderAlertsBox() {
+  const el = $('box-alerts');
+  if (!el) return;
+  const now = currentAlerts();
+  $('alert-count').textContent = now.length ? String(now.length) : '';
+  $('alert-count').className = `count ${now.some((a) => a.level === 'bad') ? 'count-bad' : now.length ? 'count-warn' : ''}`;
+  const recent = (await activityItems()).filter((i) => i.kind === 'fault').slice(0, 3);
+  el.innerHTML = `
+    ${now.length ? `<ul class="alert-list">${now.map(alertRow).join('')}</ul>`
+      : `<div class="all-clear"><span class="alert-ic">${icon('drop')}</span><span><strong>All clear</strong><span>Every tank, pump and the receiver are working normally.</span></span></div>`}
+    <p class="sub-h">Recent faults</p>
+    ${recent.length ? `<ul class="recent">${recent.map((i) => `<li><span>${esc(i.tank.name)}: ${esc(i.text.toLowerCase())}</span><time>${esc(when(new Date(i.at).toISOString()))}</time></li>`).join('')}</ul>`
+      : '<p class="muted small">None in the last 7 days.</p>'}`;
+}
+
+// ---------------------------------------------------------------------------
+// Home: water use of all tanks
+// ---------------------------------------------------------------------------
+
+// Water used per time bin by every tank, plus storage and averages.
+async function siteUsage(key) {
+  const r = RANGES[key];
+  const parts = [];
+  for (const t of site.tanks) {
+    const cap = capacityOf(t);
+    if (!cap) continue;
+    try {
+      const d = await rangeData(t, key);
+      const w = await weekData(t);
+      parts.push({ t, bins: useBins(d.points, d.runs, cap, r.bin, d.since), stats: usageStats(w.points, w.runs, cap, stateOf(t.id)?.tank_volume_l) });
+    } catch { /* leave this tank out */ }
+  }
+  const since = Date.now() - r.ms;
+  const bins = [];
+  for (let b = binStart(since, r.bin); b <= Date.now(); b += r.bin) {
+    bins.push({ t: b, byTank: parts.map((p) => ({ t: p.t, litres: p.bins.find((x) => x.t === b)?.litres ?? 0 })) });
+  }
+  bins.forEach((b) => { b.total = b.byTank.reduce((s, x) => s + x.litres, 0); });
+  const stored = site.tanks.reduce((s, t) => s + (stateOf(t.id)?.tank_volume_l ?? 0), 0);
+  const capacity = site.tanks.reduce((s, t) => s + (capacityOf(t) ?? 0), 0);
+  const perDay = parts.every((p) => p.stats.enough) && parts.length ? parts.reduce((s, p) => s + p.stats.perDay, 0) : null;
+  return { r, since, bins, parts, total: bins.reduce((s, b) => s + b.total, 0), stored, capacity, perDay };
+}
+
+// Stacked bars: one colour per tank.
+function usageChartSvg(u, W, H, full) {
+  const small = W < 600;
+  const pad = { l: 46, r: 8, t: 10, b: 24 };
+  const max = Math.max(1, ...u.bins.map((b) => b.total));
+  const step = niceStep(max / 4);
+  const top = Math.ceil(max / step) * step;
+  const n = u.bins.length;
+  const slot = (W - pad.l - pad.r) / n;
+  const bw = Math.max(2, Math.min(28, slot * 0.62));
+  const y = (v) => pad.t + (1 - v / top) * (H - pad.t - pad.b);
+  const grid = Array.from({ length: Math.round(top / step) + 1 }, (_, i) => i * step).map((v) =>
+    `<line class="c-grid" x1="${pad.l}" x2="${W - pad.r}" y1="${y(v)}" y2="${y(v)}"/><text class="c-axis" x="${pad.l - 8}" y="${y(v) + 4}" text-anchor="end">${v >= 1000 ? `${nf1.format(v / 1000).replace(/\.0$/, '')}k` : nf0.format(v)}</text>`).join('');
+  const bars = u.bins.map((b, i) => {
+    const x = pad.l + slot * i + (slot - bw) / 2;
+    let acc = 0;
+    const segs = b.byTank.map((p) => {
+      if (!p.litres) return '';
+      const y1 = y(acc + p.litres), y0 = y(acc);
+      acc += p.litres;
+      return `<rect x="${x.toFixed(1)}" y="${y1.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(0.5, y0 - y1).toFixed(1)}" fill="${tankColour(p.t)}"/>`;
+    }).join('');
+    return `<g class="u-bar" data-i="${i}"><rect class="u-hit" x="${(pad.l + slot * i).toFixed(1)}" y="${pad.t}" width="${slot.toFixed(1)}" height="${H - pad.t - pad.b}"/>${segs}</g>`;
+  }).join('');
+  const every = Math.ceil(n / (small ? 6 : full ? 14 : 10));
+  const labels = u.bins.map((b, i) => (i % every ? '' : `<text class="c-axis" x="${(pad.l + slot * i + slot / 2).toFixed(1)}" y="${H - 6}" text-anchor="middle">${esc(u.r.bin < 86400_000 ? hourFmt.format(new Date(b.t)) : u.r.ms <= 7 * 86400_000 ? weekday.format(new Date(b.t)) : shortDay.format(new Date(b.t)))}</text>`)).join('');
+  return `<svg class="chart usage-chart" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Water used by all tanks over the last ${u.r.long}: ${r10(u.total)} litres">
+    ${grid}${bars}${labels}</svg>`;
+}
+
+function niceStep(raw) {
+  const p = 10 ** Math.floor(Math.log10(Math.max(raw, 1)));
+  const f = raw / p;
+  return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p;
+}
+
+function usageTooltip(wrap, u) {
+  const tip = wrap.querySelector('.c-tip');
+  wrap.querySelectorAll('.u-bar').forEach((g) => {
+    const show = () => {
+      const b = u.bins[+g.dataset.i];
+      const label = u.r.bin < 86400_000 ? when(new Date(b.t).toISOString()) : dayFmt.format(new Date(b.t));
+      tip.innerHTML = `<p class="tip-when">${esc(label)}</p><p><strong>${r10(b.total)} L</strong>&nbsp;used</p>
+        ${b.byTank.filter((p) => p.litres > 0).map((p) => `<p><i class="sw" style="background:${tankColour(p.t)}"></i>${esc(p.t.name)} ${r10(p.litres)} L</p>`).join('')}`;
+      tip.hidden = false;
+      const wr = wrap.getBoundingClientRect(), gr = g.getBoundingClientRect();
+      const left = gr.left - wr.left;
+      tip.style.left = `${left > wr.width / 2 ? left - tip.offsetWidth - 8 : left + gr.width + 8}px`;
+      g.classList.add('is-hover');
+    };
+    g.addEventListener('pointerenter', show);
+    g.addEventListener('pointerdown', show);
+    g.addEventListener('pointerleave', () => { tip.hidden = true; g.classList.remove('is-hover'); });
+  });
+}
+
+async function renderUsageBox(quiet = false) {
+  const el = $('box-usage');
+  if (!el) return;
+  if (!$('usage-chart')) el.innerHTML = '<div class="usage-stats" id="usage-stats"></div><div class="chart-wrap" id="usage-chart"></div><div class="legend" id="usage-legend"></div>';
+  const wrap = $('usage-chart');
+  if (!quiet) wrap.innerHTML = '<div class="chart-empty"><span class="spinner" aria-hidden="true"></span></div>';
+  const key = useRange;
+  const u = await siteUsage(key);
+  if (key !== useRange || !wrap.isConnected) return;
+  const lasts = u.perDay > 1 ? u.stored / u.perDay : null;
+  $('usage-stats').innerHTML = `
+    <div class="stat-main"><span class="stat-v">${r10(u.total)}<small> L</small></span><span class="stat-l">used in the last ${u.r.long}</span></div>
+    <div><span class="stat-l">Daily average</span><span class="stat-s">${u.perDay != null ? `${r10(u.perDay)} L` : '–'}</span></div>
+    <div><span class="stat-l">In storage</span><span class="stat-s">${r10(u.stored)} L${u.capacity ? ` <span class="muted">of ${r10(u.capacity)} L</span>` : ''}</span></div>
+    <div><span class="stat-l">Lasts about</span><span class="stat-s">${lasts == null ? '–' : lasts > 60 ? '60+ days' : `${Math.floor(lasts)} days`}</span></div>`;
+  $('usage-legend').innerHTML = u.parts.map((p) => `<span><i class="sw" style="background:${tankColour(p.t)}"></i>${esc(p.t.name)}</span>`).join('') + '<span class="muted">Pump fills are not counted as use</span>';
+  if (!u.parts.length) { wrap.innerHTML = '<p class="chart-empty">Set each tank\'s size in Settings to see water use.</p>'; return; }
+  const W = Math.max(260, wrap.clientWidth);
+  const H = FIT.matches ? Math.max(140, wrap.clientHeight) : 240;
+  wrap.innerHTML = usageChartSvg(u, W, H, false) + '<div class="c-tip" hidden></div>';
+  usageTooltip(wrap, u);
+}
+
+// ---------------------------------------------------------------------------
+// Home: tanks, pumps, settings
+// ---------------------------------------------------------------------------
+
+function renderHomeTanks() {
+  const el = $('box-htanks');
+  if (!el) return;
+  el.innerHTML = `<div class="tank-cards">${site.tanks.map((t) => {
+    const st = stateOf(t.id);
+    const f = freshness(st?.last_heard_at);
+    const pump = pumpOf(t.id);
+    const light = tankLight(t);
+    const label = { fault: 'Fault', offline: 'Offline', delayed: f.key === 'delayed' ? 'Delayed' : 'Low', fill: 'Filling', live: 'Live', none: 'No reading' }[light];
+    return `<button type="button" class="tank-card" data-go="${esc(t.id)}" aria-label="${esc(t.name)}: ${st ? `${nf0.format(st.tank_percent)}%` : 'no reading'}, ${label}. Open tank page">
+      <span class="tc-art">${tankSvg(t, st, { labels: false })}</span>
+      <span class="tc-main">
+        <span class="tc-name">${esc(t.name)}</span>
+        <span class="tc-pct">${st ? nf0.format(st.tank_percent) : '–'}<small>%</small></span>
+        <span class="tc-l">${st ? `${nf0.format(st.tank_volume_l)} L` : 'No reading yet'}</span>
+        <span class="tc-status"><span class="dot dot-${light}" aria-hidden="true"></span>${label}${pump?.state === 'running' && light !== 'fill' ? ' · filling' : ''}</span>
+      </span>
+      <span class="tc-go" aria-hidden="true">${icon('right')}</span>
+    </button>`;
+  }).join('')}</div>`;
+}
+
+async function renderPumpsBox() {
+  const el = $('box-pumps');
+  if (!el) return;
+  const withPump = site.tanks.filter((t) => t.controller_node || pumpOf(t.id));
+  if (!withPump.length) { el.innerHTML = '<p class="muted">No pump controllers linked.</p>'; return; }
+  el.innerHTML = `<ul class="pump-list">${withPump.map((t) => {
+    const p = pumpSummary(pumpOf(t.id));
+    return `<li><button type="button" class="pump-row" data-go="${esc(t.id)}">
+      ${pumpSvg(p.state)}
+      <span class="pr-main"><span class="pr-name">${pumpName(t)}<span class="muted"> · ${esc(t.name)}</span></span><span class="pr-sub">${esc(p.sub)}</span></span>
+      <span class="pr-state st-${p.state}">${p.label}</span>
+    </button></li>`;
+  }).join('')}</ul>`;
+}
+
+function renderSettingsBox() {
+  const el = $('box-settings');
+  if (!el) return;
+  const lows = [...new Set(site.tanks.map((t) => t.low_alert_percent))];
+  const fills = [...new Set(site.tanks.filter((t) => t.fill_start_percent != null).map((t) => `${nf0.format(t.fill_start_percent)}% → ${nf0.format(t.fill_stop_percent)}%`))];
+  const gw = site.gateways[0];
+  el.innerHTML = `
+    ${rows([
+      ['Low-level alert', lows.length === 1 ? (lows[0] == null ? 'Off' : `Below ${nf0.format(lows[0])}%`) : 'Set per tank'],
+      ['Pump auto-fill', fills.length === 1 ? fills[0] : fills.length ? 'Set per pump' : '–'],
+      ['Tanks', `${site.tanks.length}`],
+      ['Receiver', esc(gw?.name ?? '–')],
+    ])}
+    <button type="button" class="btn btn-small" data-open="settings">${icon('cog')}Open settings</button>`;
+}
+
+// ---------------------------------------------------------------------------
+// Tank page boxes
 // ---------------------------------------------------------------------------
 
 const rows = (list) => `<dl class="rows">${list.filter(Boolean).map(([k, v, cls = '']) => `<div><dt>${k}</dt><dd class="${cls}">${v}</dd></div>`).join('')}</dl>`;
@@ -689,8 +950,9 @@ function renderTankBox() {
 }
 
 async function renderTrendBox(quiet = false) {
-  if (!selected) return;
+  if (view !== 'tank') return;
   const el = $('box-trend');
+  if (!el) return;
   if (!$('trend-chart')) el.innerHTML = '<div class="trend-stats" id="trend-stats"></div><div class="chart-wrap" id="trend-chart"></div>';
   const t = tankById(selected);
   const res = await drawChart($('trend-chart'), t, range, false, quiet);
@@ -705,27 +967,28 @@ async function renderTrendBox(quiet = false) {
     <div><span class="stat-l">Pump ran</span><span class="stat-s">${res.runs.length ? `${res.runs.length}× · ${duration(runTime)}` : 'Not at all'}</span></div>`;
 }
 
-function renderTanksBox() {
-  const el = $('box-tanks');
+async function renderInfoBox() {
+  const el = $('box-info');
   if (!el) return;
-  el.innerHTML = `<ul class="tank-list">${site.tanks.map((t) => {
-    const st = stateOf(t.id);
-    const f = freshness(st?.last_heard_at);
-    const pump = pumpOf(t.id);
-    let sub = f.key === 'live' ? 'Live' : f.label;
-    if (pump?.state === 'running') sub = 'Filling';
-    if (pump?.state === 'fault') sub = 'Pump stopped';
-    if (st?.sensor_status === 'fault') sub = 'Sensor fault';
-    const bad = needsAttention(t);
-    return `<li><button type="button" class="tank-row ${t.id === selected ? 'is-selected' : ''} ${bad ? 'is-bad' : ''}" data-tank="${esc(t.id)}" aria-pressed="${t.id === selected}">
-      <span class="mini-tank" aria-hidden="true"><i style="height:${st ? clampPct(st.tank_percent) : 0}%"></i></span>
-      <span class="row-main">
-        <span class="row-top"><span class="row-name">${esc(t.name)}</span><span class="row-pct">${st ? `${nf0.format(st.tank_percent)}%` : '–'}</span></span>
-        ${tbar(st?.tank_percent ?? 0)}
-        <span class="row-sub"><span class="dot dot-${bad ? 'offline' : pump?.state === 'running' ? 'fill' : f.key}" aria-hidden="true"></span>${esc(sub)}${st ? ` · ${nf0.format(st.tank_volume_l)} L` : ''}</span>
-      </span>
-    </button></li>`;
-  }).join('')}</ul>`;
+  const t = tankById(selected);
+  const st = stateOf(t.id);
+  const cap = capacityOf(t);
+  const H = tankHeight(t, st);
+  const draw = (days) => {
+    el.innerHTML = rows([
+      ['Capacity', cap ? `${nf0.format(cap)} L` : 'Not set'],
+      ['Tank height', H ? `${nf2.format(H)} m` : '–'],
+      ['Lasts about', esc(days)],
+      ['Low-level alert', t.low_alert_percent == null ? 'Off' : `Below ${nf0.format(t.low_alert_percent)}%`],
+      ['Tank unit', `Node ${pad2(t.tank_node)}`],
+      ['Route', st?.hop_count ? `Relayed ${st.hop_count}×` : st ? 'Direct to receiver' : '–'],
+    ]);
+  };
+  draw('…');
+  try {
+    const w = await weekData(t);
+    if (selected === t.id && $('box-info')) draw(daysLeftText(cap && st ? usageStats(w.points, w.runs, cap, st.tank_volume_l) : null));
+  } catch { draw('–'); }
 }
 
 function pumpSummary(pump) {
@@ -746,17 +1009,17 @@ const pumpSvg = (state) => `<span class="pump-badge pump-${state}" aria-hidden="
 async function renderPumpBox() {
   const t = tankById(selected);
   const st = stateOf(t.id);
-  const pump = pumpOf(t.id);
-  const p = pumpSummary(pump);
+  const p = pumpSummary(pumpOf(t.id));
   let runs = [];
   try { runs = (await weekData(t)).runs; } catch { /* show what we have */ }
-  if (selected !== t.id) return;
+  if (selected !== t.id || !$('box-pump')) return;
   const midnight = new Date(); midnight.setHours(0, 0, 0, 0);
   const todayMs = runs.reduce((s, r) => {
     const a = Math.max(r.start, midnight.getTime()), b = r.end ?? Date.now();
     return b > a ? s + (b - a) : s;
   }, 0);
   const hasBand = t.fill_start_percent != null;
+  $('bt-pump').textContent = pumpName(t);
   $('box-pump').innerHTML = `
     <div class="pump-top">
       ${pumpSvg(p.state)}
@@ -785,14 +1048,13 @@ function useSummary(t, w, cap) {
 async function renderUseBox() {
   const t = tankById(selected);
   const el = $('box-use');
+  if (!el) return;
   const cap = capacityOf(t);
-  if (!cap) { el.innerHTML = '<p class="muted">Set the tank size in settings to see water use.</p>'; return; }
+  if (!cap) { el.innerHTML = '<p class="muted">Set the tank size in Settings to see water use.</p>'; return; }
   try {
     const w = await weekData(t);
-    if (selected !== t.id) return;
+    if (selected !== t.id || !$('box-use')) return;
     const u = useSummary(t, w, cap);
-    const st = stateOf(t.id);
-    const r10 = (v) => nf0.format(Math.round(v / 10) * 10);
     const nowH = new Date().getHours();
     const maxH = Math.max(1, ...u.hours.map((b) => b.litres));
     el.innerHTML = `
@@ -806,7 +1068,7 @@ async function renderUseBox() {
       </div>
       <div class="mini-stats">
         <div><span class="stat-l">Daily average</span><span class="stat-s">${u.stats.enough ? `${r10(u.stats.perDay)} L` : '–'}</span></div>
-        <div><span class="stat-l">Lasts about</span><span class="stat-s">${esc(daysLeftText(st ? usageStats(w.points, w.runs, cap, st.tank_volume_l) : null))}</span></div>
+        <div><span class="stat-l">Lasts about</span><span class="stat-s">${esc(daysLeftText(stateOf(t.id) ? usageStats(w.points, w.runs, cap, stateOf(t.id).tank_volume_l) : null))}</span></div>
       </div>`;
   } catch {
     el.innerHTML = '<p class="muted">Water use is unavailable right now.</p>';
@@ -814,6 +1076,8 @@ async function renderUseBox() {
 }
 
 function renderStatusBox() {
+  const el = $('box-status');
+  if (!el) return;
   const t = tankById(selected);
   const st = stateOf(t.id);
   const f = freshness(st?.last_heard_at);
@@ -822,7 +1086,7 @@ function renderStatusBox() {
   const gw = site.gateways[0];
   const tile = (ic, label, key, text) => `<div class="dev dev-${key}"><span class="dev-ic">${icon(ic)}</span><span class="dev-l">${label}</span><span class="dev-s">${text}</span></div>`;
   const ok = (good, bad) => (good ? 'ok' : bad ? 'bad' : 'idle');
-  $('box-status').innerHTML = `
+  el.innerHTML = `
     <div class="devs">
       ${tile('tanks', 'Tank unit', f.key === 'live' ? 'ok' : f.key === 'delayed' ? 'warn' : f.key === 'offline' ? 'bad' : 'idle', f.key === 'live' ? 'Online' : f.label)}
       ${tile('drop', 'Level sensor', ok(st?.sensor_status === 'ok', st?.sensor_status === 'fault'), st?.sensor_status === 'fault' ? 'Fault' : st?.sensor_status === 'ok' ? 'OK' : 'Not reported')}
@@ -857,7 +1121,7 @@ async function activityItems() {
 const actIcon = (kind) => `<span class="act-icon">${icon(kind === 'fault' || kind === 'offline' ? 'alert' : 'pump')}</span>`;
 
 // ---------------------------------------------------------------------------
-// Chart (in the history box, and full size when enlarged)
+// Chart (on the tank page, and full size when enlarged)
 // ---------------------------------------------------------------------------
 
 // Smooth curve through points (Catmull-Rom as cubic Béziers), kept inside lo..hi.
@@ -1290,43 +1554,147 @@ async function renderBig(quiet = false) {
     }));
   }
 
+  if (kind === 'usage') {
+    title.textContent = 'Water use · all tanks';
+    if (!quiet || !$('big-usage')) {
+      body.innerHTML = `
+        <div class="chart-top"><div class="usage-stats" id="big-usage-stats"></div>${rangeButtons('data-brange', useRange)}</div>
+        <div class="chart-wrap" id="big-usage"></div>
+        <div class="legend" id="big-usage-legend"></div>
+        <h3 class="big-sub">By tank, last ${RANGES[useRange].long}</h3>
+        <div id="big-usage-table"></div>`;
+      body.querySelectorAll('[data-brange]').forEach((b) => b.addEventListener('click', () => {
+        useRange = b.dataset.brange;
+        body.querySelectorAll('[data-brange]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+        document.querySelectorAll('.box-usage [data-urange]').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.urange === useRange)));
+        renderUsageBox();
+        renderBig();
+      }));
+    }
+    const key = useRange;
+    const u = await siteUsage(key);
+    const wrap = $('big-usage');
+    if (openKind !== kind || key !== useRange || !wrap) return;
+    $('big-usage-stats').innerHTML = `<div class="stat-main"><span class="stat-v">${r10(u.total)}<small> L</small></span><span class="stat-l">used in the last ${u.r.long}</span></div>`;
+    $('big-usage-legend').innerHTML = u.parts.map((p) => `<span><i class="sw" style="background:${tankColour(p.t)}"></i>${esc(p.t.name)}</span>`).join('') + '<span class="muted">Worked out from the drop in level; pump fills are not counted as use</span>';
+    const W = Math.max(260, wrap.clientWidth);
+    wrap.innerHTML = usageChartSvg(u, W, W < 600 ? 240 : 340, true) + '<div class="c-tip" hidden></div>';
+    usageTooltip(wrap, u);
+    $('big-usage-table').innerHTML = `<table class="radio-table"><thead><tr><th>Tank</th><th>Used</th><th>Daily average</th><th>In tank now</th><th>Lasts about</th></tr></thead><tbody>
+      ${u.parts.map((p) => {
+        const used = u.bins.reduce((s, b) => s + (b.byTank.find((x) => x.t === p.t)?.litres ?? 0), 0);
+        const s = stateOf(p.t.id);
+        return `<tr><td><i class="sw" style="background:${tankColour(p.t)}"></i> ${esc(p.t.name)}</td><td>${r10(used)} L</td><td>${p.stats.enough ? `${r10(p.stats.perDay)} L` : '–'}</td><td>${s ? `${r10(s.tank_volume_l)} L` : '–'}</td><td>${esc(daysLeftText(p.stats))}</td></tr>`;
+      }).join('')}</tbody></table>`;
+  }
+
+  if (kind === 'alerts') {
+    title.textContent = 'Alerts';
+    const now = currentAlerts();
+    const items = await activityItems();
+    if (openKind !== kind) return;
+    body.innerHTML = `
+      <h3 class="big-sub big-sub-first">Now</h3>
+      ${now.length ? `<ul class="alert-list">${now.map(alertRow).join('')}</ul>`
+        : `<div class="all-clear"><span class="alert-ic">${icon('drop')}</span><span><strong>All clear</strong><span>Every tank, pump and the receiver are working normally.</span></span></div>`}
+      <h3 class="big-sub">Last 7 days</h3>
+      <ul class="activity">${items.slice(0, 40).map((i) => `
+        <li class="act act-${i.kind}">${actIcon(i.kind)}
+          <span class="act-main"><strong>${esc(i.tank.name)}</strong> ${esc(i.text)}<span class="muted">${esc(i.detail)}</span></span>
+          <span class="act-when">${esc(when(new Date(i.at).toISOString()))}</span>
+        </li>`).join('') || '<li class="act-empty">Nothing in the last 7 days.</li>'}</ul>
+      <p class="note">Alerts show here and on the bell at the top. Email and text alerts can be added once accounts are live.</p>`;
+    body.querySelectorAll('[data-go]').forEach((el) => el.addEventListener('click', () => go(el.dataset.go)));
+  }
+
+  if (kind === 'pumps') {
+    title.textContent = 'Pumps';
+    const withPump = site.tanks.filter((x) => x.controller_node || pumpOf(x.id));
+    const cards = [];
+    for (const x of withPump) {
+      let runs = [];
+      try { runs = (await weekData(x)).runs; } catch { /* show what we have */ }
+      const p = pumpSummary(pumpOf(x.id));
+      const midnight = new Date(); midnight.setHours(0, 0, 0, 0);
+      const todayMs = runs.reduce((s, r) => {
+        const a = Math.max(r.start, midnight.getTime()), b = r.end ?? Date.now();
+        return b > a ? s + (b - a) : s;
+      }, 0);
+      const lastDone = runs.filter((r) => r.end).at(-1);
+      cards.push(`<section class="pump-card">
+        <div class="pump-top">${pumpSvg(p.state)}<div><p class="pump-id">${pumpName(x)} · fills ${esc(x.name)}</p><p class="pump-state-t st-${p.state}">${p.label}</p><p class="pump-sub">${esc(p.sub)}</p></div></div>
+        ${kv([
+          ['Run time today', esc(duration(todayMs))],
+          ['Fills in the last 7 days', String(runs.length)],
+          ['Last fill finished', lastDone ? esc(when(new Date(lastDone.end).toISOString())) : '–'],
+          x.fill_start_percent != null && ['Automatic filling', `Starts below ${nf0.format(x.fill_start_percent)}%, stops at ${nf0.format(x.fill_stop_percent)}%`],
+        ])}
+        <button type="button" class="btn btn-small" data-go="${esc(x.id)}">Open ${esc(x.name)}${icon('right')}</button>
+      </section>`);
+    }
+    if (openKind !== kind) return;
+    body.innerHTML = `<div class="pump-cards">${cards.join('')}</div>
+      <p class="note">Each pump is switched by its own controller, using the levels set on that controller. The website shows what they are doing; it doesn't switch them.</p>`;
+    body.querySelectorAll('[data-go]').forEach((el) => el.addEventListener('click', () => go(el.dataset.go)));
+  }
+
   if (kind === 'settings') {
-    title.textContent = 'Tank settings';
-    if (!t) { body.innerHTML = '<p class="muted">No tanks yet.</p>'; return; }
-    body.innerHTML = `<form id="tank-form" class="tank-form" novalidate>
-      <p class="muted">Settings for <strong>${esc(t.name)}</strong> (tank unit node ${t.tank_node}).</p>
-      <label for="f-name">Name</label>
-      <input id="f-name" name="name" maxlength="40" value="${esc(t.name)}" required>
-      <label for="f-cap">Capacity (litres)</label>
-      <input id="f-cap" name="capacity_l" type="number" min="1" step="1" inputmode="numeric" value="${t.capacity_l ?? ''}" placeholder="e.g. 30000">
-      <label for="f-h">Height (metres)</label>
-      <input id="f-h" name="height_m" type="number" min="0.1" step="0.01" inputmode="decimal" value="${t.height_m ?? ''}" placeholder="e.g. 3.0">
-      <p class="form-hint">For display only. The tank unit uses the size set in its own settings.</p>
-      <p class="form-msg" id="tank-form-msg" role="status"></p>
-      <button class="btn btn-primary" type="submit">Save</button>
-    </form>`;
-    const form = $('tank-form');
-    form.addEventListener('submit', async (e) => {
+    title.textContent = 'Settings';
+    const gw = site.gateways[0];
+    body.innerHTML = `
+      <h3 class="big-sub big-sub-first">Tanks and alerts</h3>
+      <div class="set-tanks">${site.tanks.map((x) => `
+        <form class="set-tank" data-tank-form="${esc(x.id)}" novalidate>
+          <div class="set-head"><span class="mini-tank" aria-hidden="true"><i style="height:${clampPct(stateOf(x.id)?.tank_percent ?? 0)}%"></i></span><strong>${esc(x.name)}</strong><span class="muted small">Tank unit node ${pad2(x.tank_node)}</span></div>
+          <div class="set-grid">
+            <label>Name<input name="name" maxlength="40" value="${esc(x.name)}" required></label>
+            <label>Capacity (L)<input name="capacity_l" type="number" min="1" step="1" inputmode="numeric" value="${x.capacity_l ?? ''}" placeholder="e.g. 30000"></label>
+            <label>Height (m)<input name="height_m" type="number" min="0.1" step="0.01" inputmode="decimal" value="${x.height_m ?? ''}" placeholder="e.g. 3.0"></label>
+            <label>Alert below (%)<input name="low_alert_percent" type="number" min="0" max="100" step="1" inputmode="numeric" value="${x.low_alert_percent ?? ''}" placeholder="Off"></label>
+          </div>
+          <div class="set-foot"><p class="form-msg" role="status"></p><button class="btn btn-small btn-primary" type="submit">Save</button></div>
+        </form>`).join('')}
+      </div>
+      <p class="form-hint">Capacity and height are used for the litres and charts on this website. The tank unit uses the size set in its own settings. Leave the alert empty to turn it off.</p>
+
+      <h3 class="big-sub">Pump auto-fill</h3>
+      ${kv(site.tanks.filter((x) => x.fill_start_percent != null).map((x) => [`${pumpName(x)} · ${esc(x.name)}`, `Starts below ${nf0.format(x.fill_start_percent)}%, stops at ${nf0.format(x.fill_stop_percent)}%`]))}
+      <p class="form-hint">These levels are set on each pump controller. Changing them from the website needs remote commands, which come later and will never bypass the controller's own safety checks.</p>
+
+      <h3 class="big-sub">Receiver</h3>
+      ${kv([
+        ['Name', esc(gw?.name ?? '–')],
+        ['Status', esc(receiverStatus().short)],
+        ['Firmware', esc(gw?.firmware ?? '–')],
+      ])}
+
+      <h3 class="big-sub">Account</h3>
+      <div class="set-account"><span class="muted">${source.demo ? 'You are viewing the demo with sample data.' : 'Signed in.'}</span><button type="button" class="btn btn-small" id="set-signout">${source.demo ? 'Exit demo' : 'Sign out'}</button></div>`;
+    $('set-signout').addEventListener('click', signOut);
+    body.querySelectorAll('[data-tank-form]').forEach((form) => form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const msg = $('tank-form-msg');
+      const x = tankById(form.dataset.tankForm);
+      const msg = form.querySelector('.form-msg');
+      const num = (v) => (v === '' ? null : Number(v));
       const name = form.name.value.trim();
-      const capV = form.capacity_l.value === '' ? null : Number(form.capacity_l.value);
-      const h = form.height_m.value === '' ? null : Number(form.height_m.value);
-      if (!name) { msg.textContent = 'Enter a name for this tank.'; return; }
-      if (capV != null && !(capV > 0)) { msg.textContent = 'Capacity must be more than 0 litres.'; return; }
-      if (h != null && !(h > 0)) { msg.textContent = 'Height must be more than 0 metres.'; return; }
+      const capV = num(form.capacity_l.value), h = num(form.height_m.value), low = num(form.low_alert_percent.value);
+      if (!name) { msg.textContent = 'Enter a name.'; return; }
+      if (capV != null && !(capV > 0)) { msg.textContent = 'Capacity must be more than 0 L.'; return; }
+      if (h != null && !(h > 0)) { msg.textContent = 'Height must be more than 0 m.'; return; }
+      if (low != null && !(low >= 0 && low <= 100)) { msg.textContent = 'Alert level must be 0 to 100%.'; return; }
       msg.textContent = 'Saving…';
       try {
-        await source.renameTank(t.id, { name, capacity_l: capV, height_m: h });
-        Object.assign(t, { name, capacity_l: capV, height_m: h });
-        for (const k of [...cache.keys()]) if (k.includes(t.id)) cache.delete(k);
-        msg.textContent = 'Saved.';
+        const fields = { name, capacity_l: capV, height_m: h, low_alert_percent: low };
+        await source.renameTank(x.id, fields);
+        Object.assign(x, fields);
+        for (const k of [...cache.keys()]) if (k.includes(x.id)) cache.delete(k);
+        msg.textContent = 'Saved';
         updateTop();
         renderAll();
       } catch (err) {
         msg.textContent = `Not saved: ${err.message}`;
       }
-    });
+    }));
   }
 }
 

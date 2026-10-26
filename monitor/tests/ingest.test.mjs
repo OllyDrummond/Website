@@ -74,6 +74,7 @@ before(async () => {
   await db.exec(SUPABASE_STUBS);
   await db.exec(readFileSync(MIGRATION, 'utf8'));
   await db.exec(readFileSync(new URL('../supabase/migrations/0002_history.sql', import.meta.url), 'utf8'));
+  await db.exec(readFileSync(new URL('../supabase/migrations/0003_alert_settings.sql', import.meta.url), 'utf8'));
 
   await db.query('insert into auth.users (id) values ($1), ($2)', [USER_A, USER_B]);
   instA = (await one(`insert into installations (owner_id, name, lora_system_id)
@@ -313,6 +314,18 @@ test('a customer can rename a tank but cannot write readings or see key hashes',
     assert.rejects(db.query('select * from gateway_keys'), /permission denied/));
   await as('authenticated', USER_A, () =>
     assert.rejects(db.query(`update tanks set installation_id = gen_random_uuid()`), /permission denied/));
+});
+
+test('a customer can set the low-level alert, within 0-100%, but not the pump levels', async () => {
+  await as('authenticated', USER_A, async () => {
+    await db.query(`update tanks set low_alert_percent = 35 where tank_node = 1`);
+    const t = await one(`select low_alert_percent from tanks where tank_node = 1`);
+    assert.equal(t.low_alert_percent, 35);
+  });
+  await as('authenticated', USER_A, () =>
+    assert.rejects(db.query(`update tanks set low_alert_percent = 120 where tank_node = 1`), /check/));
+  await as('authenticated', USER_A, () =>
+    assert.rejects(db.query(`update tanks set fill_start_percent = 10`), /permission denied/));
 });
 
 test('another customer cannot rename my tanks', async () => {

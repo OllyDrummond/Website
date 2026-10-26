@@ -136,8 +136,8 @@ function simulateTank(spec, now) {
     litres = Math.max(0, Math.min(spec.capacity, litres));
     const pct = (litres / spec.capacity) * 100;
 
-    if (!pumping && pct < spec.start) { pumping = true;  events.push({ state: 'running', heard_at: new Date(t).toISOString(), controller_node: 101 }); }
-    else if (pumping && pct >= spec.stop) { pumping = false; events.push({ state: 'stopped', heard_at: new Date(t).toISOString(), controller_node: 101 }); }
+    if (!pumping && pct < spec.start) { pumping = true;  events.push({ state: 'running', heard_at: new Date(t).toISOString(), controller_node: 100 + spec.node }); }
+    else if (pumping && pct >= spec.stop) { pumping = false; events.push({ state: 'stopped', heard_at: new Date(t).toISOString(), controller_node: 100 + spec.node }); }
 
     points.push({ t, pct });
     packet += STEP_S / 20;
@@ -168,12 +168,12 @@ export function createDemoSource() {
 
     tanks.push({
       id: s.id, installation_id: 'demo', tank_node: s.node, name: `Tank ${s.node}`,
-      height_m: s.height, capacity_l: s.capacity, fill_start_percent: s.start, fill_stop_percent: s.stop, controller_node: 101,
+      height_m: s.height, capacity_l: s.capacity, fill_start_percent: s.start, fill_stop_percent: s.stop, controller_node: 100 + s.node, low_alert_percent: 25,
     });
     const last = sim.points.at(-1);
     tankState.push(stateRow(s, last.pct, new Date(last.t).toISOString(), s.id === 't3' ? -97 : -78 - s.node * 3));
     const lastEvent = sim.events.at(-1);
-    if (lastEvent) pumpState.push({ tank_id: s.id, installation_id: 'demo', controller_node: 101, state: lastEvent.state, since: lastEvent.heard_at });
+    if (lastEvent) pumpState.push({ tank_id: s.id, installation_id: 'demo', controller_node: 100 + s.node, state: lastEvent.state, since: lastEvent.heard_at });
   }
 
   // Make the demo open part-way through a fill on Tank 1: the level dipped
@@ -239,8 +239,8 @@ export function createDemoSource() {
       if (sim.pumping && pct >= s.stop) change = 'stopped';
       if (change) {
         sim.pumping = change === 'running';
-        sim.events.push({ state: change, heard_at: iso, controller_node: 101 });
-        const ps = { tank_id: id, installation_id: 'demo', controller_node: 101, state: change, since: iso };
+        sim.events.push({ state: change, heard_at: iso, controller_node: 100 + s.node });
+        const ps = { tank_id: id, installation_id: 'demo', controller_node: 100 + s.node, state: change, since: iso };
         const existing = pumpState.find((p) => p.tank_id === id);
         if (existing) Object.assign(existing, ps); else pumpState.push(ps);
         listeners.forEach((fn) => fn({ table: 'pump_state', row: ps }));

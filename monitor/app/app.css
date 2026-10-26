@@ -146,11 +146,11 @@ a { color: var(--water-2); }
 .board {
   display: grid; gap: 16px;
   grid-template-columns: minmax(0, 1.05fr) minmax(0, .9fr) minmax(0, .9fr) minmax(0, 1fr);
-  grid-template-areas: "tank tank trend trend" "tanks pump use status";
+  grid-template-areas: "tank tank trend trend" "info pump use status";
 }
 .box-tank { grid-area: tank; }
 .box-trend { grid-area: trend; }
-.box-tanks { grid-area: tanks; }
+.box-info { grid-area: info; }
 .box-pump { grid-area: pump; }
 .box-use { grid-area: use; }
 .box-status { grid-area: status; }
@@ -444,6 +444,11 @@ a { color: var(--water-2); }
    Keep the media query in step with FIT in app.js. ----- */
 @media (min-width: 1100px) and (min-height: 640px) {
   .dash { height: 100vh; overflow: hidden; }
+  .home, .tank-page { flex: 1; min-height: 0; }
+  .home { grid-template-rows: minmax(0, 1.2fr) minmax(0, 1fr); }
+  .home .box-usage .chart-wrap { min-height: 0; }
+  .box-usage .chart { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .box-htanks .box-body, .box-pumps .box-body, .box-alerts .box-body { overflow-y: auto; }
   .board { flex: 1; min-height: 0; grid-template-rows: minmax(0, 1.25fr) minmax(0, 1fr); }
   .box { min-height: 0; overflow: hidden; }
   .box-trend .chart-wrap { min-height: 0; }
@@ -471,6 +476,7 @@ a { color: var(--water-2); }
   .tank-list { gap: 6px; }
   .tank-row { padding: 7px 10px; }
   .tank-row .row-sub { display: none; }
+  .box-info .rows > div:nth-child(n+5) { display: none; }
   .mini-tank { height: 24px; width: 18px; }
 }
 @media (min-width: 1100px) and (max-width: 1380px) {
@@ -479,12 +485,127 @@ a { color: var(--water-2); }
   .brand span { display: none; }
 }
 
+/* ----- home page ----- */
+.home {
+  display: grid; gap: 16px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-areas: "usage usage usage alerts" "htanks htanks pumps settings";
+}
+.box-usage { grid-area: usage; }
+.box-alerts { grid-area: alerts; }
+.box-htanks { grid-area: htanks; }
+.box-pumps { grid-area: pumps; }
+.box-settings { grid-area: settings; }
+.small { font-size: 12px; }
+.tank-tab .icon { width: 15px; height: 15px; }
+
+.box-usage .box-body { gap: 10px; }
+.usage-stats { display: flex; align-items: flex-end; gap: 28px; flex-wrap: wrap; }
+.usage-stats .stat-main { flex-direction: column; align-items: flex-start; gap: 2px; }
+.stat-v small { font-size: .45em; color: var(--muted); letter-spacing: 0; }
+.box-usage .chart-wrap { flex: 1; min-height: 200px; position: relative; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; flex: none; vertical-align: middle; }
+.u-hit { fill: transparent; }
+.u-bar rect:not(.u-hit) { transition: opacity .15s; }
+.usage-chart:hover .u-bar:not(.is-hover) rect:not(.u-hit) { opacity: .45; }
+.c-tip .sw { margin-right: 2px; }
+
+.count { min-width: 22px; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; text-align: center; background: rgba(255, 255, 255, .08); }
+.count:empty { display: none; }
+.count-bad { background: var(--bad-soft); color: var(--bad); }
+.count-warn { background: var(--warn-soft); color: var(--warn); }
+.alert-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.alert, .all-clear { display: flex; gap: 12px; align-items: flex-start; padding: 11px 12px; border-radius: 14px; border: 1px solid var(--line); background: rgba(255, 255, 255, .025); }
+.alert[data-go] { cursor: pointer; }
+.alert[data-go]:hover { border-color: var(--line-2); }
+.alert-ic { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; flex: none; background: rgba(255, 255, 255, .06); }
+.alert-ic .icon { width: 15px; height: 15px; }
+.alert-main, .all-clear > span:last-child { display: grid; gap: 2px; min-width: 0; }
+.alert strong, .all-clear strong { font-size: 13.5px; font-weight: 600; }
+.alert-main > span, .all-clear > span:last-child > span { font-size: 12.5px; color: var(--muted); }
+.alert-bad { background: var(--bad-soft); border-color: rgba(255, 95, 109, .28); }
+.alert-bad .alert-ic { background: rgba(255, 95, 109, .16); color: var(--bad); }
+.alert-warn { background: var(--warn-soft); border-color: rgba(242, 184, 75, .25); }
+.alert-warn .alert-ic { background: rgba(242, 184, 75, .16); color: var(--warn); }
+.all-clear { background: var(--ok-soft); border-color: rgba(79, 209, 139, .2); }
+.all-clear .alert-ic { background: rgba(79, 209, 139, .16); color: var(--ok); }
+.sub-h { font-size: 12px; color: var(--muted); margin: 16px 0 6px; }
+.recent { list-style: none; margin: 0; padding: 0; display: grid; }
+.recent li { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-top: 1px solid var(--line); font-size: 12.5px; }
+.recent time { color: var(--muted); white-space: nowrap; }
+
+.tank-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 10px; }
+.tank-card {
+  display: flex; align-items: center; gap: 12px; padding: 12px 12px 12px 8px; text-align: left; cursor: pointer; color: var(--text);
+  border-radius: 16px; border: 1px solid var(--line); background: rgba(255, 255, 255, .025); transition: border-color .2s, background .2s, transform .2s;
+}
+.tank-card:hover { border-color: rgba(124, 192, 248, .35); background: rgba(124, 192, 248, .05); }
+.tc-art { width: clamp(48px, 28%, 70px); flex: none; }
+.tc-art .tank3d { max-height: none; height: auto; }
+.tc-main { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.tc-name { font-weight: 600; font-size: 14px; }
+.tc-pct { font-size: 30px; font-weight: 300; letter-spacing: -.03em; line-height: 1.15; }
+.tc-pct small { font-size: .5em; color: var(--muted); }
+.tc-l { font-size: 12.5px; color: var(--muted); }
+.tc-status { display: flex; align-items: center; gap: 6px; font-size: 12px; margin-top: 4px; }
+.tc-go { color: var(--faint); }
+.tank-card:hover .tc-go { color: var(--text); }
+
+.pump-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.pump-row { width: 100%; display: flex; align-items: center; gap: 12px; padding: 8px 10px; text-align: left; cursor: pointer; color: var(--text); border-radius: 14px; border: 1px solid var(--line); background: rgba(255, 255, 255, .025); }
+.pump-row:hover { border-color: var(--line-2); }
+.pump-row .pump-badge { width: 38px; height: 38px; border-radius: 12px; }
+.pump-row .pump-badge svg { width: 24px; height: 24px; }
+.pr-main { flex: 1; min-width: 0; display: grid; }
+.pr-name { font-size: 13.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pr-sub { font-size: 12px; color: var(--muted); }
+.pr-state { font-size: 13px; font-weight: 600; }
+
+.btn-small { min-height: 36px; padding: 0 14px; font-size: 13px; border-radius: 10px; }
+.btn-small .icon { width: 15px; height: 15px; }
+.box-settings .btn { margin-top: auto; align-self: flex-start; }
+.box-settings .rows { margin-bottom: 14px; }
+
+/* tank page */
+.tank-page { display: flex; flex-direction: column; gap: 12px; }
+.crumbs { display: flex; align-items: center; gap: 10px; color: var(--faint); font-size: 13px; }
+.crumbs span:last-child { color: var(--muted); }
+.back { display: inline-flex; align-items: center; gap: 4px; padding: 5px 12px 5px 6px; border-radius: 10px; border: 1px solid var(--line-2); background: rgba(255, 255, 255, .04); cursor: pointer; font-size: 13px; color: var(--text); }
+.back:hover { background: rgba(255, 255, 255, .08); }
+.back .icon { width: 16px; height: 16px; }
+
+/* settings and pumps panels */
+.big-sub-first { margin-top: 4px; }
+.set-tanks { display: grid; gap: 12px; }
+.set-tank { padding: 14px 16px; border-radius: 16px; border: 1px solid var(--line); background: rgba(255, 255, 255, .025); }
+.set-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.set-head .muted { margin-left: auto; }
+.set-grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 10px; }
+.set-grid label { display: grid; gap: 5px; font-size: 12px; color: var(--muted); }
+.set-tank input {
+  width: 100%; min-height: 40px; padding: 0 12px; border-radius: 10px;
+  background: rgba(0, 0, 0, .35); border: 1px solid var(--line-2); color: var(--text); font: inherit; font-size: 15px;
+}
+.set-tank input:focus { outline: none; border-color: var(--water); box-shadow: 0 0 0 3px var(--water-soft); }
+.set-foot { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 10px; }
+.set-foot .form-msg { min-height: 0; }
+.set-account { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.big .form-hint { margin-top: 8px; }
+.pump-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+.pump-card { padding: 16px; border-radius: 18px; border: 1px solid var(--line); background: rgba(255, 255, 255, .025); display: flex; flex-direction: column; gap: 6px; }
+.pump-card .btn { align-self: flex-start; margin-top: 8px; }
+.pump-card .pump-top { margin-bottom: 4px; }
+.radio-table .sw { margin-right: 4px; }
+
 /* ----- smaller screens: boxes stack and the page scrolls ----- */
 @media (max-width: 1099px) {
   .topbar { flex-wrap: wrap; }
   .tank-tabs { order: 3; flex: 1 1 100%; }
-  .board { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "tank tank" "trend trend" "pump use" "tanks status"; }
+  .board { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "tank tank" "trend trend" "pump use" "info status"; }
   .box-trend .chart-wrap { min-height: 220px; }
+  .home { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "usage usage" "alerts settings" "htanks htanks" "pumps pumps"; }
   .pill-text { display: none; }
   .pill { width: 40px; padding: 0; justify-content: center; }
 }
@@ -493,7 +614,10 @@ a { color: var(--water-2); }
   .brand img { height: 24px; }
   .brand span, .top-time { display: none; }
   .top-right { gap: 6px; }
-  .board { grid-template-columns: 1fr; grid-template-areas: "tank" "trend" "pump" "use" "status" "tanks"; gap: 12px; }
+  .home { grid-template-columns: 1fr; grid-template-areas: "alerts" "htanks" "usage" "pumps" "settings"; gap: 12px; }
+  .set-grid { grid-template-columns: 1fr 1fr; }
+  .tank-cards { grid-template-columns: 1fr; }
+  .board { grid-template-columns: 1fr; grid-template-areas: "tank" "trend" "pump" "use" "status" "info"; gap: 12px; }
   .box { padding: 16px; border-radius: 20px; }
   .tank-hero { grid-template-columns: 1fr 1fr; gap: 8px; }
   .tank3d { max-height: 240px; }
@@ -606,7 +730,7 @@ body:has(.design-switch) .dash { padding-bottom: 66px; }
 @media (min-width: 1100px) {
   :root[data-design="b"] .board {
     grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-areas: "tank trend trend tanks" "tank pump use status";
+    grid-template-areas: "tank trend trend info" "tank pump use status";
   }
   :root[data-design="b"] .tank-hero { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto; gap: 10px; }
   :root[data-design="b"] .tank-read { text-align: left; }
@@ -614,13 +738,12 @@ body:has(.design-switch) .dash { padding-bottom: 66px; }
   :root[data-design="c"] .tank-tabs { display: none; }
   :root[data-design="c"] .board {
     grid-template-columns: minmax(240px, .8fr) minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-areas: "tanks tank trend trend" "tanks pump use status";
+    grid-template-areas: "info tank trend trend" "info pump use status";
   }
-  :root[data-design="c"] .box-tanks .tank-row .row-sub { display: flex; }
-
+  
   :root[data-design="d"] .board {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.3fr);
-    grid-template-areas: "trend trend trend tank" "pump use status tanks";
+    grid-template-areas: "trend trend trend tank" "pump use status info";
   }
   :root[data-design="d"] .tank-hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
   :root[data-design="d"] .hero-num { font-size: 58px; }
